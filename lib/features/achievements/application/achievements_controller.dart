@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/auth/auth_service.dart';
 import '../../../core/database/repositories.dart';
+import '../../../core/di/providers.dart';
 import '../../../core/motion/pulse_events.dart';
 import '../../../models/achievement_model.dart';
 import '../../../models/user_model.dart';
