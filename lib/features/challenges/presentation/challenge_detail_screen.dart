@@ -9,6 +9,7 @@ import '../../../core/widgets/pulse_button.dart';
 import '../../../core/widgets/pulse_card.dart';
 import '../../../core/widgets/pulse_feedback.dart';
 import '../../../core/widgets/pulse_states.dart';
+import '../../home/application/home_controller.dart';
 import '../application/challenge_detail_controller.dart';
 
 class ChallengeDetailScreen extends ConsumerWidget {
@@ -69,8 +70,8 @@ class _LoadedBody extends ConsumerWidget {
 
     final isStarting = data.phase == ChallengeDetailPhase.starting;
     final isCompleting = data.phase == ChallengeDetailPhase.completing;
-    final canStart = data.phase == ChallengeDetailPhase.ready && !isStarting && !isCompleting;
-    final canComplete = (data.phase == ChallengeDetailPhase.active || data.phase == ChallengeDetailPhase.ready) && !isCompleting;
+    final canStart = data.phase == ChallengeDetailPhase.ready;
+    final canComplete = data.phase == ChallengeDetailPhase.active || data.phase == ChallengeDetailPhase.ready;
 
     return PulseMotionBoundary(
       state: data.challengeMotionState,
@@ -79,10 +80,7 @@ class _LoadedBody extends ConsumerWidget {
           SliverPadding(
             padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
             sliver: SliverList(delegate: SliverChildListDelegate([
-              Semantics(
-                header: true,
-                child: Text('a small action. a real win.', style: Theme.of(context).textTheme.labelLarge),
-              ),
+              Semantics(header: true, child: Text('a small action. a real win.', style: Theme.of(context).textTheme.labelLarge)),
               const SizedBox(height: 12),
               Text(challenge.title, style: Theme.of(context).textTheme.headlineLarge),
               const SizedBox(height: 14),
@@ -106,7 +104,7 @@ class _LoadedBody extends ConsumerWidget {
                       const SizedBox(width: 8),
                       Text('${challenge.xpReward} XP', style: Theme.of(context).textTheme.titleMedium),
                       const SizedBox(width: 8),
-                      Text('when the backend confirms completion', style: Theme.of(context).textTheme.bodySmall),
+                      Expanded(child: Text('after the backend confirms completion', style: Theme.of(context).textTheme.bodySmall)),
                     ]),
                   ),
                 ]),
@@ -141,7 +139,7 @@ class _LoadedBody extends ConsumerWidget {
     context.go('/home');
   }
 
-  String _pretty(String value) => value[0].toUpperCase() + value.substring(1);
+  String _pretty(String value) => value.isEmpty ? value : value[0].toUpperCase() + value.substring(1);
 }
 
 class _CompletionBody extends StatelessWidget {
@@ -229,10 +227,7 @@ class _MetaChip extends StatelessWidget {
         label: label,
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surfaceContainerHighest,
-            borderRadius: BorderRadius.circular(99),
-          ),
+          decoration: BoxDecoration(color: Theme.of(context).colorScheme.surfaceContainerHighest, borderRadius: BorderRadius.circular(99)),
           child: Text(label, style: Theme.of(context).textTheme.labelMedium),
         ),
       );
