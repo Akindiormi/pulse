@@ -47,7 +47,7 @@ class CompleteChallenge {
       final nextUser = user.copyWith(totalActivities: nextActivityCount, currentStreak: streak.current, longestStreak: streak.longest, xp: xp.newXP, level: xp.newLevel, lastActivityDate: now, completedCategories: nextCategories, unlockedAchievements: unlockedIds);
       final activity = ActivityModel(id: id, userId: uid, challengeId: challenge.id, date: date, xpAwarded: challenge.xpReward, completedAt: now, category: challenge.category.name);
       final events = <Object>[
-        ActivityCompletedEvent(xpAwarded: totalReward, newXP: xp.newXP, previousStreak: streak.previous, newStreak: streak.current, newAchievements: achievementEvaluation.newAchievements.map((e) => e.achievementId).toList(), leveledUp: xp.leveledUp),
+        ActivityCompletedEvent(challengeId: challenge.id, xpAwarded: totalReward, newXP: xp.newXP, previousStreak: streak.previous, newStreak: streak.current, newAchievements: achievementEvaluation.newAchievements.map((e) => e.achievementId).toList(), leveledUp: xp.leveledUp),
         if (streak.changed && streak.current > streak.previous) StreakIncreasedEvent(previous: streak.previous, current: streak.current),
         ...achievementEvaluation.newAchievements.map((e) => AchievementUnlockedEvent(e.achievementId)),
         if (xp.leveledUp) LevelUpEvent(previousLevel: xp.previousLevel, newLevel: xp.newLevel),
