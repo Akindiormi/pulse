@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../models/achievement_model.dart';
 import '../design/pulse_tokens.dart';
 import '../motion/pulse_motion_state.dart';
+import '../theme/app_theme.dart';
 
 class PulseAchievementBadge extends StatelessWidget {
   const PulseAchievementBadge({super.key, required this.definition, this.unlocked = false, this.newlyUnlocked = false, this.progress, this.motionState});
