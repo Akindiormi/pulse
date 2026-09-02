@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:pulse/core/motion/pulse_celebration.dart';
 import 'package:pulse/core/motion/pulse_motion_attachment.dart';
 import 'package:pulse/core/motion/pulse_motion_policy.dart';
+import 'package:pulse/core/motion/pulse_motion_state.dart';
 import 'package:pulse/core/motion/pulse_staggered.dart';
 
 void main() {
