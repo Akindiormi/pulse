@@ -6,25 +6,47 @@ service cloud.firestore {
 
     match /users/{uid} {
       allow read: if own(uid);
-      allow create: if own(uid);
-      allow update: if own(uid) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['username','displayName','photoUrl','createdAt','timezone','notificationPreferences']);
+      allow create: if own(uid)
+        && request.resource.data.totalActivities == 0
+        && request.resource.data.currentStreak == 0
+        && request.resource.data.longestStreak == 0
+        && request.resource.data.xp == 0
+        && request.resource.data.level == 1
+        && request.resource.data.unlockedAchievements.size() == 0
+        && request.resource.data.completedCategories.size() == 0;
+      allow update: if own(uid)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['username','displayName','photoUrl','timezone','notificationPreferences']);
       allow delete: if false;
 
       match /dailyChallenges/{date} {
         allow read: if own(uid);
-        allow create: if own(uid) && request.resource.data.keys().hasOnly(['challengeId','assignedAt','completed','completedAt']);
-        allow update: if own(uid) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['completed','completedAt']);
+        allow create: if own(uid)
+          && !exists(/databases/$(database)/documents/users/$(uid)/dailyChallenges/$(date))
+          && request.resource.data.keys().hasOnly(['challengeId','date','assignedAt','completed','completedAt'])
+          && request.resource.data.date == date
+          && request.resource.data.completed == false
+          && get(/databases/$(database)/documents/challenges/$(request.resource.data.challengeId)).data.active == true;
+        // Completion assignment state is authoritative and should be written by the trusted backend.
+        allow update: if false;
         allow delete: if false;
       }
+
+      match /activities/{activityId} {
+        allow read: if own(uid);
+        allow write: if false;
+      }
+
       match /activityDays/{date} {
         allow read: if own(uid);
         allow write: if false;
       }
+
       match /achievements/{achievementId} {
         allow read: if own(uid);
         allow write: if false;
       }
     }
+
     match /challenges/{challengeId} {
       allow read: if signedIn();
       allow write: if false;
