@@ -13,6 +13,16 @@ enum PulseMotionState {
   error,
 }
 
+enum PulseProfileMotionState {
+  entering,
+  idle,
+  pressed,
+  editing,
+  saving,
+  saved,
+  error,
+}
+
 enum PulseProgressMotionState {
   initial,
   unchanged,
