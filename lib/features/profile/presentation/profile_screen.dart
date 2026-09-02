@@ -205,7 +205,7 @@ class _AccountActions extends StatelessWidget {
   Widget build(BuildContext context) => Column(children: [
     SizedBox(width: double.infinity, child: OutlinedButton.icon(onPressed: onSignOut, icon: const Icon(Icons.logout_rounded), label: const Text('sign out'))),
     const SizedBox(height: PulseSpace.sm),
-    SizedBox(width: double.infinity, child: TextButton.icon(onPressed: onDelete, icon: const Icon(Icons.delete_outline_rounded), label: const Text('delete account')),
+    SizedBox(width: double.infinity, child: TextButton.icon(onPressed: onDelete, icon: const Icon(Icons.delete_outline_rounded), label: const Text('delete account'))),
   ]);
 }
 
