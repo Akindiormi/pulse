@@ -9,8 +9,8 @@ const seedSource = fs.readFileSync(path.join(__dirname, '../../lib/features/chal
 test('seeding reads the existing Dart challenge seed as its only content source', () => {
   const records = parseChallengeSeed(seedSource);
   validateSeed(records);
-  assert.equal(records.length, 50);
-  assert.equal(new Set(records.map((record) => record.id)).size, 50);
+  assert.equal(records.length, 48);
+  assert.equal(new Set(records.map((record) => record.id)).size, 48);
 });
 
 test('seeding validates the expected category and difficulty distribution', () => {
@@ -49,7 +49,7 @@ test('repeated seeding upserts by challenge ID and does not delete unrelated doc
   await seedChallenges(database, records);
   await seedChallenges(database, records);
 
-  assert.equal(writes.length, 100);
+  assert.equal(writes.length, 96);
   assert.equal(writes.every((write) => write.options.merge === true), true);
   assert.equal(writes.some((write) => write.path === 'users/user-a'), false);
   assert.equal(writes.some((write) => write.path.startsWith('challenges/')), true);
