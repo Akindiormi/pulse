@@ -1,0 +1,212 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+
+import '../../../core/design/pulse_tokens.dart';
+import '../../../core/motion/pulse_motion_policy.dart';
+import '../../../core/motion/pulse_motion_state.dart';
+import '../../../core/widgets/pulse_button.dart';
+import '../../../core/widgets/pulse_card.dart';
+import '../../../core/widgets/pulse_states.dart';
+import '../../../models/user_model.dart';
+import '../../../services/xp_service.dart';
+import '../application/profile_controller.dart';
+
+class ProfileScreen extends ConsumerWidget {
+  const ProfileScreen({super.key});
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final state = ref.watch(profileControllerProvider);
+    return Scaffold(
+      appBar: AppBar(title: const Text('profile'), centerTitle: false),
+      body: state.when(
+        loading: () => const _Loading(),
+        error: (_, __) => PulseErrorState(message: 'we couldn’t load your profile. please try again.', onRetry: () => ref.read(profileControllerProvider.notifier).refresh()),
+        data: (data) => _Profile(data: data),
+      ),
+    );
+  }
+}
+
+class _Loading extends StatelessWidget {
+  const _Loading();
+  @override
+  Widget build(BuildContext context) => ListView(padding: const EdgeInsets.all(PulseSpace.lg), children: const [PulseCardLoading(height: 220), SizedBox(height: PulseSpace.lg), PulseCardLoading(height: 150), SizedBox(height: PulseSpace.md), PulseCardLoading(height: 150)]);
+}
+
+class _Profile extends ConsumerWidget {
+  const _Profile({required this.data});
+  final ProfileViewData data;
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final controller = ref.read(profileControllerProvider.notifier);
+    return RefreshIndicator(
+      onRefresh: controller.refresh,
+      child: ListView(padding: const EdgeInsets.fromLTRB(PulseSpace.lg, PulseSpace.md, PulseSpace.lg, PulseSpace.xxxl), children: [
+        _IdentityCard(data: data, onEdit: () => _showEditProfile(context, ref, data.user)),
+        const SizedBox(height: PulseSpace.lg),
+        _ProgressionCard(user: data.user),
+        const SizedBox(height: PulseSpace.lg),
+        _JourneyCard(user: data.user),
+        const SizedBox(height: PulseSpace.lg),
+        _AchievementCard(data: data),
+        const SizedBox(height: PulseSpace.xxl),
+        _AccountActions(onSignOut: () => _confirmSignOut(context, ref), onDelete: () => _confirmDelete(context, ref)),
+      ]),
+    );
+  }
+
+  Future<void> _showEditProfile(BuildContext context, WidgetRef ref, UserModel user) async {
+    final controller = ref.read(profileControllerProvider.notifier);
+    controller.beginEditing();
+    final field = TextEditingController(text: user.displayName ?? '');
+    var saving = false;
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (sheetContext) => StatefulBuilder(builder: (context, setState) {
+        final editState = controller.editState;
+        return SafeArea(child: Padding(
+          padding: EdgeInsets.fromLTRB(PulseSpace.xl, PulseSpace.md, PulseSpace.xl, MediaQuery.viewInsetsOf(context).bottom + PulseSpace.xl),
+          child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text('edit profile', style: AppTypography.headline),
+            const SizedBox(height: PulseSpace.lg),
+            TextField(controller: field, textCapitalization: TextCapitalization.words, maxLength: 60, enabled: !saving, decoration: const InputDecoration(labelText: 'display name', hintText: 'how should Pulse call you?')),
+            if (editState == ProfileEditState.error) ...[const SizedBox(height: PulseSpace.sm), Text(controller.editError ?? 'we couldn’t save your profile.', style: AppTypography.metadata.copyWith(color: PulseColors.error))],
+            const SizedBox(height: PulseSpace.md),
+            SizedBox(width: double.infinity, child: PulseButton(label: saving ? 'saving…' : 'save', onPressed: saving ? null : () async {
+              setState(() => saving = true);
+              final saved = await controller.saveDisplayName(field.text);
+              if (!context.mounted) return;
+              if (saved) Navigator.of(context).pop(); else setState(() => saving = false);
+            })),
+          ]),
+        ));
+      }),
+    );
+    field.dispose();
+  }
+
+  Future<void> _confirmSignOut(BuildContext context, WidgetRef ref) async {
+    final confirmed = await showDialog<bool>(context: context, builder: (context) => AlertDialog(title: const Text('sign out?'), content: const Text('you’ll need to sign in again to continue your Pulse journey.'), actions: [TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('cancel')), FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('sign out'))]));
+    if (confirmed == true) {
+      try { await ref.read(profileControllerProvider.notifier).signOut(); } catch (_) { if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('we couldn’t sign you out. please try again.'))); }
+    }
+  }
+
+  Future<void> _confirmDelete(BuildContext context, WidgetRef ref) async {
+    final confirmed = await showDialog<bool>(context: context, builder: (context) => AlertDialog(title: const Text('delete account?'), content: const Text('this is permanent. Pulse will ask the current authentication service to delete your account. profile data cleanup may require the backend deletion workflow.'), actions: [TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('cancel')), FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('delete account'))]));
+    if (confirmed == true) {
+      try { await ref.read(profileControllerProvider.notifier).deleteAccount(); } catch (_) { if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('we couldn’t delete your account. please try again or re-authenticate.'))); }
+    }
+  }
+}
+
+class _IdentityCard extends StatelessWidget {
+  const _IdentityCard({required this.data, required this.onEdit});
+  final ProfileViewData data;
+  final VoidCallback onEdit;
+  @override
+  Widget build(BuildContext context) {
+    final user = data.user;
+    final display = (user.displayName?.trim().isNotEmpty ?? false) ? user.displayName!.trim() : 'your Pulse journey';
+    final initials = _initials(display);
+    final hasPhoto = user.photoUrl?.trim().isNotEmpty ?? false;
+    return Semantics(label: 'profile identity for $display', child: PulseMotionBoundary(state: PulseMotionState.idle, child: PulseCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Semantics(label: hasPhoto ? 'profile photo' : 'profile avatar for $display', image: true, child: CircleAvatar(radius: 38, backgroundColor: PulseColors.accentTint, foregroundColor: PulseColors.accent, backgroundImage: hasPhoto ? NetworkImage(user.photoUrl!) : null, onBackgroundImageError: hasPhoto ? (_, __) {} : null, child: hasPhoto ? null : Text(initials, style: AppTypography.title.copyWith(color: PulseColors.accent)))),
+        const SizedBox(width: PulseSpace.lg),
+        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(display, maxLines: 3, overflow: TextOverflow.ellipsis, style: AppTypography.headline),
+          if (user.username?.trim().isNotEmpty ?? false) ...[const SizedBox(height: PulseSpace.xs), Text('@${user.username!.trim()}', maxLines: 2, overflow: TextOverflow.ellipsis, style: AppTypography.metadata)],
+          const SizedBox(height: PulseSpace.sm),
+          Text(user.createdAt == null ? 'building your journey' : 'your Pulse journey', style: AppTypography.metadata),
+        ])),
+        IconButton(onPressed: onEdit, tooltip: 'edit profile', icon: const Icon(Icons.edit_outlined)),
+      ],
+      const SizedBox(height: PulseSpace.xl),
+      Text('this is your Pulse.', style: AppTypography.body.copyWith(fontWeight: FontWeight.w700)),
+      const SizedBox(height: PulseSpace.xs),
+      Text('your progress, streaks and milestones live here.', style: AppTypography.metadata),
+    ]))));
+  }
+  String _initials(String value) {
+    final parts = value.trim().split(RegExp(r'\s+')).where((part) => part.isNotEmpty).toList();
+    if (parts.isEmpty) return 'P';
+    if (parts.length == 1) return parts.first.substring(0, 1).toUpperCase();
+    return '${parts.first.substring(0, 1)}${parts.last.substring(0, 1)}'.toUpperCase();
+  }
+}
+
+class _ProgressionCard extends StatelessWidget {
+  const _ProgressionCard({required this.user});
+  final UserModel user;
+  @override
+  Widget build(BuildContext context) {
+    final progress = XPService.progress(user.xp);
+    final next = XPService.nextLevelXP(user.xp);
+    return PulseCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Row(children: [Expanded(child: Text('level ${user.level}', style: AppTypography.title)), Text('${user.xp} XP', style: AppTypography.body.copyWith(fontWeight: FontWeight.w700))]),
+      const SizedBox(height: PulseSpace.md),
+      Semantics(label: '${user.xp} XP progression toward level ${user.level + 1}', value: '${(progress * 100).round()} percent', child: ClipRRect(borderRadius: BorderRadius.circular(PulseRadius.small), child: LinearProgressIndicator(value: progress, minHeight: 8))),
+      const SizedBox(height: PulseSpace.sm),
+      Text('$next XP target for next level', style: AppTypography.metadata),
+      const SizedBox(height: PulseSpace.lg),
+      Row(children: [
+        Expanded(child: _Stat(label: 'streak', value: '${user.currentStreak} days', state: user.currentStreak > 0 ? PulseStreakMotionState.active : PulseStreakMotionState.inactive)),
+        const SizedBox(width: PulseSpace.md),
+        Expanded(child: _Stat(label: 'best', value: '${user.longestStreak} days', state: user.longestStreak > 0 ? PulseStreakMotionState.milestone : PulseStreakMotionState.inactive)),
+        const SizedBox(width: PulseSpace.md),
+        Expanded(child: _Stat(label: 'challenges', value: '${user.totalActivities}', state: PulseProgressMotionState.unchanged)),
+      ]),
+    ]));
+  }
+}
+
+class _JourneyCard extends StatelessWidget {
+  const _JourneyCard({required this.user});
+  final UserModel user;
+  @override
+  Widget build(BuildContext context) => PulseCard(child: Row(children: [
+    Container(width: 44, height: 44, decoration: BoxDecoration(shape: BoxShape.circle, color: PulseColors.accentTint), child: const Icon(Icons.explore_outlined, color: PulseColors.accent)),
+    const SizedBox(width: PulseSpace.lg),
+    Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text('your journey', style: AppTypography.title), const SizedBox(height: PulseSpace.xs), Text('${user.completedCategories.length} categories explored', style: AppTypography.body), const SizedBox(height: 2), Text(user.completedCategories.isEmpty ? 'your first category is waiting.' : 'keep exploring different sides of Pulse.', style: AppTypography.metadata)])),
+  ]));
+}
+
+class _AchievementCard extends StatelessWidget {
+  const _AchievementCard({required this.data});
+  final ProfileViewData data;
+  @override
+  Widget build(BuildContext context) => Semantics(label: '${data.unlockedAchievementCount} achievements unlocked', child: PulseCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+    Row(children: [Expanded(child: Text('achievements', style: AppTypography.title)), Text('${data.unlockedAchievementCount} unlocked', style: AppTypography.metadata)]),
+    const SizedBox(height: PulseSpace.lg),
+    if (data.achievementHighlights.isEmpty)
+      Text('your first badge is waiting for you.', style: AppTypography.body)
+    else
+      Row(children: data.achievementHighlights.map((record) => Padding(padding: const EdgeInsets.only(right: PulseSpace.md), child: Semantics(label: 'unlocked achievement ${record.achievementId}', child: Container(width: 52, height: 52, decoration: BoxDecoration(shape: BoxShape.circle, color: PulseColors.accentTint), child: const Icon(Icons.workspace_premium_rounded, color: PulseColors.accent)))).toList()),
+    const SizedBox(height: PulseSpace.lg),
+    Align(alignment: Alignment.centerLeft, child: TextButton.icon(onPressed: () => context.push('/achievements'), icon: const Icon(Icons.arrow_forward_rounded), label: const Text('view all'))),
+  ])));
+}
+
+class _AccountActions extends StatelessWidget {
+  const _AccountActions({required this.onSignOut, required this.onDelete});
+  final VoidCallback onSignOut;
+  final VoidCallback onDelete;
+  @override
+  Widget build(BuildContext context) => Column(children: [
+    SizedBox(width: double.infinity, child: OutlinedButton.icon(onPressed: onSignOut, icon: const Icon(Icons.logout_rounded), label: const Text('sign out'))),
+    const SizedBox(height: PulseSpace.sm),
+    SizedBox(width: double.infinity, child: TextButton.icon(onPressed: onDelete, icon: const Icon(Icons.delete_outline_rounded), label: const Text('delete account'))),
+  ]);
+}
+
+class _Stat extends StatelessWidget {
+  const _Stat({required this.label, required this.value, required this.state});
+  final String label, value;
+  final Object state;
+  @override
+  Widget build(BuildContext context) => Semantics(label: '$label: $value', child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(value, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppTypography.body.copyWith(fontWeight: FontWeight.w700)), const SizedBox(height: 2), Text(label, style: AppTypography.metadata)]));
+}
