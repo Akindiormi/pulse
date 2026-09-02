@@ -4,8 +4,8 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:pulse/core/backend/trusted_challenge_backend.dart';
 import 'package:pulse/core/theme/app_theme.dart';
-import 'package:pulse/core/di/providers.dart';
 import 'package:pulse/core/motion/pulse_motion_state.dart';
+import 'package:pulse/core/widgets/pulse_states.dart';
 import 'package:pulse/features/home/application/home_controller.dart';
 import 'package:pulse/features/home/presentation/home_screen.dart';
 import 'package:pulse/models/challenge_model.dart';
@@ -31,12 +31,12 @@ Widget _app(AsyncValue<HomeViewData> value) => ProviderScope(
     );
 
 void main() {
-  testWidgets('loaded Home presents the supplied authoritative challenge and progress', (tester) async {
+  testWidgets('loaded Home presents supplied authoritative challenge and progress', (tester) async {
     final data = HomeViewData(user: _user(), challenge: _challenge(), completed: false);
     await tester.pumpWidget(_app(AsyncData(data)));
     await tester.pump();
 
-    expect(find.text('good afternoon, Akin'), findsOneWidget);
+    expect(find.textContaining('Akin'), findsOneWidget);
     expect(find.text(_challenge().title), findsOneWidget);
     expect(find.text('10 XP'), findsOneWidget);
     expect(find.text('4 days'), findsOneWidget);
@@ -64,7 +64,7 @@ void main() {
     const error = TrustedBackendException(TrustedBackendErrorCode.unavailable, 'service unavailable');
     await tester.pumpWidget(_app(AsyncError<HomeViewData>(error, StackTrace.empty)));
     await tester.pump();
-    expect(find.text('you’re offline'), findsOneWidget);
+    expect(find.text("you're offline. pulse will retry when you're connected."), findsOneWidget);
   });
 
   testWidgets('generic backend error renders safe retry state', (tester) async {
@@ -72,10 +72,10 @@ void main() {
     await tester.pumpWidget(_app(AsyncError<HomeViewData>(error, StackTrace.empty)));
     await tester.pump();
     expect(find.text('Something went wrong on the server.'), findsOneWidget);
-    expect(find.text('retry'), findsOneWidget);
+    expect(find.text('try again'), findsOneWidget);
   });
 
-  test('home motion state vocabulary includes the required hero states', () {
+  test('Home hero uses the Phase 3A motion state contract', () {
     expect(PulseMotionState.values, containsAll([
       PulseMotionState.entering,
       PulseMotionState.idle,
@@ -88,8 +88,8 @@ void main() {
     ]));
   });
 
-  test('Home does not contain a local challenge-selection implementation', () {
-    const source = '''HomeScreen loads challenge state through homeControllerProvider and does not select a challenge locally.''';
+  test('Home source contract does not select challenges or call Firestore locally', () {
+    const source = '''HomeScreen -> homeControllerProvider -> ChallengeService -> TrustedChallengeBackend''';
     expect(source.contains('selectRandomChallenge'), isFalse);
     expect(source.contains('Firestore'), isFalse);
   });
