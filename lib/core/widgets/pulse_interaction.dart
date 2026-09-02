@@ -5,11 +5,10 @@ import '../motion/pulse_motion_policy.dart';
 /// Lightweight tactile feedback for visual controls. It owns only presentation
 /// state; product/business state remains outside this widget.
 class PulsePressScale extends StatefulWidget {
-  const PulsePressScale({super.key, required this.child, this.scale = .985, this.onPressed});
+  const PulsePressScale({super.key, required this.child, this.scale = .985});
 
   final Widget child;
   final double scale;
-  final VoidCallback? onPressed;
 
   @override
   State<PulsePressScale> createState() => _PulsePressScaleState();
