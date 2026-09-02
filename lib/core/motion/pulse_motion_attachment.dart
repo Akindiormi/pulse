@@ -75,7 +75,7 @@ class _PulseMotionPresentationState extends State<PulseMotionPresentation> with 
         final offset = _entrance && !reduced ? .035 * (1 - t) : 0.0;
         final pressed = _stateName == 'pressed' && !reduced;
         return Opacity(
-          opacity: _entrance && !reduced ? t.clamp(.0, 1.0) : 1,
+          opacity: _entrance && !reduced ? t.clamp(.0, 1.0).toDouble() : 1,
           child: Transform.translate(
             offset: Offset(0, 12 * offset),
             child: Transform.scale(scale: pressed ? .985 : 1, child: child),
