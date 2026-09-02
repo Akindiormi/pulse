@@ -15,7 +15,7 @@ import 'package:pulse/models/challenge_model.dart';
 
 Challenge _challenge() => const Challenge(id: 'challenge-1', title: 'take a ten minute walk', description: 'step outside and take a calm ten minute walk.', category: ChallengeCategory.health, difficulty: Difficulty.easy, xpReward: 25, estimatedMinutes: 10, estimatedCost: 0, active: true);
 ChallengeDetailViewData _data({ChallengeDetailPhase phase = ChallengeDetailPhase.ready, CompletionResult? completion}) => ChallengeDetailViewData(challenge: _challenge(), phase: phase, completion: completion);
-Widget _app(AsyncValue<ChallengeDetailViewData> value) => ProviderScope(overrides: [challengeDetailControllerProvider.overrideWith((ref, arg) => _FakeChallengeDetailController(value))], child: MaterialApp(theme: buildAppTheme(Brightness.light), home: const ChallengeDetailScreen(challengeId: 'challenge-1')));
+Widget _app(AsyncValue<ChallengeDetailViewData> value) => ProviderScope(overrides: [challengeDetailControllerProvider.overrideWith(() => _FakeChallengeDetailController(value))], child: MaterialApp(theme: buildAppTheme(Brightness.light), home: const ChallengeDetailScreen(challengeId: 'challenge-1')));
 
 void main() {
   testWidgets('loading renders polished skeletons', (tester) async { await tester.pumpWidget(_app(const AsyncLoading())); expect(find.byType(PulseCardLoading), findsWidgets); });
