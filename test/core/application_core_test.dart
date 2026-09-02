@@ -1,7 +1,6 @@
-import 'dart:async';
-
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pulse/core/backend/trusted_challenge_backend.dart';
+import 'package:pulse/core/motion/pulse_events.dart';
 import 'package:pulse/core/time/calendar_service.dart';
 import 'package:pulse/features/achievements/application/achievement_service.dart';
 import 'package:pulse/features/challenges/application/challenge_service.dart';
