@@ -6,6 +6,7 @@ import '../../../core/design/pulse_tokens.dart';
 import '../../../core/motion/pulse_motion_attachment.dart';
 import '../../../core/motion/pulse_motion_policy.dart';
 import '../../../core/motion/pulse_motion_state.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/pulse_button.dart';
 import '../../../core/widgets/pulse_card.dart';
 import '../../../core/widgets/pulse_states.dart';
@@ -101,7 +102,7 @@ class _Profile extends ConsumerWidget {
   }
 
   Future<void> _confirmDelete(BuildContext context, WidgetRef ref) async {
-    final confirmed = await showDialog<bool>(context: context, builder: (context) => AlertDialog(title: const Text('delete account?'), content: const Text('this is permanent. Pulse will ask the current authentication service to delete your account. profile data cleanup may require the backend deletion workflow.'), actions: [TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('cancel')), FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('delete account'))]));
+    final confirmed = await showDialog<bool>(context: context, builder: (context) => AlertDialog(title: const Text('delete account?'), content: const Text('this is permanent. Pulse will ask the current authentication service to delete your account. profile data will be removed through the trusted deletion workflow.'), actions: [TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('cancel')), FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('delete account'))]));
     if (confirmed == true) {
       try { await ref.read(profileControllerProvider.notifier).deleteAccount(); } catch (_) { if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('we couldn’t delete your account. please try again or re-authenticate.'))); }
     }
