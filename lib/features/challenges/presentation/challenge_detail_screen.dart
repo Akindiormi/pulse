@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/backend/trusted_challenge_backend.dart';
-import '../../../core/di/providers.dart';
 import '../../../core/motion/pulse_motion_attachment.dart';
 import '../../../core/motion/pulse_motion_state.dart';
 import '../../../core/widgets/pulse_button.dart';
