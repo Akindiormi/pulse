@@ -19,7 +19,7 @@ class ChallengeService {
     return DailyChallengeAssignment(
       challengeId: result.challengeId,
       date: result.date,
-      assignedAt: result.assignedAt ?? DateTime.now(),
+      assignedAt: result.assignedAt,
       completedAt: null,
       completed: result.completed,
     );
