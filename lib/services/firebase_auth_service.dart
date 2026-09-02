@@ -1,10 +1,12 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import '../auth/auth_service.dart';
+import '../backend/trusted_account_backend.dart';
 import '../core/errors/app_error.dart';
 
 class FirebaseAuthService implements AuthService {
-  FirebaseAuthService(this._auth);
+  FirebaseAuthService(this._auth, this._accountBackend);
   final FirebaseAuth _auth;
+  final TrustedAccountBackend _accountBackend;
 
   @override
   Stream<AuthState> get authStateChanges => _auth.userChanges().map(_mapUser);
@@ -61,5 +63,13 @@ class FirebaseAuthService implements AuthService {
   Future<void> signOut() => _auth.signOut();
 
   @override
-  Future<void> deleteAccount() => _auth.currentUser?.delete() ?? Future.value();
+  Future<void> deleteAccount() async {
+    final user = _auth.currentUser;
+    if (user == null) return;
+
+    // Firestore cleanup runs first so the authenticated callable can verify the
+    // current UID. It is retryable if Auth deletion later fails.
+    await _accountBackend.deleteAccountData();
+    await _guard(() => user.delete());
+  }
 }
