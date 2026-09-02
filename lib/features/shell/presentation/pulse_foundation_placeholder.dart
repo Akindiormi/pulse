@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../core/design/pulse_tokens.dart';
+import '../../../core/theme/app_theme.dart';
 
 class PulseFoundationPlaceholder extends StatelessWidget {
   const PulseFoundationPlaceholder({super.key, required this.title, this.detail});
