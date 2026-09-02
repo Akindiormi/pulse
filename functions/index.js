@@ -74,12 +74,12 @@ exports.getOrAssignDailyChallenge = onCall(async (request) => {
     if (existing && existing.source === 'server') {
       const challengeSnapshot = await transaction.get(db.collection('challenges').doc(existing.challengeId));
       if (!challengeSnapshot.exists || challengeSnapshot.data().active !== true) throw new HttpsError('failed-precondition', 'The assigned challenge is unavailable.');
-      return { date, challengeId: existing.challengeId, completed: existing.completed === true };
+      return { date, challengeId: existing.challengeId, completed: existing.completed === true, assignedAt: existing.assignedAt };
     }
     const challenge = await chooseChallenge(transaction, date);
     const assignment = serverAssignment(challenge, date);
     transaction.set(assignmentRef, assignment);
-    return { date, challengeId: assignment.challengeId, completed: false };
+    return { date, challengeId: assignment.challengeId, completed: false, assignedAt: assignment.assignedAt };
   });
 });
 
@@ -118,7 +118,7 @@ exports.completeChallenge = onCall(async (request) => {
     }
 
     if (assignment.date !== date || assignment.source !== 'server' || typeof assignment.challengeId !== 'string') throw new HttpsError('failed-precondition', 'The daily assignment could not be verified.');
-    if (assignment.completed === true || activitySnapshot.exists) return { completed: false, alreadyCompleted: true, xpAwarded: 0 };
+    if (assignment.completed === true || activitySnapshot.exists) return { completed: false, alreadyCompleted: true, challengeId: assignment.challengeId, xpAwarded: 0, challengeXP: 0, achievementXP: 0, previousXP: Number(user.xp) || 0, currentXP: Number(user.xp) || 0, previousStreak: Number(user.currentStreak) || 0, currentStreak: Number(user.currentStreak) || 0, longestStreak: Number(user.longestStreak) || 0, previousLevel: Number(user.level) || 1, newLevel: Number(user.level) || 1, leveledUp: false, newAchievements: [] };
     if (challenge.active !== true) throw new HttpsError('failed-precondition', 'The assigned challenge is no longer active.');
 
     const reward = Number(challenge.xpReward);
