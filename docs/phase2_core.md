@@ -32,4 +32,4 @@ Calendar keys are date-based rather than elapsed-24-hour windows. `CalendarServi
 
 ## Seed data
 
-`challenge_seed_data.dart` contains 50 curated challenges across all eight categories and four difficulty levels. It is seed content, not an automatic production write. Use a trusted/admin seed process to publish it to the `challenges` collection.
+`challenge_seed_data.dart` contains 48 curated challenges across eight categories and four difficulty levels: six challenges per category, with 16 easy, 16 medium, 8 hard and 8 wild. It is seed content, not an automatic production write. Use a trusted/admin seed process to publish it to the `challenges` collection.
