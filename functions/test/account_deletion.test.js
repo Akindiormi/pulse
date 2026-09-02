@@ -46,7 +46,7 @@ test('account deletion removes the user document and all current subcollections 
   const database = fakeDatabase();
   await deleteUserData(database, 'user-a');
   assert.equal(database.calls.at(-1).recursiveDelete, 'users/user-a');
-  assert.match(source, /recursiveDelete\(userRef\)/);
+  assert.match(source, /deleteUserData\(db, uid\)/);
 });
 
 test('account deletion is safe to retry after the user path is already clean', async () => {
@@ -64,7 +64,7 @@ test('account deletion never targets the global challenges collection', async ()
 });
 
 test('clients still cannot directly delete user data', () => {
-  assert.match(rules, /match \/users\/\{userId\}/);
+  assert.match(rules, /match \/users\/\{uid\}/);
   assert.match(rules, /allow delete: if false;/);
   assert.match(rules, /match \/dailyChallenges\/\{date\}/);
   assert.match(rules, /match \/activities\/\{activityId\}/);
