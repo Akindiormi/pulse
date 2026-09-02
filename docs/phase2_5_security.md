@@ -18,7 +18,7 @@ User creation is restricted to a signed-in owner and requires zero progress, lev
 
 ## Trusted completion contract
 
-The production completion path is now the `completeChallenge` callable Cloud Function.
+The production completion path is the `completeChallenge` callable Cloud Function.
 
 The callable accepts only an optional `idempotencyKey`; it does not accept a user ID, challenge ID, date, XP amount, streak value, level, achievement list, or completion timestamp from the client. Authentication supplies the UID. The function derives the current date from server UTC time.
 
@@ -38,7 +38,7 @@ All authoritative writes occur in one Firestore transaction. Firestore Security 
 
 ## Daily assignment
 
-Daily assignment is now backend-authoritative. `getOrAssignDailyChallenge` chooses from active challenges sorted by document ID and uses the same stable date-based selection for a given server UTC date. Client-side assignment creation is disabled.
+Daily assignment is backend-authoritative. `getOrAssignDailyChallenge` chooses from active challenges sorted by document ID and uses the same stable date-based selection for a given server UTC date. Client-side assignment creation is disabled.
 
 Legacy assignment documents that lack `source: 'server'` are treated as untrusted and replaced by the backend with a server-selected assignment before completion.
 
@@ -56,20 +56,21 @@ If product requirements later require local-calendar-day streaks, timezone handl
 
 ## App Check
 
-The callable functions use Firebase App Check enforcement. The Flutter client must later integrate the App Check SDK before the callable path is enabled in a released build.
+The callable functions use Firebase App Check enforcement. The Flutter client integration now reaches the functions through the official callable SDK boundary, but release builds still require the App Check SDK/provider configuration appropriate to the target platforms before callable requests can succeed in a deployed environment.
 
 ## Verification status
 
-Repository-level inspection confirms the rules and code paths described above. The repository environment does not contain the Flutter/Dart runtime, and no Firebase project/emulator credentials are available through this GitHub inspection environment. Therefore no claim is made that Firestore Rules evaluation, callable authentication, App Check enforcement, transaction retries, or deployed Firebase behavior has been runtime-tested.
+Repository-level inspection confirms the rules, backend, Flutter callable abstraction, dependency injection, and application paths described above. The repository environment does not contain the Flutter/Dart runtime, and no Firebase project/emulator credentials are available through this GitHub inspection environment. Therefore no claim is made that Firestore Rules evaluation, callable authentication, App Check enforcement, transaction retries, or deployed Firebase behavior has been runtime-tested.
 
 The Node backend includes pure security/domain tests under `functions/test/`; these require `npm install` in `functions/` and were not claimed as executed in this environment.
 
 ## Remaining production work
 
-- install dependencies and run the Functions unit tests
+- install Flutter dependencies and run `flutter analyze` / `flutter test`
+- install Functions dependencies and run `npm test`
 - deploy functions to the intended Firebase project
-- configure App Check for the Android/iOS apps and verify callable requests end-to-end
+- configure the Flutter App Check SDK/provider for the Android/iOS release builds
 - run Firestore Rules Emulator tests covering allowed reads/profile writes and denied authoritative writes
-- migrate the Flutter completion caller from direct Firestore mutation to the callable contract
+- run deployed callable tests covering authentication, App Check, transaction retry/idempotency, and error mapping
 - seed/verify challenge documents in the Firebase project
 - verify the Firebase project is on a billing plan that supports Cloud Functions deployment
