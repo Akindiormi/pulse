@@ -1,6 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/auth/auth_service.dart';
 import '../../../core/di/providers.dart';
 import '../../../models/achievement_model.dart';
 import '../../../models/user_model.dart';
