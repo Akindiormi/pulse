@@ -2,11 +2,8 @@ import 'package:flutter/material.dart';
 
 import 'pulse_motion_policy.dart';
 
-/// A stable visual boundary between product state and future artwork.
-///
-/// Business/application code supplies [intent] and [state]. The visual layer
-/// may later provide [builder] for Rive, illustration, physics, or other
-/// custom artwork. No business service owns an animation controller.
+/// Stable presentation boundary between authoritative product state and motion.
+/// The attachment never owns business logic or changes application state.
 class PulseMotionAttachment extends StatelessWidget {
   const PulseMotionAttachment({
     super.key,
@@ -38,7 +35,8 @@ class PulseMotionAttachment extends StatelessWidget {
     if (visual == null) return const SizedBox.shrink();
 
     final positioned = Align(alignment: alignment, child: visual);
-    return excludeFromSemantics ? ExcludeSemantics(child: positioned) : positioned;
+    final animated = PulseMotionPresentation(state: state, child: positioned);
+    return excludeFromSemantics ? ExcludeSemantics(child: animated) : animated;
   }
 }
 
@@ -81,27 +79,52 @@ enum PulseMotionIntent {
   errorRecovery,
 }
 
+class PulseMotionPresentation extends StatelessWidget {
+  const PulseMotionPresentation({super.key, required this.state, required this.child});
+
+  final Enum state;
+  final Widget child;
+
+  bool _isActive(Enum value) => value.toString().split('.').last == 'pressed';
+  bool _isEntering(Enum value) {
+    final name = value.toString().split('.').last;
+    return name == 'entering' || name == 'starting' || name == 'unlocking' || name == 'celebrating';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final reduced = PulseMotionPolicy.isReducedMotion(context);
+    final pressed = _isActive(state);
+    final entering = _isEntering(state);
+    return AnimatedOpacity(
+      opacity: 1,
+      duration: PulseMotionPolicy.duration(context, const Duration(milliseconds: 180)),
+      curve: PulseMotionPolicy.curve(context),
+      child: AnimatedSlide(
+        offset: reduced || !entering ? Offset.zero : const Offset(0, .035),
+        duration: PulseMotionPolicy.duration(context, const Duration(milliseconds: 280)),
+        curve: PulseMotionPolicy.curve(context, normal: Curves.easeOutCubic),
+        child: AnimatedScale(
+          scale: reduced ? 1 : (pressed ? .985 : 1),
+          duration: PulseMotionPolicy.microDuration(context),
+          curve: PulseMotionPolicy.curve(context, normal: Curves.easeOutCubic),
+          child: child,
+        ),
+      ),
+    );
+  }
+}
+
 class PulseMotionScope extends InheritedWidget {
   const PulseMotionScope({super.key, required this.reducedMotion, required super.child});
-
   final bool reducedMotion;
-
-  static PulseMotionScope? maybeOf(BuildContext context) =>
-      context.dependOnInheritedWidgetOfExactType<PulseMotionScope>();
-
+  static PulseMotionScope? maybeOf(BuildContext context) => context.dependOnInheritedWidgetOfExactType<PulseMotionScope>();
   @override
   bool updateShouldNotify(PulseMotionScope oldWidget) => reducedMotion != oldWidget.reducedMotion;
 }
 
 class PulseMotionBoundaryV2 extends StatelessWidget {
-  const PulseMotionBoundaryV2({
-    super.key,
-    required this.intent,
-    required this.state,
-    required this.child,
-    this.overlayBuilder,
-  });
-
+  const PulseMotionBoundaryV2({super.key, required this.intent, required this.state, required this.child, this.overlayBuilder});
   final PulseMotionIntent intent;
   final Enum state;
   final Widget child;
@@ -119,9 +142,8 @@ class PulseMotionBoundaryV2 extends StatelessWidget {
     return Stack(
       fit: StackFit.passthrough,
       children: [
-        child,
-        if (overlay != null && !data.reducedMotion)
-          Positioned.fill(child: IgnorePointer(child: overlay)),
+        PulseMotionPresentation(state: state, child: child),
+        if (overlay != null && !data.reducedMotion) Positioned.fill(child: IgnorePointer(child: overlay)),
       ],
     );
   }
