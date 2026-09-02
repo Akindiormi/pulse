@@ -5,6 +5,7 @@ import '../../../core/design/pulse_tokens.dart';
 import '../../../core/motion/pulse_motion_attachment.dart';
 import '../../../core/motion/pulse_motion_policy.dart';
 import '../../../core/motion/pulse_motion_state.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/pulse_card.dart';
 import '../../../core/widgets/pulse_states.dart';
 import '../../../models/user_model.dart';
