@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -28,7 +30,7 @@ UserModel _user() => const UserModel(uid: 'user-1', displayName: 'Akin', xp: 50,
 HomeViewData _data({bool completed = false}) => HomeViewData(user: _user(), challenge: _challenge(), completed: completed, nextLevelXP: 100, xpProgress: .5);
 
 Widget _app(AsyncValue<HomeViewData> value) => ProviderScope(
-      overrides: [homeControllerProvider.overrideWithValue(value)],
+      overrides: [homeControllerProvider.overrideWith(() => _FakeHomeController(value))],
       child: MaterialApp(theme: buildAppTheme(Brightness.light), darkTheme: buildAppTheme(Brightness.dark), home: const HomeScreen()),
     );
 
@@ -87,4 +89,18 @@ void main() {
       PulseMotionState.error,
     ]));
   });
+}
+
+class _FakeHomeController extends HomeController {
+  _FakeHomeController(this.value);
+  final AsyncValue<HomeViewData> value;
+
+  @override
+  Future<HomeViewData> build() {
+    return switch (value) {
+      AsyncLoading<HomeViewData>() => Completer<HomeViewData>().future,
+      AsyncError<HomeViewData>(:final error, :final stackTrace) => Future<HomeViewData>.error(error, stackTrace),
+      AsyncData<HomeViewData>(:final value) => Future.value(value),
+    };
+  }
 }
