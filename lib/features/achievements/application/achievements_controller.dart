@@ -51,14 +51,8 @@ class AchievementsController extends AsyncNotifier<AchievementsViewData> {
     final recordById = {for (final record in records) record.achievementId: record};
     final items = achievementDefinitions.where((definition) => definition.active).map((definition) {
       final record = recordById[definition.id];
-      return AchievementItem(
-        definition: definition,
-        unlocked: record != null || user.unlockedAchievements.contains(definition.id),
-        unlockedAt: record?.unlockedAt,
-        progress: _progressFor(definition, user),
-      );
+      return AchievementItem(definition: definition, unlocked: record != null || user.unlockedAchievements.contains(definition.id), unlockedAt: record?.unlockedAt, progress: _progressFor(definition, user));
     }).toList(growable: false);
-
     return AchievementsViewData(user: user, items: items, newlyUnlockedIds: newlyUnlockedIds);
   }
 
@@ -70,7 +64,7 @@ class AchievementsController extends AsyncNotifier<AchievementsViewData> {
       AchievementType.special => null,
     };
     if (current == null || definition.threshold <= 0) return null;
-    return AchievementProgress(current: current.clamp(0, definition.threshold), target: definition.threshold);
+    return AchievementProgress(current: current.clamp(0, definition.threshold).toInt(), target: definition.threshold);
   }
 
   Future<void> retry() async {
