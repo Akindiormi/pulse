@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/design/pulse_tokens.dart';
+import '../../../core/motion/pulse_motion_attachment.dart';
 import '../../../core/motion/pulse_motion_policy.dart';
 import '../../../core/motion/pulse_motion_state.dart';
 import '../../../core/widgets/pulse_button.dart';
@@ -43,13 +44,13 @@ class _Profile extends ConsumerWidget {
     return RefreshIndicator(
       onRefresh: controller.refresh,
       child: ListView(padding: const EdgeInsets.fromLTRB(PulseSpace.lg, PulseSpace.md, PulseSpace.lg, PulseSpace.xxxl), children: [
-        _IdentityCard(data: data, onEdit: () => _showEditProfile(context, ref, data.user)),
+        PulseMotionBoundaryV2(intent: PulseMotionIntent.profileEntrance, state: PulseProfileMotionState.idle, child: _IdentityCard(data: data, onEdit: () => _showEditProfile(context, ref, data.user))),
         const SizedBox(height: PulseSpace.lg),
-        _ProgressionCard(user: data.user),
+        PulseMotionBoundaryV2(intent: PulseMotionIntent.xpReveal, state: PulseProgressMotionState.unchanged, child: _ProgressionCard(user: data.user)),
         const SizedBox(height: PulseSpace.lg),
         _JourneyCard(user: data.user),
         const SizedBox(height: PulseSpace.lg),
-        _AchievementCard(data: data),
+        PulseMotionBoundaryV2(intent: PulseMotionIntent.achievementReveal, state: PulseAchievementMotionState.unlocked, child: _AchievementCard(data: data)),
         const SizedBox(height: PulseSpace.xxl),
         _AccountActions(onSignOut: () => _confirmSignOut(context, ref), onDelete: () => _confirmDelete(context, ref)),
       ]),
@@ -73,14 +74,18 @@ class _Profile extends ConsumerWidget {
             Text('edit profile', style: AppTypography.headline),
             const SizedBox(height: PulseSpace.lg),
             TextField(controller: field, textCapitalization: TextCapitalization.words, maxLength: 60, enabled: !saving, decoration: const InputDecoration(labelText: 'display name', hintText: 'how should Pulse call you?')),
-            if (editState == ProfileEditState.error) ...[const SizedBox(height: PulseSpace.sm), Text(controller.editError ?? 'we couldn’t save your profile.', style: AppTypography.metadata.copyWith(color: PulseColors.error))],
+            if (editState == ProfileEditState.error) ...[const SizedBox(height: PulseSpace.sm), Semantics(liveRegion: true, child: Text(controller.editError ?? 'we couldn’t save your profile.', style: AppTypography.metadata.copyWith(color: PulseColors.error)))],
             const SizedBox(height: PulseSpace.md),
-            SizedBox(width: double.infinity, child: PulseButton(label: saving ? 'saving…' : 'save', onPressed: saving ? null : () async {
-              setState(() => saving = true);
-              final saved = await controller.saveDisplayName(field.text);
-              if (!context.mounted) return;
-              if (saved) Navigator.of(context).pop(); else setState(() => saving = false);
-            })),
+            PulseMotionBoundaryV2(
+              intent: PulseMotionIntent.profileSave,
+              state: saving ? PulseProfileMotionState.saving : editState == ProfileEditState.saved ? PulseProfileMotionState.saved : PulseProfileMotionState.idle,
+              child: PulseButton(label: saving ? 'saving…' : 'save', onPressed: saving ? null : () async {
+                setState(() => saving = true);
+                final saved = await controller.saveDisplayName(field.text);
+                if (!context.mounted) return;
+                if (saved) Navigator.of(context).pop(); else setState(() => saving = false);
+              }),
+            ),
           ]),
         ));
       }),
@@ -113,9 +118,9 @@ class _IdentityCard extends StatelessWidget {
     final display = (user.displayName?.trim().isNotEmpty ?? false) ? user.displayName!.trim() : 'your Pulse journey';
     final initials = _initials(display);
     final hasPhoto = user.photoUrl?.trim().isNotEmpty ?? false;
-    return Semantics(label: 'profile identity for $display', child: PulseMotionBoundary(state: PulseMotionState.idle, child: PulseCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+    return Semantics(label: 'profile identity for $display', child: PulseCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Semantics(label: hasPhoto ? 'profile photo' : 'profile avatar for $display', image: true, child: CircleAvatar(radius: 38, backgroundColor: PulseColors.accentTint, foregroundColor: PulseColors.accent, backgroundImage: hasPhoto ? NetworkImage(user.photoUrl!) : null, onBackgroundImageError: hasPhoto ? (_, __) {} : null, child: hasPhoto ? null : Text(initials, style: AppTypography.title.copyWith(color: PulseColors.accent)))),
+        PulseMotionAttachment(intent: PulseMotionIntent.profileEntrance, state: PulseProfileMotionState.entering, excludeFromSemantics: false, child: Semantics(label: hasPhoto ? 'profile photo' : 'profile avatar for $display', image: true, child: CircleAvatar(radius: 38, backgroundColor: PulseColors.accentTint, foregroundColor: PulseColors.accent, backgroundImage: hasPhoto ? NetworkImage(user.photoUrl!) : null, onBackgroundImageError: hasPhoto ? (_, __) {} : null, child: hasPhoto ? null : Text(initials, style: AppTypography.title.copyWith(color: PulseColors.accent))))),
         const SizedBox(width: PulseSpace.lg),
         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text(display, maxLines: 3, overflow: TextOverflow.ellipsis, style: AppTypography.headline),
@@ -147,9 +152,9 @@ class _ProgressionCard extends StatelessWidget {
     final progress = XPService.progress(user.xp);
     final next = XPService.nextLevelXP(user.xp);
     return PulseCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Row(children: [Expanded(child: Text('level ${user.level}', style: AppTypography.title)), Text('${user.xp} XP', style: AppTypography.body.copyWith(fontWeight: FontWeight.w700))]),
+      Row(children: [Expanded(child: Text('level ${user.level}', style: AppTypography.title)), Text('${user.xp} XP', style: AppTypography.numberSmall)]),
       const SizedBox(height: PulseSpace.md),
-      Semantics(label: '${user.xp} XP progression toward level ${user.level + 1}', value: '${(progress * 100).round()} percent', child: ClipRRect(borderRadius: BorderRadius.circular(PulseRadius.small), child: LinearProgressIndicator(value: progress, minHeight: 8))),
+      Semantics(label: '${user.xp} XP progression toward level ${user.level + 1}', value: '${(progress * 100).round()} percent', child: TweenAnimationBuilder<double>(tween: Tween(begin: 0, end: progress), duration: PulseMotionPolicy.transitionDuration(context), curve: PulseMotionPolicy.curve(context), builder: (_, value, __) => ClipRRect(borderRadius: BorderRadius.circular(PulseRadius.small), child: LinearProgressIndicator(value: value, minHeight: 8)))),
       const SizedBox(height: PulseSpace.sm),
       Text('$next XP target for next level', style: AppTypography.metadata),
       const SizedBox(height: PulseSpace.lg),
@@ -199,7 +204,7 @@ class _AccountActions extends StatelessWidget {
   Widget build(BuildContext context) => Column(children: [
     SizedBox(width: double.infinity, child: OutlinedButton.icon(onPressed: onSignOut, icon: const Icon(Icons.logout_rounded), label: const Text('sign out'))),
     const SizedBox(height: PulseSpace.sm),
-    SizedBox(width: double.infinity, child: TextButton.icon(onPressed: onDelete, icon: const Icon(Icons.delete_outline_rounded), label: const Text('delete account'))),
+    SizedBox(width: double.infinity, child: TextButton.icon(onPressed: onDelete, icon: const Icon(Icons.delete_outline_rounded), label: const Text('delete account')),
   ]);
 }
 
@@ -208,5 +213,5 @@ class _Stat extends StatelessWidget {
   final String label, value;
   final Object state;
   @override
-  Widget build(BuildContext context) => Semantics(label: '$label: $value', child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(value, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppTypography.body.copyWith(fontWeight: FontWeight.w700)), const SizedBox(height: 2), Text(label, style: AppTypography.metadata)]));
+  Widget build(BuildContext context) => Semantics(label: '$label: $value', child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(value, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppTypography.numberSmall), const SizedBox(height: 2), Text(label, style: AppTypography.metadata)]));
 }
