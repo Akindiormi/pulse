@@ -32,16 +32,20 @@ void main() {
 
     await tester.pumpWidget(MaterialApp(
       theme: buildAppTheme(Brightness.light),
-      home: Scaffold(body: SingleChildScrollView(child: Column(children: [
-        PulseButton(label: 'continue', onPressed: () {}),
-        PulseXpProgress(currentXp: 30, nextLevelXp: 100, level: 2),
-        const PulseStreak(current: 4, longest: 9, state: PulseStreakMotionState.increased),
-        PulseAchievementBadge(definition: definition, newlyUnlocked: true, progress: 1),
-        const PulseOfflineState(),
-        const PulseEmptyState(title: 'nothing here', message: 'come back soon.'),
-        const PulseErrorState(message: 'something went wrong.'),
-        Text(challenge.title),
-      ])),
+      home: Scaffold(
+        body: SingleChildScrollView(
+          child: Column(children: [
+            PulseButton(label: 'continue', onPressed: () {}),
+            PulseXpProgress(currentXp: 30, nextLevelXp: 100, level: 2),
+            const PulseStreak(current: 4, longest: 9, state: PulseStreakMotionState.increased),
+            PulseAchievementBadge(definition: definition, newlyUnlocked: true, progress: 1),
+            const PulseOfflineState(),
+            const PulseEmptyState(title: 'nothing here', message: 'come back soon.'),
+            const PulseErrorState(message: 'something went wrong.'),
+            Text(challenge.title),
+          ]),
+        ),
+      ),
     ));
 
     expect(find.text('continue'), findsOneWidget);
