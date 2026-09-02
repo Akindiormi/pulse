@@ -4,6 +4,7 @@ const { initializeApp } = require('firebase-admin/app');
 const { getFirestore, Timestamp } = require('firebase-admin/firestore');
 
 const SEED_PATH = path.join(__dirname, '../../lib/features/challenges/data/challenge_seed_data.dart');
+const EXPECTED_TOTAL = 48;
 const DIFFICULTY_XP = { easy: 10, medium: 25, hard: 50, wild: 75 };
 const EXPECTED_CATEGORIES = ['random', 'social', 'health', 'money', 'learning', 'confidence', 'creativity', 'mindfulness'];
 const EXPECTED_COUNTS = { easy: 16, medium: 16, hard: 8, wild: 8 };
@@ -33,7 +34,7 @@ function parseChallengeSeed(source) {
 }
 
 function validateSeed(records) {
-  if (records.length !== 50) throw new Error(`Expected 50 challenges, found ${records.length}.`);
+  if (records.length !== EXPECTED_TOTAL) throw new Error(`Expected ${EXPECTED_TOTAL} challenges, found ${records.length}.`);
   const ids = new Set(records.map((record) => record.id));
   if (ids.size !== records.length) throw new Error('Challenge seed contains duplicate IDs.');
 
