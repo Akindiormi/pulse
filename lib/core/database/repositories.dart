@@ -10,6 +10,7 @@ abstract interface class UserRepository {
     final data = await getUser(uid);
     return data == null ? null : UserModel.fromMap(uid, data);
   }
+  Future<void> updatePreferences({required String uid, required Map<String, dynamic> preferences}) async => throw UnimplementedError('User preferences are not implemented by this repository.');
 }
 
 abstract interface class ChallengeRepository {
