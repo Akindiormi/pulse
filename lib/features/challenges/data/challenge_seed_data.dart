@@ -1,0 +1,72 @@
+import '../../../models/challenge_model.dart';
+
+const challengeSeedData = <Challenge>[
+  _challenge('R01', 'Take a new route', 'Walk or drive a familiar trip using a safe route you have never tried before.', ChallengeCategory.random, Difficulty.easy, 8),
+  _challenge('R02', 'Tiny room reset', 'Pick one small area and make it noticeably better in ten minutes.', ChallengeCategory.random, Difficulty.easy, 10),
+  _challenge('R03', 'Try the opposite', 'For one harmless routine today, choose the opposite of your usual preference.', ChallengeCategory.random, Difficulty.medium, 15),
+  _challenge('R04', 'Ask a curious question', 'Ask someone you trust a question you have genuinely never asked them before.', ChallengeCategory.random, Difficulty.medium, 12),
+  _challenge('R05', 'Mini adventure', 'Visit a safe nearby place you have never explored and spend fifteen minutes there.', ChallengeCategory.random, Difficulty.hard, 25),
+  _challenge('R06', 'Wild card hour', 'For one hour, say yes to a safe spontaneous activity you would normally skip.', ChallengeCategory.random, Difficulty.wild, 40),
+
+  _challenge('S01', 'Send appreciation', 'Message someone and tell them one specific thing you appreciate about them.', ChallengeCategory.social, Difficulty.easy, 8),
+  _challenge('S02', 'Check in properly', 'Call a friend or relative and spend at least ten minutes really listening.', ChallengeCategory.social, Difficulty.easy, 10),
+  _challenge('S03', 'Introduce two people', 'Think of two people who might enjoy knowing each other and make a genuine introduction.', ChallengeCategory.social, Difficulty.medium, 15),
+  _challenge('S04', 'Give a useful compliment', 'Give someone a sincere compliment about a quality or effort, not their appearance.', ChallengeCategory.social, Difficulty.medium, 12),
+  _challenge('S05', 'Plan a real hangout', 'Invite someone to a simple activity and agree on a realistic day or time.', ChallengeCategory.social, Difficulty.hard, 25),
+  _challenge('S06', 'Host a micro-gathering', 'Bring three or more people together for a simple, low-cost activity or conversation.', ChallengeCategory.social, Difficulty.wild, 40),
+
+  _challenge('H01', 'Drink some water', 'Drink a full glass of water now, then keep water nearby for the next hour.', ChallengeCategory.health, Difficulty.easy, 5),
+  _challenge('H02', 'Move for ten', 'Take a brisk ten-minute walk or do gentle mobility work.', ChallengeCategory.health, Difficulty.easy, 10),
+  _challenge('H03', 'Build a better plate', 'Make your next meal include a fruit or vegetable and a protein source.', ChallengeCategory.health, Difficulty.medium, 15),
+  _challenge('H04', 'Screen-free stretch', 'Put your phone away and do fifteen minutes of comfortable stretching.', ChallengeCategory.health, Difficulty.medium, 12),
+  _challenge('H05', 'Cook from basics', 'Prepare a balanced meal at home using mostly basic ingredients.', ChallengeCategory.health, Difficulty.hard, 25),
+  _challenge('H06', 'Active hour', 'Spend an hour doing a safe physical activity you enjoy, with breaks as needed.', ChallengeCategory.health, Difficulty.wild, 40),
+
+  _challenge('M01', 'Track one expense', 'Write down one purchase you made today and why you chose to make it.', ChallengeCategory.money, Difficulty.easy, 5),
+  _challenge('M02', 'Cancel a leak', 'Find one unused subscription, fee, or recurring charge worth reviewing and take action if appropriate.', ChallengeCategory.money, Difficulty.easy, 10),
+  _challenge('M03', 'No-spend window', 'Go six hours without an unplanned purchase.', ChallengeCategory.money, Difficulty.medium, 10),
+  _challenge('M04', 'Compare before buying', 'Before your next non-essential purchase, compare at least two prices or options.', ChallengeCategory.money, Difficulty.medium, 15),
+  _challenge('M05', 'Build a mini budget', 'Write a simple plan for your next seven days of essential and optional spending.', ChallengeCategory.money, Difficulty.hard, 25),
+  _challenge('M06', 'Sell or donate one item', 'Choose one useful item you no longer need and either list it for sale or donate it.', ChallengeCategory.money, Difficulty.wild, 35),
+
+  _challenge('L01', 'Learn for ten', 'Spend ten focused minutes learning a useful fact or skill from a reliable source.', ChallengeCategory.learning, Difficulty.easy, 10),
+  _challenge('L02', 'Teach back', 'Explain something you recently learned to another person in your own words.', ChallengeCategory.learning, Difficulty.easy, 10),
+  _challenge('L03', 'Make a one-page note', 'Turn one topic into a one-page summary using headings and examples.', ChallengeCategory.learning, Difficulty.medium, 15),
+  _challenge('L04', 'Question the claim', 'Take one claim you see online and verify it using two credible sources.', ChallengeCategory.learning, Difficulty.medium, 20),
+  _challenge('L05', 'Finish a lesson', 'Complete a focused lesson or tutorial and write down three takeaways.', ChallengeCategory.learning, Difficulty.hard, 30),
+  _challenge('L06', 'Build something tiny', 'Use a skill you are learning to make a small working result in one focused session.', ChallengeCategory.learning, Difficulty.wild, 45),
+
+  _challenge('C01', 'Speak up once', 'In a conversation today, share one honest opinion you would normally keep to yourself.', ChallengeCategory.confidence, Difficulty.easy, 10),
+  _challenge('C02', 'Fix your posture', 'Spend five minutes practicing a relaxed, upright posture and steady breathing.', ChallengeCategory.confidence, Difficulty.easy, 5),
+  _challenge('C03', 'Ask for feedback', 'Ask someone you trust for one specific piece of constructive feedback.', ChallengeCategory.confidence, Difficulty.medium, 15),
+  _challenge('C04', 'Make the request', 'Ask clearly for something reasonable that you have been hesitant to ask for.', ChallengeCategory.confidence, Difficulty.medium, 20),
+  _challenge('C05', 'Do the avoided task', 'Spend twenty focused minutes on a safe task you have been putting off.', ChallengeCategory.confidence, Difficulty.hard, 30),
+  _challenge('C06', 'Kindly take the lead', 'Volunteer to lead a small, appropriate task or decision instead of waiting to be asked.', ChallengeCategory.confidence, Difficulty.wild, 45),
+
+  _challenge('CR01', 'Doodle for ten', 'Draw anything for ten minutes without judging the result.', ChallengeCategory.creativity, Difficulty.easy, 10),
+  _challenge('CR02', 'Rewrite a headline', 'Pick a harmless headline and rewrite it three different ways for fun.', ChallengeCategory.creativity, Difficulty.easy, 8),
+  _challenge('CR03', 'Make a tiny poster', 'Create a simple poster or graphic around an idea you care about.', ChallengeCategory.creativity, Difficulty.medium, 15),
+  _challenge('CR04', 'Write a micro-story', 'Write a complete story in exactly 100 words.', ChallengeCategory.creativity, Difficulty.medium, 20),
+  _challenge('CR05', 'Remix something old', 'Take an old photo, note, sketch, or idea and turn it into something new.', ChallengeCategory.creativity, Difficulty.hard, 30),
+  _challenge('CR06', 'Create in public', 'Share a small original creation with a supportive audience and accept whatever reaction comes.', ChallengeCategory.creativity, Difficulty.wild, 40),
+
+  _challenge('MI01', 'One-minute pause', 'Sit quietly for one minute and notice your breathing without trying to change it.', ChallengeCategory.mindfulness, Difficulty.easy, 5),
+  _challenge('MI02', 'Name five things', 'Slow down and notice five things you can see, four you can feel, and three you can hear.', ChallengeCategory.mindfulness, Difficulty.easy, 8),
+  _challenge('MI03', 'Mindful meal', 'Eat one meal without scrolling or watching anything, paying attention to taste and texture.', ChallengeCategory.mindfulness, Difficulty.medium, 15),
+  _challenge('MI04', 'Three-line journal', 'Write three lines about what happened today, how you felt, and what you need next.', ChallengeCategory.mindfulness, Difficulty.medium, 12),
+  _challenge('MI05', 'Quiet walk', 'Take a fifteen-minute walk without entertainment and notice your surroundings.', ChallengeCategory.mindfulness, Difficulty.hard, 25),
+  _challenge('MI06', 'Digital sunset', 'Choose a safe one-hour period tonight with notifications off and no social media.', ChallengeCategory.mindfulness, Difficulty.wild, 35),
+];
+
+Challenge _challenge(String id, String title, String description, ChallengeCategory category, Difficulty difficulty, int minutes, {double? cost}) => Challenge(
+      id: id,
+      title: title,
+      description: description,
+      category: category,
+      difficulty: difficulty,
+      xpReward: switch (difficulty) { Difficulty.easy => 10, Difficulty.medium => 25, Difficulty.hard => 50, Difficulty.wild => 75 },
+      estimatedMinutes: minutes,
+      estimatedCost: cost,
+      active: true,
+      createdAt: DateTime(2026, 9, 1),
+    );
