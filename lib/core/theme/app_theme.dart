@@ -8,9 +8,9 @@ class AppTypography {
   static const title = TextStyle(fontSize: 19, height: 1.25, fontWeight: FontWeight.w700, letterSpacing: -0.15);
   static const body = TextStyle(fontSize: 16, height: 1.45, fontWeight: FontWeight.w400);
   static const label = TextStyle(fontSize: 13, height: 1.25, fontWeight: FontWeight.w700, letterSpacing: 0.1);
-  static const metadata = TextStyle(fontSize: 12, height: 1.25, fontWeight: FontWeight.w500);
-  static const number = TextStyle(fontSize: 32, height: 1.0, fontWeight: FontWeight.w800, letterSpacing: -1.0);
-  static const numberSmall = TextStyle(fontSize: 22, height: 1.0, fontWeight: FontWeight.w800, letterSpacing: -0.6);
+  static const metadata = TextStyle(fontSize: 12, height: 1.3, fontWeight: FontWeight.w500);
+  static const number = TextStyle(fontSize: 32, height: 1.0, fontWeight: FontWeight.w800, letterSpacing: -1.0, fontFeatures: [FontFeature.tabularFigures()]);
+  static const numberSmall = TextStyle(fontSize: 22, height: 1.0, fontWeight: FontWeight.w800, letterSpacing: -0.6, fontFeatures: [FontFeature.tabularFigures()]);
 }
 
 ThemeData buildAppTheme(Brightness brightness) {
@@ -32,25 +32,62 @@ ThemeData buildAppTheme(Brightness brightness) {
     error: PulseColors.error,
   );
 
+  final typography = TextTheme(
+    displayLarge: AppTypography.display,
+    displayMedium: AppTypography.headline,
+    displaySmall: AppTypography.headline,
+    headlineLarge: AppTypography.display,
+    headlineMedium: AppTypography.headline,
+    headlineSmall: AppTypography.title,
+    titleLarge: AppTypography.title,
+    titleMedium: AppTypography.title.copyWith(fontSize: 16, height: 1.3),
+    titleSmall: AppTypography.label,
+    bodyLarge: AppTypography.body,
+    bodyMedium: AppTypography.body.copyWith(fontSize: 14),
+    bodySmall: AppTypography.metadata,
+    labelLarge: AppTypography.label.copyWith(fontSize: 14),
+    labelMedium: AppTypography.label,
+    labelSmall: AppTypography.metadata,
+  ).apply(bodyColor: text, displayColor: text);
+
   return ThemeData(
     useMaterial3: true,
     brightness: brightness,
     scaffoldBackgroundColor: background,
     colorScheme: scheme,
     fontFamily: 'Inter',
-    textTheme: TextTheme(
-      displayLarge: AppTypography.display,
-      headlineMedium: AppTypography.headline,
-      titleLarge: AppTypography.title,
-      bodyLarge: AppTypography.body,
-      labelLarge: AppTypography.label,
-      bodySmall: AppTypography.metadata,
-    ).apply(bodyColor: text, displayColor: text),
+    textTheme: typography,
     cardTheme: CardThemeData(
       margin: EdgeInsets.zero,
       elevation: 0,
       color: surface,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(PulseRadius.large)),
+    ),
+    filledButtonTheme: FilledButtonThemeData(
+      style: FilledButton.styleFrom(
+        minimumSize: const Size(48, 50),
+        padding: const EdgeInsets.symmetric(horizontal: PulseSpace.xl),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(PulseRadius.medium)),
+        textStyle: AppTypography.label.copyWith(fontSize: 14),
+      ),
+    ),
+    outlinedButtonTheme: OutlinedButtonThemeData(
+      style: OutlinedButton.styleFrom(
+        minimumSize: const Size(48, 50),
+        padding: const EdgeInsets.symmetric(horizontal: PulseSpace.xl),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(PulseRadius.medium)),
+        textStyle: AppTypography.label.copyWith(fontSize: 14),
+      ),
+    ),
+    inputDecorationTheme: InputDecorationTheme(
+      filled: true,
+      fillColor: elevated.withValues(alpha: dark ? 0.55 : 0.7),
+      contentPadding: const EdgeInsets.symmetric(horizontal: PulseSpace.lg, vertical: PulseSpace.md),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(PulseRadius.medium), borderSide: BorderSide.none),
+      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(PulseRadius.medium), borderSide: BorderSide.none),
+      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(PulseRadius.medium), borderSide: BorderSide(color: PulseColors.accent, width: 1.5)),
+      errorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(PulseRadius.medium), borderSide: BorderSide(color: PulseColors.error.withValues(alpha: .7))),
+      focusedErrorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(PulseRadius.medium), borderSide: BorderSide(color: PulseColors.error, width: 1.5)),
     ),
     navigationBarTheme: NavigationBarThemeData(
       height: 72,
