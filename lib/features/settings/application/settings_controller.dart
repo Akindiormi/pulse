@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../../../core/auth/auth_service.dart';
 import '../../../core/database/repositories.dart';
 import '../../../core/di/providers.dart';
 import '../../../core/motion/pulse_motion_policy.dart';
@@ -28,6 +27,7 @@ class SettingsController extends AsyncNotifier<SettingsViewData> {
   static const _reminderEnabledKey = 'pulse.daily_reminder_enabled';
   static const _reminderHourKey = 'pulse.daily_reminder_hour';
   static const _reminderMinuteKey = 'pulse.daily_reminder_minute';
+  bool _saving = false;
 
   @override
   Future<SettingsViewData> build() async {
@@ -51,20 +51,23 @@ class SettingsController extends AsyncNotifier<SettingsViewData> {
   }
 
   Future<void> setTheme(ThemeMode mode) async {
+    if (_saving) return;
     final current = state.valueOrNull;
     if (current == null) return;
+    _saving = true;
     try {
       await ref.read(themeControllerProvider.notifier).setMode(mode);
       state = AsyncData(current.copyWith(themeMode: mode));
     } catch (_) {
-      state = AsyncData(current);
       throw const SettingsException('we couldn’t save your appearance preference.');
-    }
+    } finally { _saving = false; }
   }
 
   Future<void> setReducedMotion(bool enabled) async {
+    if (_saving) return;
     final current = state.valueOrNull;
     if (current == null) return;
+    _saving = true;
     state = AsyncData(current.copyWith(reducedMotion: enabled));
     PulseMotionPolicy.userReducedMotion = enabled;
     try {
@@ -73,10 +76,11 @@ class SettingsController extends AsyncNotifier<SettingsViewData> {
       PulseMotionPolicy.userReducedMotion = current.reducedMotion;
       state = AsyncData(current);
       throw const SettingsException('we couldn’t save your motion preference.');
-    }
+    } finally { _saving = false; }
   }
 
   Future<void> setDailyReminder(bool enabled) async {
+    if (_saving) return;
     final current = state.valueOrNull;
     if (current == null) return;
     if (enabled && current.permissionStatus == NotificationPermissionStatus.denied) throw const SettingsException('notifications are blocked by the device. enable them in system settings first.');
@@ -86,6 +90,7 @@ class SettingsController extends AsyncNotifier<SettingsViewData> {
       if (refreshed.permissionStatus == NotificationPermissionStatus.denied || refreshed.permissionStatus == NotificationPermissionStatus.unavailable) throw const SettingsException('notifications are not available on this device right now.');
     }
     final previous = state.valueOrNull ?? current;
+    _saving = true;
     try {
       if (enabled) {
         await ref.read(notificationServiceProvider).scheduleDailyChallengeReminder(hour: previous.reminderTime.hour, minute: previous.reminderTime.minute);
@@ -101,12 +106,14 @@ class SettingsController extends AsyncNotifier<SettingsViewData> {
     } catch (_) {
       state = AsyncData(previous);
       throw const SettingsException('we couldn’t save your reminder preference. please try again.');
-    }
+    } finally { _saving = false; }
   }
 
   Future<void> setReminderTime(TimeOfDay time) async {
+    if (_saving) return;
     final current = state.valueOrNull;
     if (current == null || !current.reminderDeliveryAvailable) throw const SettingsException('reminder time will be available when daily reminder delivery is configured.');
+    _saving = true;
     try {
       await _prefs.setInt(_reminderHourKey, time.hour);
       await _prefs.setInt(_reminderMinuteKey, time.minute);
@@ -115,7 +122,7 @@ class SettingsController extends AsyncNotifier<SettingsViewData> {
       state = AsyncData(current.copyWith(reminderTime: time));
     } catch (_) {
       throw const SettingsException('we couldn’t save the reminder time.');
-    }
+    } finally { _saving = false; }
   }
 
   Future<void> requestNotificationPermission() async {
