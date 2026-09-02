@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/design/pulse_tokens.dart';
 import '../../../core/motion/pulse_motion_attachment.dart';
-import '../../../core/motion/pulse_motion_policy.dart';
 import '../../../core/motion/pulse_motion_state.dart';
 import '../../../core/notifications/notification_service.dart';
 import '../../../core/theme/app_theme.dart';
