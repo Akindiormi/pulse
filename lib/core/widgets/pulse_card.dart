@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../design/pulse_tokens.dart';
-import '../motion/pulse_motion_policy.dart';
 import 'pulse_interaction.dart';
 
 class PulseCard extends StatelessWidget {
@@ -31,11 +30,7 @@ class PulseInteractiveCard extends StatelessWidget {
         button: true,
         child: PulsePressScale(
           scale: scale,
-          child: InkWell(
-            onTap: onTap,
-            borderRadius: BorderRadius.circular(PulseRadius.large),
-            child: child,
-          ),
+          child: InkWell(onTap: onTap, borderRadius: BorderRadius.circular(PulseRadius.large), child: child),
         ),
       );
 }
