@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../lib/core/notifications/notification_service.dart';
-import '../../../lib/features/settings/application/settings_controller.dart';
-import '../../../lib/features/settings/presentation/settings_screen.dart';
+import 'package:pulse/core/notifications/notification_service.dart';
+import 'package:pulse/features/settings/application/settings_controller.dart';
+import 'package:pulse/features/settings/presentation/settings_screen.dart';
 
 void main() {
   const initial = SettingsViewData(

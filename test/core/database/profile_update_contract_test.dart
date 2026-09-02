@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import '../../../lib/core/database/repositories.dart';
+import 'package:pulse/core/database/repositories.dart';
 
 void main() {
   test('display-name-only update preserves existing photoUrl and unrelated fields', () {
