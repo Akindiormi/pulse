@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../design/pulse_tokens.dart';
+import '../motion/pulse_celebration.dart';
+import '../motion/pulse_motion_policy.dart';
 import '../motion/pulse_motion_state.dart';
 
 class PulseCompletionSurface extends StatelessWidget {
@@ -24,19 +26,25 @@ class PulseCompletionSurface extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final levelChanged = previousLevel != null && newLevel != null && newLevel != previousLevel;
     final lines = <String>[
       if (xpAwarded > 0) '+$xpAwarded XP',
       if (streak != null) 'streak: $streak day${streak == 1 ? '' : 's'}',
       if (achievementIds.isNotEmpty) 'achievement unlocked: ${achievementIds.map(_label).join(', ')}',
-      if (previousLevel != null && newLevel != null && newLevel != previousLevel) 'level $previousLevel → level $newLevel',
+      if (levelChanged) 'level $previousLevel → level $newLevel',
     ];
+
+    final overlay = motionOverlay ??
+        (event == PulseCelebrationEvent.completion
+            ? PulseCompletionCelebration(hasAchievement: achievementIds.isNotEmpty, leveledUp: levelChanged)
+            : null);
 
     return PulseFeedbackSurface(
       semanticLabel: 'challenge completion feedback',
       icon: Icons.check_rounded,
-      title: newLevel != null && previousLevel != null && newLevel != previousLevel ? 'level up.' : 'nice. you did it.',
+      title: levelChanged ? 'level up.' : 'nice. you did it.',
       detail: lines.isEmpty ? 'challenge completed' : lines.join('\n'),
-      overlay: motionOverlay,
+      overlay: overlay,
     );
   }
 
@@ -58,7 +66,7 @@ class PulseLevelUpSurface extends StatelessWidget {
         icon: Icons.auto_awesome_rounded,
         title: 'level up.',
         detail: 'you reached level $level',
-        overlay: motionOverlay,
+        overlay: motionOverlay ?? const PulseCompletionCelebration(leveledUp: true),
       );
 }
 
@@ -75,7 +83,8 @@ class PulseFeedbackSurface extends StatelessWidget {
         label: semanticLabel,
         liveRegion: true,
         child: Stack(children: [
-          Container(
+          AnimatedContainer(
+            duration: PulseMotionPolicy.duration(context, const Duration(milliseconds: 260)),
             width: double.infinity,
             padding: const EdgeInsets.all(PulseSpace.xxxl),
             decoration: BoxDecoration(color: PulseColors.accentTint, borderRadius: BorderRadius.circular(PulseRadius.hero)),
@@ -87,7 +96,7 @@ class PulseFeedbackSurface extends StatelessWidget {
               Text(detail, style: AppTypography.body.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant)),
             ]),
           ),
-          if (overlay != null) Positioned.fill(child: IgnorePointer(child: overlay!)),
+          if (overlay != null && !PulseMotionPolicy.isReducedMotion(context)) Positioned.fill(child: IgnorePointer(child: overlay!)),
         ]),
       );
 }
