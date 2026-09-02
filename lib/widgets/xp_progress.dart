@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../models/challenge_model.dart';
 
 class XPProgress extends StatelessWidget {
   const XPProgress({super.key, required this.currentXP, required this.level, required this.nextLevelXP});
