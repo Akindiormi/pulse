@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../design/pulse_tokens.dart';
-import 'pulse_interaction.dart';
+import '../motion/pulse_interaction.dart';
+import '../theme/app_theme.dart';
 
 class PulseButton extends StatelessWidget {
   const PulseButton({super.key, required this.label, this.onPressed, this.variant = PulseButtonVariant.primary, this.loading = false, this.icon, this.expand = false});
