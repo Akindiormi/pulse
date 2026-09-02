@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/backend/trusted_challenge_backend.dart';
 import '../../../core/di/providers.dart';
+import '../../../core/motion/pulse_motion_attachment.dart';
 import '../../../core/motion/pulse_motion_state.dart';
 import '../../../core/widgets/pulse_button.dart';
 import '../../../core/widgets/pulse_card.dart';
@@ -62,13 +63,15 @@ class _LoadedBody extends ConsumerWidget {
     final challenge = data.challenge;
 
     if (data.phase == ChallengeDetailPhase.completed) {
-      return PulseMotionBoundary(
+      return PulseMotionBoundaryV2(
+        intent: PulseMotionIntent.challengeCompletion,
         state: data.challengeMotionState,
         child: _CompletionBody(data: data, onHome: () => _goHome(context, ref)),
       );
     }
     if (data.phase == ChallengeDetailPhase.alreadyCompleted) {
-      return PulseMotionBoundary(
+      return PulseMotionBoundaryV2(
+        intent: PulseMotionIntent.challengeCompletion,
         state: data.challengeMotionState,
         child: _AlreadyCompletedBody(onHome: () => _goHome(context, ref)),
       );
@@ -79,14 +82,19 @@ class _LoadedBody extends ConsumerWidget {
     final canStart = data.phase == ChallengeDetailPhase.ready;
     final canComplete = data.phase == ChallengeDetailPhase.active || data.phase == ChallengeDetailPhase.ready;
 
-    return PulseMotionBoundary(
+    return PulseMotionBoundaryV2(
+      intent: PulseMotionIntent.challengeInteraction,
       state: data.challengeMotionState,
       child: CustomScrollView(
         slivers: [
           SliverPadding(
             padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
             sliver: SliverList(delegate: SliverChildListDelegate([
-              Semantics(header: true, child: Text('a small action. a real win.', style: Theme.of(context).textTheme.labelLarge)),
+              PulseMotionAttachment(
+                intent: PulseMotionIntent.challengeReveal,
+                state: data.challengeMotionState,
+                child: Semantics(header: true, child: Text('a small action. a real win.', style: Theme.of(context).textTheme.labelLarge)),
+              ),
               const SizedBox(height: 12),
               Text(challenge.title, style: Theme.of(context).textTheme.headlineLarge),
               const SizedBox(height: 14),
@@ -122,12 +130,16 @@ class _LoadedBody extends ConsumerWidget {
                 Text('when you’ve actually finished, tap complete. pulse will verify the completion before showing any reward.', style: Theme.of(context).textTheme.bodyMedium),
                 const SizedBox(height: 18),
               ],
-              PulseButton(
-                label: isStarting ? 'starting…' : data.phase == ChallengeDetailPhase.active ? 'complete challenge' : 'start challenge',
-                loading: isStarting || isCompleting,
-                onPressed: isCompleting ? null : canStart ? controller.start : canComplete ? controller.complete : null,
-                icon: data.phase == ChallengeDetailPhase.active ? Icons.check_rounded : Icons.play_arrow_rounded,
-                expand: true,
+              PulseMotionBoundaryV2(
+                intent: PulseMotionIntent.challengeInteraction,
+                state: isCompleting ? PulseCompletionMotionState.pending : data.challengeMotionState,
+                child: PulseButton(
+                  label: isStarting ? 'starting…' : data.phase == ChallengeDetailPhase.active ? 'complete challenge' : 'start challenge',
+                  loading: isStarting || isCompleting,
+                  onPressed: isCompleting ? null : canStart ? controller.start : canComplete ? controller.complete : null,
+                  icon: data.phase == ChallengeDetailPhase.active ? Icons.check_rounded : Icons.play_arrow_rounded,
+                  expand: true,
+                ),
               ),
               if (isCompleting) ...[
                 const SizedBox(height: 14),
@@ -160,17 +172,27 @@ class _CompletionBody extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 24, 20, 32),
       children: [
-        PulseCompletionSurface(
-          event: PulseCelebrationEvent.completion,
-          xpAwarded: result.xpAwarded,
-          streak: result.currentStreak,
-          achievementIds: result.newAchievements,
-          previousLevel: result.previousLevel,
-          newLevel: result.newLevel,
+        PulseMotionAttachment(
+          intent: PulseMotionIntent.challengeReward,
+          state: PulseCompletionMotionState.success,
+          child: PulseCompletionSurface(
+            event: PulseCelebrationEvent.completion,
+            xpAwarded: result.xpAwarded,
+            streak: result.currentStreak,
+            achievementIds: result.newAchievements,
+            previousLevel: result.previousLevel,
+            newLevel: result.newLevel,
+          ),
+          excludeFromSemantics: false,
         ),
         const SizedBox(height: 18),
         if (result.leveledUp) ...[
-          PulseLevelUpSurface(level: result.newLevel),
+          PulseMotionAttachment(
+            intent: PulseMotionIntent.levelUp,
+            state: PulseProgressMotionState.levelUp,
+            child: PulseLevelUpSurface(level: result.newLevel),
+            excludeFromSemantics: false,
+          ),
           const SizedBox(height: 18),
         ],
         Text('you’re done for today.', style: Theme.of(context).textTheme.titleLarge),
