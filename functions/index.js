@@ -51,15 +51,14 @@ function requireEmptyObject(data) {
   if (data == null) return;
   if (typeof data !== 'object' || Array.isArray(data) || Object.keys(data).length !== 0) throw new HttpsError('invalid-argument', 'This operation does not accept client-controlled arguments.');
 }
-
+function serverAssignment(challenge, date) {
+  return { challengeId: challenge.id, date, assignedAt: Timestamp.now(), completed: false, completedAt: null, source: 'server', assignmentVersion: 1 };
+}
 async function chooseChallenge(transaction, date) {
   const snapshot = await transaction.get(db.collection('challenges').where('active', '==', true));
   const challenges = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })).sort((a, b) => a.id.localeCompare(b.id));
   if (challenges.length === 0) throw new HttpsError('failed-precondition', 'No active challenges are available.');
   return challenges[stableIndex(date, challenges.length)];
-}
-function serverAssignment(challenge, date) {
-  return { challengeId: challenge.id, date, assignedAt: Timestamp.now(), completed: false, completedAt: null, source: 'server', assignmentVersion: 1 };
 }
 
 exports.getOrAssignDailyChallenge = onCall(async (request) => {
@@ -68,21 +67,20 @@ exports.getOrAssignDailyChallenge = onCall(async (request) => {
   const date = utcDateKey(new Date());
   const userRef = db.collection('users').doc(uid);
   const assignmentRef = userRef.collection('dailyChallenges').doc(date);
-
   return db.runTransaction(async (transaction) => {
     const userSnapshot = await transaction.get(userRef);
     const assignmentSnapshot = await transaction.get(assignmentRef);
     if (!userSnapshot.exists) throw new HttpsError('failed-precondition', 'User profile does not exist.');
-    let assignment = assignmentSnapshot.exists ? assignmentSnapshot.data() : null;
-    if (!assignment || assignment.source !== 'server') {
-      const challenge = await chooseChallenge(transaction, date);
-      assignment = serverAssignment(challenge, date);
-      transaction.set(assignmentRef, assignment);
-      return { date, challengeId: assignment.challengeId, completed: false };
+    const existing = assignmentSnapshot.exists ? assignmentSnapshot.data() : null;
+    if (existing && existing.source === 'server') {
+      const challengeSnapshot = await transaction.get(db.collection('challenges').doc(existing.challengeId));
+      if (!challengeSnapshot.exists || challengeSnapshot.data().active !== true) throw new HttpsError('failed-precondition', 'The assigned challenge is unavailable.');
+      return { date, challengeId: existing.challengeId, completed: existing.completed === true };
     }
-    const challengeSnapshot = await transaction.get(db.collection('challenges').doc(assignment.challengeId));
-    if (!challengeSnapshot.exists || challengeSnapshot.data().active !== true) throw new HttpsError('failed-precondition', 'The assigned challenge is unavailable.');
-    return { date, challengeId: assignment.challengeId, completed: assignment.completed === true };
+    const challenge = await chooseChallenge(transaction, date);
+    const assignment = serverAssignment(challenge, date);
+    transaction.set(assignmentRef, assignment);
+    return { date, challengeId: assignment.challengeId, completed: false };
   });
 });
 
@@ -96,30 +94,31 @@ exports.completeChallenge = onCall(async (request) => {
   const date = utcDateKey(new Date());
   const userRef = db.collection('users').doc(uid);
   const assignmentRef = userRef.collection('dailyChallenges').doc(date);
-
   return db.runTransaction(async (transaction) => {
     const userSnapshot = await transaction.get(userRef);
     const assignmentSnapshot = await transaction.get(assignmentRef);
     if (!userSnapshot.exists) throw new HttpsError('failed-precondition', 'User profile does not exist.');
     const user = userSnapshot.data();
+
     let assignment = assignmentSnapshot.exists ? assignmentSnapshot.data() : null;
     let challenge;
+    let challengeSnapshot = null;
+    let activitySnapshot;
     if (!assignment || assignment.source !== 'server') {
       challenge = await chooseChallenge(transaction, date);
+      const activityRef = userRef.collection('activities').doc(`${date}-${challenge.id}`);
+      activitySnapshot = await transaction.get(activityRef);
       assignment = serverAssignment(challenge, date);
-      transaction.set(assignmentRef, assignment);
     } else {
-      const challengeSnapshot = await transaction.get(db.collection('challenges').doc(assignment.challengeId));
+      challengeSnapshot = await transaction.get(db.collection('challenges').doc(assignment.challengeId));
+      const activityRef = userRef.collection('activities').doc(`${date}-${assignment.challengeId}`);
+      activitySnapshot = await transaction.get(activityRef);
       if (!challengeSnapshot.exists) throw new HttpsError('failed-precondition', 'The assigned challenge does not exist.');
       challenge = { id: challengeSnapshot.id, ...challengeSnapshot.data() };
     }
 
     if (assignment.date !== date || assignment.source !== 'server' || typeof assignment.challengeId !== 'string') throw new HttpsError('failed-precondition', 'The daily assignment could not be verified.');
-    if (assignment.completed === true) return { completed: false, alreadyCompleted: true, xpAwarded: 0 };
-
-    const activityRef = userRef.collection('activities').doc(`${date}-${assignment.challengeId}`);
-    const activitySnapshot = await transaction.get(activityRef);
-    if (activitySnapshot.exists) return { completed: false, alreadyCompleted: true, xpAwarded: 0 };
+    if (assignment.completed === true || activitySnapshot.exists) return { completed: false, alreadyCompleted: true, xpAwarded: 0 };
     if (challenge.active !== true) throw new HttpsError('failed-precondition', 'The assigned challenge is no longer active.');
 
     const reward = Number(challenge.xpReward);
@@ -154,7 +153,9 @@ exports.completeChallenge = onCall(async (request) => {
     const nextXP = currentXP + totalReward;
     if (!Number.isSafeInteger(nextXP)) throw new HttpsError('failed-precondition', 'XP overflow.');
     const nextLevel = levelForXP(nextXP);
+    const activityRef = userRef.collection('activities').doc(`${date}-${assignment.challengeId}`);
     transaction.create(activityRef, { userId: uid, challengeId: assignment.challengeId, date, xpAwarded: reward, completedAt: Timestamp.fromDate(now), category: challenge.category });
+    if (!assignmentSnapshot.exists || assignment.source !== 'server') transaction.set(assignmentRef, assignment);
     transaction.update(userRef, { totalActivities: nextActivityCount, currentStreak: streak.current, longestStreak: streak.longest, xp: nextXP, level: nextLevel, lastActivityDate: Timestamp.fromDate(now), completedCategories: [...categories].sort(), unlockedAchievements: [...unlocked].sort() });
     transaction.update(assignmentRef, { completed: true, completedAt: Timestamp.fromDate(now) });
 
