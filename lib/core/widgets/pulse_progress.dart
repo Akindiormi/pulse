@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../design/pulse_tokens.dart';
 import '../motion/pulse_motion_policy.dart';
 import '../motion/pulse_motion_state.dart';
+import '../theme/app_theme.dart';
 
 class PulseXpProgress extends StatelessWidget {
   const PulseXpProgress({super.key, required this.currentXp, required this.nextLevelXp, this.level = 1, this.motionState = PulseProgressMotionState.initial, this.showValues = true});
