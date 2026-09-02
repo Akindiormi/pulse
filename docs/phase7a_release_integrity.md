@@ -30,9 +30,9 @@ Firestore data cleanup and Firebase Auth deletion are not a single transaction a
 
 ## Challenge seeding
 
-`functions/scripts/seed_challenges.js` reads `lib/features/challenges/data/challenge_seed_data.dart` directly and parses the existing `_challenge(...)` records. It validates the expected 50-record contract before writing.
+`functions/scripts/seed_challenges.js` reads `lib/features/challenges/data/challenge_seed_data.dart` directly and parses the existing `_challenge(...)` records. It validates the authoritative 48-record contract: eight categories with six challenges each, distributed as 16 easy, 16 medium, 8 hard and 8 wild.
 
-The command upserts each record into `challenges/{challengeId}` with `merge: true`. Existing IDs are updated, repeated runs are safe, and unrelated challenge documents are not deleted.
+The command upserts each record into `challenges/{challengeId}` with `merge: true`. Existing IDs are updated, repeated runs are safe, and unrelated challenge documents are not deleted. Repeating the seed operation over the 48-record source therefore performs 96 writes.
 
 Run from the repository with trusted Firebase Admin credentials and the intended Firebase project selected:
 
