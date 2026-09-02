@@ -1,12 +1,13 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
-import 'package:pulse/core/database/repositories.dart';
+import 'package:pulse/core/backend/trusted_challenge_backend.dart';
 import 'package:pulse/core/time/calendar_service.dart';
 import 'package:pulse/features/achievements/application/achievement_service.dart';
 import 'package:pulse/features/challenges/application/challenge_service.dart';
 import 'package:pulse/features/challenges/application/complete_challenge.dart';
 import 'package:pulse/features/challenges/data/challenge_seed_data.dart';
 import 'package:pulse/models/challenge_model.dart';
-import 'package:pulse/models/user_model.dart';
 import 'package:pulse/services/streak_service.dart';
 import 'package:pulse/services/xp_service.dart';
 
@@ -14,6 +15,7 @@ final testDay = DateTime(2026, 9, 2);
 
 void main() {
   final calendar = CalendarService(now: () => testDay);
+
   group('streak', () {
     test('first activity', () => expect(StreakService.calculateForCalendar(lastActivityDate: null, currentStreak: 0, longestStreak: 0, today: testDay, calendar: calendar).current, 1));
     test('same day', () => expect(StreakService.calculateForCalendar(lastActivityDate: DateTime(2026, 9, 2, 23), currentStreak: 3, longestStreak: 3, today: testDay, calendar: calendar).current, 3));
@@ -40,60 +42,90 @@ void main() {
     });
   });
 
-  group('challenge assignment', () {
-    test('stable assignment, retrieval and no reassignment', () async {
-      final repo = FakeChallengeRepository(challengeSeedData.first);
-      final service = ChallengeService(repository: repo, calendar: calendar);
-      final a = await service.getOrAssignToday(uid: 'u1');
-      final b = await service.getOrAssignToday(uid: 'u1');
-      expect(a.challengeId, b.challengeId);
-      expect(repo.assignmentWrites, 1);
-      expect((await service.getTodayAssignment(uid: 'u1'))?.date, '2026-09-02');
+  group('trusted completion integration', () {
+    test('authoritative completion result becomes domain events without local reward calculation', () async {
+      final backend = FakeTrustedBackend(completion: const CompleteChallengeResult(activityCompleted: true, alreadyCompleted: false, xpAwarded: 35, previousXP: 0, newXP: 35, previousStreak: 0, newStreak: 1, longestStreak: 1, previousLevel: 1, newLevel: 1, leveledUp: false, newAchievements: ['FIRST_STEP'], challengeId: 'challenge-1'));
+      final result = await CompleteChallenge(backend: backend).call();
+      expect(result.completed, true);
+      expect(result.xpAwarded, 35);
+      expect(result.currentXP, 35);
+      expect(result.currentStreak, 1);
+      expect(result.newAchievements, ['FIRST_STEP']);
+      expect(result.events.whereType<AchievementUnlockedEvent>(), hasLength(1));
+      expect(result.events.whereType<StreakIncreasedEvent>(), hasLength(1));
+      expect(backend.receivedIdempotencyKey, isNull);
+    });
+
+    test('duplicate backend result does not locally award another reward', () async {
+      final backend = FakeTrustedBackend(completion: const CompleteChallengeResult(activityCompleted: false, alreadyCompleted: true, xpAwarded: 0, previousXP: 35, newXP: 35, previousStreak: 1, newStreak: 1, longestStreak: 1, previousLevel: 1, newLevel: 1, leveledUp: false, newAchievements: [], challengeId: 'challenge-1'));
+      final result = await CompleteChallenge(backend: backend).call();
+      expect(result.completed, false);
+      expect(result.alreadyCompleted, true);
+      expect(result.xpAwarded, 0);
+      expect(result.currentXP, 35);
+      expect(result.events, isEmpty);
+    });
+
+    test('backend/network failure does not award locally and remains retryable', () async {
+      final backend = FakeTrustedBackend(error: const TrustedBackendException(TrustedBackendErrorCode.unavailable, 'The service is temporarily unavailable.'));
+      final useCase = CompleteChallenge(backend: backend);
+      await expectLater(useCase.call(), throwsA(isA<TrustedBackendException>()));
+      backend.error = null;
+      backend.completion = const CompleteChallengeResult(activityCompleted: true, alreadyCompleted: false, xpAwarded: 10, previousXP: 0, newXP: 10, previousStreak: 0, newStreak: 1, longestStreak: 1, previousLevel: 1, newLevel: 1, leveledUp: false, newAchievements: [], challengeId: 'challenge-1');
+      expect((await useCase.call()).currentXP, 10);
+      expect(backend.calls, 2);
     });
   });
 
-  group('completion', () {
-    test('successful completion returns reward, streak, achievement and events', () async {
-      final challenge = challengeSeedData.first;
-      final challengeRepo = FakeChallengeRepository(challenge);
-      await challengeRepo.assignDailyChallenge(uid: 'u1', date: '2026-09-02', challengeId: challenge.id);
-      final repo = FakeCompletionRepository(UserModel(uid: 'u1'), challenge);
-      final result = await CompleteChallenge(completionRepository: repo, challengeRepository: challengeRepo, calendar: calendar).call(uid: 'u1');
-      expect(result.completed, true); expect(result.xpAwarded, 35); expect(result.currentStreak, 1); expect(result.currentXP, 35); expect(result.newAchievements, contains('FIRST_STEP')); expect(result.events, isNotEmpty);
-    });
-    test('duplicate completion is idempotent', () async {
-      final challenge = challengeSeedData.first;
-      final challengeRepo = FakeChallengeRepository(challenge);
-      await challengeRepo.assignDailyChallenge(uid: 'u2', date: '2026-09-02', challengeId: challenge.id);
-      final repo = FakeCompletionRepository(UserModel(uid: 'u2'), challenge);
-      final useCase = CompleteChallenge(completionRepository: repo, challengeRepository: challengeRepo, calendar: calendar);
-      await useCase.call(uid: 'u2');
-      final second = await useCase.call(uid: 'u2');
-      expect(second.completed, false); expect(second.alreadyCompleted, true); expect(repo.user.totalActivities, 1);
+  group('daily challenge integration', () {
+    test('daily challenge comes from backend and is parsed without client assignment', () async {
+      final backend = FakeTrustedBackend(daily: DailyChallengeResult(date: '2026-09-02', challengeId: 'challenge-1', completed: false, assignedAt: testDay));
+      final repository = FakeChallengeRepository(challengeSeedData.first);
+      final service = ChallengeService(repository: repository, backend: backend);
+      final assignment = await service.getOrAssignToday(uid: 'ignored-client-uid');
+      expect(assignment.challengeId, 'challenge-1');
+      expect(assignment.date, '2026-09-02');
+      expect(repository.assignmentWrites, 0);
+      expect(backend.dailyCalls, 1);
     });
   });
+}
+
+class FakeTrustedBackend implements TrustedChallengeBackend {
+  FakeTrustedBackend({this.daily, this.completion, this.error});
+  DailyChallengeResult? daily;
+  CompleteChallengeResult? completion;
+  TrustedBackendException? error;
+  String? receivedIdempotencyKey;
+  int calls = 0;
+  int dailyCalls = 0;
+
+  @override
+  Future<DailyChallengeResult> getOrAssignDailyChallenge() async {
+    dailyCalls++;
+    return daily!;
+  }
+
+  @override
+  Future<CompleteChallengeResult> completeChallenge({String? idempotencyKey}) async {
+    calls++;
+    receivedIdempotencyKey = idempotencyKey;
+    if (error != null) throw error!;
+    return completion!;
+  }
 }
 
 class FakeChallengeRepository implements ChallengeRepository {
   FakeChallengeRepository(this.challenge);
   final Challenge challenge;
-  Map<String, dynamic>? assignment;
   int assignmentWrites = 0;
-  @override Future<Map<String, dynamic>?> getChallenge(String id) async => id == challenge.id ? challenge.toMap() : null;
-  @override Future<List<Challenge>> getActiveChallenges() async => [challenge];
-  @override Future<Map<String, dynamic>?> getDailyAssignment({required String uid, required String date}) async => assignment;
-  @override Future<void> assignDailyChallenge({required String uid, required String date, required String challengeId}) async { if (assignment == null) { assignment = {'challengeId': challengeId, 'date': date, 'assignedAt': testDay, 'completed': false, 'completedAt': null}; assignmentWrites++; } }
-}
 
-class FakeCompletionRepository implements CompletionRepository {
-  FakeCompletionRepository(this.user, this.challenge);
-  UserModel user;
-  final Challenge challenge;
-  bool activityExists = false;
-  @override Future<CompletionMutation> runAtomic({required String uid, required String activityId, required String date, required CompletionCalculator calculate}) async {
-    final state = CompletionState(user: user, assignment: DailyChallengeAssignment(challengeId: challenge.id, date: date, assignedAt: testDay, completed: activityExists), challenge: challenge, activityExists: activityExists);
-    final mutation = calculate(state);
-    if (mutation.completed) { user = mutation.user; activityExists = true; }
-    return mutation;
-  }
+  @override
+  Future<Map<String, dynamic>?> getChallenge(String id) async => id == challenge.id ? challenge.toMap() : null;
+
+  @override
+  Future<List<Challenge>> getActiveChallenges() async => [challenge];
+
+  @override
+  Future<Map<String, dynamic>?> getDailyAssignment({required String uid, required String date}) async => null;
 }
