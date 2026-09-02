@@ -2,7 +2,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/auth/auth_service.dart';
 import '../../../core/backend/trusted_challenge_backend.dart';
-import '../../../core/database/repositories.dart';
 import '../../../core/di/providers.dart';
 import '../../../models/challenge_model.dart';
 import '../../../models/user_model.dart';
@@ -25,9 +24,10 @@ class HomeViewData {
 
 class HomeController extends AsyncNotifier<HomeViewData> {
   @override
-  Future<HomeViewData> build() async {
-    final auth = ref.read(authServiceProvider);
-    final authState = await auth.authStateChanges.first;
+  Future<HomeViewData> build() => _load();
+
+  Future<HomeViewData> _load() async {
+    final authState = await ref.read(authServiceProvider).authStateChanges.first;
     if (authState.status != AuthStatus.authenticated || authState.uid == null) {
       throw const TrustedBackendException(TrustedBackendErrorCode.unauthenticated, 'Sign in to see your daily Pulse.');
     }
@@ -35,20 +35,23 @@ class HomeController extends AsyncNotifier<HomeViewData> {
     final uid = authState.uid!;
     final userRepository = ref.read(userRepositoryProvider);
     final challengeService = ref.read(challengeServiceProvider);
+    final challengeRepository = ref.read(challengeRepositoryProvider);
 
     final user = await userRepository.getUserModel(uid);
     if (user == null) throw const TrustedBackendException(TrustedBackendErrorCode.notFound, 'Your Pulse profile could not be found.');
 
     final assignment = await challengeService.getTodayAssignment(uid: uid);
-    final challenge = await challengeService.getTodayChallenge(uid: uid);
-    if (challenge == null) throw const TrustedBackendException(TrustedBackendErrorCode.notFound, 'Today’s challenge is unavailable right now.');
+    final data = await challengeRepository.getChallenge(assignment.challengeId);
+    if (data == null) throw const TrustedBackendException(TrustedBackendErrorCode.notFound, 'Today’s challenge is unavailable right now.');
+    final challenge = Challenge.fromMap(assignment.challengeId, data);
+    if (!challenge.active) throw const TrustedBackendException(TrustedBackendErrorCode.notFound, 'Today’s challenge is unavailable right now.');
 
     return HomeViewData(user: user, challenge: challenge, completed: assignment.completed);
   }
 
   Future<void> retry() async {
     state = const AsyncLoading();
-    state = await AsyncValue.guard(build);
+    state = await AsyncValue.guard(_load);
   }
 
   void applyCompletion(CompleteChallengeResult result) {
