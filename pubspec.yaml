@@ -33,4 +33,11 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   assets:
-    - assets/rive/
+    - assets/rive/splash/
+    - assets/rive/onboarding/
+    - assets/rive/auth/
+    - assets/rive/challenge/
+    - assets/rive/progression/
+    - assets/rive/achievements/
+    - assets/rive/profile/
+    - assets/rive/navigation/
