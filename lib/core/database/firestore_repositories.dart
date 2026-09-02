@@ -39,11 +39,7 @@ class FirestoreUserRepository implements UserRepository {
 
   @override
   Future<void> updateProfileFields({required String uid, required Map<String, dynamic> fields}) async {
-    const allowed = {'displayName', 'photoUrl', 'timezone', 'notificationPreferences'};
-    if (fields.isEmpty || fields.keys.any((key) => !allowed.contains(key))) {
-      throw ArgumentError('Profile updates may only change supported profile fields.');
-    }
-    await _ref(uid).update(Map<String, dynamic>.from(fields));
+    await _ref(uid).update(UserProfileUpdate(fields).toFirestore());
   }
 
   @override
