@@ -6,6 +6,7 @@ import '../../models/user_model.dart';
 abstract interface class UserRepository {
   Future<void> createOrUpdateUser({required String uid, String? displayName, String? photoUrl});
   Future<Map<String, dynamic>?> getUser(String uid);
+  Future<void> updateProfile({required String uid, String? displayName});
   Future<UserModel?> getUserModel(String uid) async {
     final data = await getUser(uid);
     return data == null ? null : UserModel.fromMap(uid, data);
