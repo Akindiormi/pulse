@@ -1,0 +1,41 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:pulse/features/auth/presentation/auth_screen.dart';
+
+void main() {
+  Widget app() => const ProviderScope(child: MaterialApp(home: AuthScreen()));
+
+  testWidgets('auth entry exposes account creation and sign in', (tester) async {
+    await tester.pumpWidget(app());
+    expect(find.text('create account'), findsOneWidget);
+    expect(find.text('sign in'), findsOneWidget);
+  });
+
+  testWidgets('sign up validates password confirmation before submitting', (tester) async {
+    await tester.pumpWidget(app());
+    await tester.tap(find.text('create account'));
+    await tester.pump();
+    await tester.enterText(find.widgetWithText(TextField, 'email'), 'not-an-email');
+    expect(find.text('enter a valid email address.'), findsOneWidget);
+    expect(find.text('create your account'), findsOneWidget);
+  });
+
+  testWidgets('sign in exposes forgot password recovery', (tester) async {
+    await tester.pumpWidget(app());
+    await tester.tap(find.text('sign in'));
+    await tester.pump();
+    expect(find.text('forgot password?'), findsOneWidget);
+  });
+
+  testWidgets('password can be revealed without changing its value', (tester) async {
+    await tester.pumpWidget(app());
+    await tester.tap(find.text('sign in'));
+    await tester.pump();
+    final passwordField = find.widgetWithText(TextField, 'password');
+    await tester.enterText(passwordField, 'secret123');
+    await tester.tap(find.byTooltip('show password'));
+    await tester.pump();
+    expect(find.byType(TextField), findsNWidgets(2));
+  });
+}
