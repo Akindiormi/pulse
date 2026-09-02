@@ -62,10 +62,16 @@ class _LoadedBody extends ConsumerWidget {
     final challenge = data.challenge;
 
     if (data.phase == ChallengeDetailPhase.completed) {
-      return _CompletionBody(data: data, onHome: () => _goHome(context, ref));
+      return PulseMotionBoundary(
+        state: data.challengeMotionState,
+        child: _CompletionBody(data: data, onHome: () => _goHome(context, ref)),
+      );
     }
     if (data.phase == ChallengeDetailPhase.alreadyCompleted) {
-      return _AlreadyCompletedBody(onHome: () => _goHome(context, ref));
+      return PulseMotionBoundary(
+        state: data.challengeMotionState,
+        child: _AlreadyCompletedBody(onHome: () => _goHome(context, ref)),
+      );
     }
 
     final isStarting = data.phase == ChallengeDetailPhase.starting;
