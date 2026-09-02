@@ -32,7 +32,7 @@ class _Content extends ConsumerWidget {
     return RefreshIndicator(onRefresh: controller.refresh, child: ListView(padding: const EdgeInsets.fromLTRB(PulseSpace.lg, PulseSpace.md, PulseSpace.lg, PulseSpace.xxxl), children: [
       _Section(title: 'preferences', children: [
         _SwitchRow(icon: Icons.notifications_none_rounded, title: 'daily challenge reminder', subtitle: _notificationSubtitle(data), value: data.dailyReminderEnabled, enabled: data.reminderDeliveryAvailable || data.permissionStatus != NotificationPermissionStatus.unavailable, onChanged: (value) => _run(context, () => controller.setDailyReminder(value))),
-        if (!data.reminderDeliveryAvailable) Padding(padding: const EdgeInsets.fromLTRB(PulseSpace.lg, 0, PulseSpace.lg, PulseSpace.md), child: Text('reminder delivery is not configured yet. your preference won’t create a notification until the trusted notification backend supports scheduling.', style: AppTypography.metadata)),
+        if (!data.reminderDeliveryAvailable) Padding(padding: const EdgeInsets.fromLTRB(PulseSpace.lg, 0, PulseSpace.lg, PulseSpace.md), child: Text('your reminder preference is kept safely, but delivery is not configured yet. no notification will be sent until the trusted notification backend supports scheduling.', style: AppTypography.metadata)),
         _TapRow(icon: Icons.palette_outlined, title: 'appearance', subtitle: _themeLabel(data.themeMode), onTap: () => _showThemePicker(context, ref)),
         _SwitchRow(icon: Icons.motion_photos_off_outlined, title: 'reduced motion', subtitle: data.reducedMotion ? 'nonessential motion is reduced' : 'full Pulse motion', value: data.reducedMotion, onChanged: (value) => _run(context, () => controller.setReducedMotion(value))),
       ]),
@@ -52,7 +52,15 @@ class _Content extends ConsumerWidget {
     ]));
   }
 
-  String _notificationSubtitle(SettingsViewData data) => switch (data.permissionStatus) { NotificationPermissionStatus.denied => 'notifications are blocked by your device', NotificationPermissionStatus.unavailable => 'notification service unavailable', NotificationPermissionStatus.notDetermined => 'ask the device for permission when enabled', NotificationPermissionStatus.provisional => data.dailyReminderEnabled ? 'enabled with provisional permission' : 'available', NotificationPermissionStatus.authorized => data.dailyReminderEnabled ? 'enabled' : 'off' };
+  String _notificationSubtitle(SettingsViewData data) {
+    if (data.permissionStatus == NotificationPermissionStatus.denied) return 'notifications are blocked by your device';
+    if (data.permissionStatus == NotificationPermissionStatus.unavailable) return 'notification service unavailable';
+    if (data.dailyReminderEnabled && !data.reminderDeliveryAvailable) return 'preference on · delivery not configured';
+    if (data.permissionStatus == NotificationPermissionStatus.notDetermined) return 'permission will be requested when enabled';
+    if (data.permissionStatus == NotificationPermissionStatus.provisional) return data.dailyReminderEnabled ? 'enabled with provisional permission' : 'available';
+    return data.dailyReminderEnabled ? 'enabled' : 'off';
+  }
+
   String _themeLabel(ThemeMode mode) => switch (mode) { ThemeMode.system => 'system', ThemeMode.light => 'light', ThemeMode.dark => 'dark' };
 
   Future<void> _showThemePicker(BuildContext context, WidgetRef ref) async {
