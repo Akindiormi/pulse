@@ -3,6 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/design/pulse_tokens.dart';
+import '../../../core/motion/pulse_motion_attachment.dart';
+import '../../../core/motion/pulse_motion_policy.dart';
+import '../../../core/motion/pulse_motion_state.dart';
 import '../../../core/notifications/notification_service.dart';
 import '../../../core/widgets/pulse_card.dart';
 import '../../../core/widgets/pulse_states.dart';
@@ -30,12 +33,16 @@ class _Content extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final controller = ref.read(settingsControllerProvider.notifier);
     return RefreshIndicator(onRefresh: controller.refresh, child: ListView(padding: const EdgeInsets.fromLTRB(PulseSpace.lg, PulseSpace.md, PulseSpace.lg, PulseSpace.xxxl), children: [
-      _Section(title: 'preferences', children: [
-        _SwitchRow(icon: Icons.notifications_none_rounded, title: 'daily challenge reminder', subtitle: _notificationSubtitle(data), value: data.dailyReminderEnabled, enabled: data.reminderDeliveryAvailable || data.permissionStatus != NotificationPermissionStatus.unavailable, onChanged: (value) => _run(context, () => controller.setDailyReminder(value))),
-        if (!data.reminderDeliveryAvailable) Padding(padding: const EdgeInsets.fromLTRB(PulseSpace.lg, 0, PulseSpace.lg, PulseSpace.md), child: Text('your reminder preference is kept safely, but delivery is not configured yet. no notification will be sent until the trusted notification backend supports scheduling.', style: AppTypography.metadata)),
-        _TapRow(icon: Icons.palette_outlined, title: 'appearance', subtitle: _themeLabel(data.themeMode), onTap: () => _showThemePicker(context, ref)),
-        _SwitchRow(icon: Icons.motion_photos_off_outlined, title: 'reduced motion', subtitle: data.reducedMotion ? 'nonessential motion is reduced' : 'full Pulse motion', value: data.reducedMotion, onChanged: (value) => _run(context, () => controller.setReducedMotion(value))),
-      ]),
+      PulseMotionBoundaryV2(
+        intent: PulseMotionIntent.settingsChange,
+        state: PulseSettingsMotionState.idle,
+        child: _Section(title: 'preferences', children: [
+          _SwitchRow(icon: Icons.notifications_none_rounded, title: 'daily challenge reminder', subtitle: _notificationSubtitle(data), value: data.dailyReminderEnabled, enabled: data.reminderDeliveryAvailable || data.permissionStatus != NotificationPermissionStatus.unavailable, onChanged: (value) => _run(context, () => controller.setDailyReminder(value))),
+          if (!data.reminderDeliveryAvailable) Padding(padding: const EdgeInsets.fromLTRB(PulseSpace.lg, 0, PulseSpace.lg, PulseSpace.md), child: Text('your reminder preference is kept safely, but delivery is not configured yet. no notification will be sent until the trusted notification backend supports scheduling.', style: AppTypography.metadata)),
+          _TapRow(icon: Icons.palette_outlined, title: 'appearance', subtitle: _themeLabel(data.themeMode), onTap: () => _showThemePicker(context, ref)),
+          _SwitchRow(icon: Icons.motion_photos_off_outlined, title: 'reduced motion', subtitle: data.reducedMotion ? 'nonessential motion is reduced' : 'full Pulse motion', value: data.reducedMotion, onChanged: (value) => _run(context, () => controller.setReducedMotion(value))),
+        ]),
+      ),
       const SizedBox(height: PulseSpace.xl),
       _Section(title: 'account', children: [
         _TapRow(icon: Icons.person_outline_rounded, title: 'profile', subtitle: 'your identity and Pulse journey', onTap: () => context.push('/profile')),
