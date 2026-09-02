@@ -7,8 +7,8 @@ class PulseEventDispatcher {
 
   Future<void> dispatch(PulseEvent event) async {
     switch (event) {
-      case ActivityCompletedEvent():
-        await analytics.logChallengeCompleted('');
+      case ActivityCompletedEvent(challengeId: final id):
+        await analytics.logChallengeCompleted(id);
       case StreakIncreasedEvent(current: final streak):
         await analytics.logStreakIncreased(streak);
       case AchievementUnlockedEvent(achievementId: final id):
