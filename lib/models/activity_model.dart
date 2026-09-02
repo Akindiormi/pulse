@@ -1,10 +1,11 @@
 class ActivityModel {
-  const ActivityModel({required this.id, required this.userId, required this.challengeId, required this.date, required this.xpAwarded, required this.completedAt});
+  const ActivityModel({required this.id, required this.userId, required this.challengeId, required this.date, required this.xpAwarded, required this.completedAt, this.category});
   final String id, userId, challengeId, date;
   final int xpAwarded;
   final DateTime completedAt;
+  final String? category;
 
-  Map<String, dynamic> toMap() => {'userId': userId, 'challengeId': challengeId, 'date': date, 'xpAwarded': xpAwarded, 'completedAt': completedAt};
+  Map<String, dynamic> toMap() => {'userId': userId, 'challengeId': challengeId, 'date': date, 'xpAwarded': xpAwarded, 'completedAt': completedAt, 'category': category};
 
   factory ActivityModel.fromMap(String id, Map<String, dynamic> map) => ActivityModel(
         id: id,
@@ -13,6 +14,7 @@ class ActivityModel {
         date: map['date'] as String? ?? '',
         xpAwarded: (map['xpAwarded'] as num?)?.toInt() ?? 0,
         completedAt: _date(map['completedAt']) ?? DateTime.fromMillisecondsSinceEpoch(0),
+        category: map['category'] as String?,
       );
 
   static DateTime? _date(Object? value) {
