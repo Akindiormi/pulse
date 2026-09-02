@@ -25,6 +25,8 @@ class FirebaseTrustedCallableClient implements TrustedCallableClient {
       return Map<String, dynamic>.from(value);
     } on FirebaseFunctionsException catch (error) {
       throw FirebaseTrustedCallableClient.mapError(error);
+    } catch (_) {
+      throw const TrustedBackendException(TrustedBackendErrorCode.unavailable, 'The service is temporarily unavailable.');
     }
   }
 
