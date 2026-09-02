@@ -30,6 +30,7 @@ final messagingProvider = Provider<FirebaseMessaging>((ref) => FirebaseMessaging
 final crashlyticsProvider = Provider<FirebaseCrashlytics>((ref) => FirebaseCrashlytics.instance);
 
 final authServiceProvider = Provider<AuthService>((ref) => FirebaseAuthService(ref.watch(authProvider)));
+final authStateProvider = StreamProvider<AuthState>((ref) => ref.watch(authServiceProvider).authStateChanges);
 final userRepositoryProvider = Provider<UserRepository>((ref) => FirestoreUserRepository(ref.watch(firestoreProvider)));
 final challengeRepositoryProvider = Provider<ChallengeRepository>((ref) => FirestoreChallengeRepository(ref.watch(firestoreProvider)));
 final activityRepositoryProvider = Provider<ActivityRepository>((ref) => FirestoreActivityRepository(ref.watch(firestoreProvider)));
