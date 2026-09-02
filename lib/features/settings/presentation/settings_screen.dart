@@ -3,8 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/design/pulse_tokens.dart';
-import '../../../core/motion/pulse_motion_policy.dart';
-import '../../../core/motion/pulse_motion_state.dart';
 import '../../../core/notifications/notification_service.dart';
 import '../../../core/widgets/pulse_card.dart';
 import '../../../core/widgets/pulse_states.dart';
@@ -15,14 +13,7 @@ class SettingsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(settingsControllerProvider);
-    return Scaffold(
-      appBar: AppBar(title: const Text('settings')),
-      body: state.when(
-        loading: () => const _Loading(),
-        error: (_, __) => PulseErrorState(message: 'we couldn’t load your settings. please try again.', onRetry: () => ref.read(settingsControllerProvider.notifier).refresh()),
-        data: (data) => _Content(data: data),
-      ),
-    );
+    return Scaffold(appBar: AppBar(title: const Text('settings')), body: state.when(loading: () => const _Loading(), error: (_, __) => PulseErrorState(message: 'we couldn’t load your settings. please try again.', onRetry: () => ref.read(settingsControllerProvider.notifier).refresh()), data: (data) => _Content(data: data)));
   }
 }
 
@@ -35,46 +26,33 @@ class _Loading extends StatelessWidget {
 class _Content extends ConsumerWidget {
   const _Content({required this.data});
   final SettingsViewData data;
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final controller = ref.read(settingsControllerProvider.notifier);
-    return RefreshIndicator(
-      onRefresh: controller.refresh,
-      child: ListView(padding: const EdgeInsets.fromLTRB(PulseSpace.lg, PulseSpace.md, PulseSpace.lg, PulseSpace.xxxl), children: [
-        _Section(title: 'preferences', children: [
-          _SwitchRow(icon: Icons.notifications_none_rounded, title: 'daily challenge reminder', subtitle: _notificationSubtitle(data), value: data.dailyReminderEnabled, enabled: data.reminderDeliveryAvailable || data.permissionStatus != NotificationPermissionStatus.unavailable, onChanged: (value) => _run(context, () => controller.setDailyReminder(value))),
-          if (!data.reminderDeliveryAvailable) Padding(padding: const EdgeInsets.fromLTRB(PulseSpace.lg, 0, PulseSpace.lg, PulseSpace.md), child: Text('reminder delivery is not configured yet. your preference won’t create a notification until the trusted notification backend supports scheduling.', style: AppTypography.metadata)),
-          _TapRow(icon: Icons.palette_outlined, title: 'appearance', subtitle: _themeLabel(data.themeMode), onTap: () => _showThemePicker(context, ref)),
-          _SwitchRow(icon: Icons.motion_photos_off_outlined, title: 'reduced motion', subtitle: data.reducedMotion ? 'nonessential motion is reduced' : 'full Pulse motion', value: data.reducedMotion, onChanged: (value) => _run(context, () => controller.setReducedMotion(value))),
-        ]),
-        const SizedBox(height: PulseSpace.xl),
-        _Section(title: 'account', children: [
-          _TapRow(icon: Icons.person_outline_rounded, title: 'profile', subtitle: 'your identity and Pulse journey', onTap: () => context.push('/profile')),
-          _TapRow(icon: Icons.logout_rounded, title: 'sign out', subtitle: 'sign out of this account', onTap: () => _confirmSignOut(context, controller)),
-          _TapRow(icon: Icons.delete_outline_rounded, title: 'delete account', subtitle: 'permanently remove your account', destructive: true, onTap: () => _confirmDelete(context, controller)),
-        ]),
-        const SizedBox(height: PulseSpace.xl),
-        _Section(title: 'about', children: [
-          const _InfoRow(title: 'Pulse', subtitle: 'small actions, real progress.'),
-          const _InfoRow(title: 'version', subtitle: '0.1.0+1'),
-          const _InfoRow(title: 'privacy', subtitle: 'no legal destination is configured yet'),
-          const _InfoRow(title: 'terms', subtitle: 'no legal destination is configured yet'),
-        ]),
+    return RefreshIndicator(onRefresh: controller.refresh, child: ListView(padding: const EdgeInsets.fromLTRB(PulseSpace.lg, PulseSpace.md, PulseSpace.lg, PulseSpace.xxxl), children: [
+      _Section(title: 'preferences', children: [
+        _SwitchRow(icon: Icons.notifications_none_rounded, title: 'daily challenge reminder', subtitle: _notificationSubtitle(data), value: data.dailyReminderEnabled, enabled: data.reminderDeliveryAvailable || data.permissionStatus != NotificationPermissionStatus.unavailable, onChanged: (value) => _run(context, () => controller.setDailyReminder(value))),
+        if (!data.reminderDeliveryAvailable) Padding(padding: const EdgeInsets.fromLTRB(PulseSpace.lg, 0, PulseSpace.lg, PulseSpace.md), child: Text('reminder delivery is not configured yet. your preference won’t create a notification until the trusted notification backend supports scheduling.', style: AppTypography.metadata)),
+        _TapRow(icon: Icons.palette_outlined, title: 'appearance', subtitle: _themeLabel(data.themeMode), onTap: () => _showThemePicker(context, ref)),
+        _SwitchRow(icon: Icons.motion_photos_off_outlined, title: 'reduced motion', subtitle: data.reducedMotion ? 'nonessential motion is reduced' : 'full Pulse motion', value: data.reducedMotion, onChanged: (value) => _run(context, () => controller.setReducedMotion(value))),
       ]),
-    );
+      const SizedBox(height: PulseSpace.xl),
+      _Section(title: 'account', children: [
+        _TapRow(icon: Icons.person_outline_rounded, title: 'profile', subtitle: 'your identity and Pulse journey', onTap: () => context.push('/profile')),
+        _TapRow(icon: Icons.logout_rounded, title: 'sign out', subtitle: 'sign out of this account', onTap: () => _confirmSignOut(context, controller)),
+        _TapRow(icon: Icons.delete_outline_rounded, title: 'delete account', subtitle: 'permanently remove your account', destructive: true, onTap: () => _confirmDelete(context, controller)),
+      ]),
+      const SizedBox(height: PulseSpace.xl),
+      _Section(title: 'about', children: const [
+        _InfoRow(title: 'Pulse', subtitle: 'small actions, real progress.'),
+        _InfoRow(title: 'version', subtitle: '0.1.0+1'),
+        _InfoRow(title: 'privacy', subtitle: 'no legal destination is configured yet'),
+        _InfoRow(title: 'terms', subtitle: 'no legal destination is configured yet'),
+      ]),
+    ]));
   }
 
-  String _notificationSubtitle(SettingsViewData data) {
-    switch (data.permissionStatus) {
-      case NotificationPermissionStatus.denied: return 'notifications are blocked by your device';
-      case NotificationPermissionStatus.unavailable: return 'notification service unavailable';
-      case NotificationPermissionStatus.notDetermined: return 'ask the device for permission when enabled';
-      case NotificationPermissionStatus.provisional: return data.dailyReminderEnabled ? 'enabled with provisional permission' : 'available';
-      case NotificationPermissionStatus.authorized: return data.dailyReminderEnabled ? 'enabled' : 'off';
-    }
-  }
-
+  String _notificationSubtitle(SettingsViewData data) => switch (data.permissionStatus) { NotificationPermissionStatus.denied => 'notifications are blocked by your device', NotificationPermissionStatus.unavailable => 'notification service unavailable', NotificationPermissionStatus.notDetermined => 'ask the device for permission when enabled', NotificationPermissionStatus.provisional => data.dailyReminderEnabled ? 'enabled with provisional permission' : 'available', NotificationPermissionStatus.authorized => data.dailyReminderEnabled ? 'enabled' : 'off' };
   String _themeLabel(ThemeMode mode) => switch (mode) { ThemeMode.system => 'system', ThemeMode.light => 'light', ThemeMode.dark => 'dark' };
 
   Future<void> _showThemePicker(BuildContext context, WidgetRef ref) async {
@@ -93,9 +71,7 @@ class _Content extends ConsumerWidget {
     if (ok == true) await _run(context, controller.deleteAccount);
   }
 
-  Future<void> _run(BuildContext context, Future<void> Function() action) async {
-    try { await action(); } catch (error) { if (!context.mounted) return; final message = error is SettingsException ? error.message : 'we couldn’t save that setting. please try again.'; ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message))); }
-  }
+  Future<void> _run(BuildContext context, Future<void> Function() action) async { try { await action(); } catch (error) { if (!context.mounted) return; final message = error is SettingsException ? error.message : 'we couldn’t save that setting. please try again.'; ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message))); } }
 }
 
 class _Section extends StatelessWidget {
