@@ -9,7 +9,6 @@ import '../../../core/widgets/pulse_feedback.dart';
 import '../../../core/widgets/pulse_hero_challenge.dart';
 import '../../../core/widgets/pulse_progress.dart';
 import '../../../core/widgets/pulse_streak.dart';
-import '../../../services/xp_service.dart';
 import '../application/home_controller.dart';
 
 class HomeScreen extends ConsumerWidget {
@@ -42,7 +41,6 @@ class _HomeLoaded extends StatelessWidget {
   Widget build(BuildContext context) {
     final name = data.user.displayName?.trim();
     final greeting = name == null || name.isEmpty ? _greeting() : '${_greeting()}, ${name.split(' ').first}';
-    final nextLevelXP = XPService.nextLevelXP(data.user.xp);
     final heroState = data.completed ? PulseMotionState.completed : PulseMotionState.idle;
 
     return RefreshIndicator(
@@ -57,7 +55,7 @@ class _HomeLoaded extends StatelessWidget {
             children: [
               Expanded(child: PulseStreak(current: data.user.currentStreak, longest: data.user.longestStreak, state: data.user.currentStreak > 0 ? PulseStreakMotionState.active : PulseStreakMotionState.inactive)),
               const SizedBox(width: 16),
-              Expanded(child: PulseXpProgress(currentXp: data.user.xp, nextLevelXp: nextLevelXP, level: data.user.level, motionState: PulseProgressMotionState.initial)),
+              Expanded(child: PulseXpProgress(currentXp: data.user.xp, nextLevelXp: data.nextLevelXP, level: data.user.level, motionState: PulseProgressMotionState.initial)),
             ],
           ),
           const SizedBox(height: 28),
