@@ -7,6 +7,7 @@ import '../../../core/motion/pulse_motion_attachment.dart';
 import '../../../core/motion/pulse_motion_policy.dart';
 import '../../../core/motion/pulse_motion_state.dart';
 import '../../../core/di/providers.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/pulse_button.dart';
 
 class OnboardingScreen extends ConsumerStatefulWidget {
