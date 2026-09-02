@@ -23,7 +23,7 @@ class SettingsViewData {
 }
 
 class SettingsController extends AsyncNotifier<SettingsViewData> {
-  static const _prefs = SharedPreferencesAsync();
+  static final _prefs = SharedPreferencesAsync();
   static const _reducedMotionKey = 'pulse.reduced_motion';
   static const _reminderEnabledKey = 'pulse.daily_reminder_enabled';
   static const _reminderHourKey = 'pulse.daily_reminder_hour';
@@ -65,13 +65,12 @@ class SettingsController extends AsyncNotifier<SettingsViewData> {
   Future<void> setReducedMotion(bool enabled) async {
     final current = state.valueOrNull;
     if (current == null) return;
-    final previous = current.reducedMotion;
     state = AsyncData(current.copyWith(reducedMotion: enabled));
     PulseMotionPolicy.userReducedMotion = enabled;
     try {
       await _prefs.setBool(_reducedMotionKey, enabled);
     } catch (_) {
-      PulseMotionPolicy.userReducedMotion = previous;
+      PulseMotionPolicy.userReducedMotion = current.reducedMotion;
       state = AsyncData(current);
       throw const SettingsException('we couldn’t save your motion preference.');
     }
@@ -127,7 +126,10 @@ class SettingsController extends AsyncNotifier<SettingsViewData> {
     if (current != null) state = AsyncData(current.copyWith(permissionStatus: permission));
   }
 
-  Future<void> refresh() async { state = const AsyncLoading(); state = AsyncData(await build()); }
+  Future<void> refresh() async {
+    state = const AsyncLoading();
+    try { state = AsyncData(await build()); } catch (error, stack) { state = AsyncError(error, stack); }
+  }
   Future<void> signOut() => ref.read(authServiceProvider).signOut();
   Future<void> deleteAccount() => ref.read(authServiceProvider).deleteAccount();
 
