@@ -25,6 +25,8 @@ Challenge _challenge() => const Challenge(
 
 UserModel _user() => const UserModel(uid: 'user-1', displayName: 'Akin', xp: 50, level: 1, currentStreak: 4, longestStreak: 7);
 
+HomeViewData _data({bool completed = false}) => HomeViewData(user: _user(), challenge: _challenge(), completed: completed, nextLevelXP: 100, xpProgress: .5);
+
 Widget _app(AsyncValue<HomeViewData> value) => ProviderScope(
       overrides: [homeControllerProvider.overrideWithValue(value)],
       child: MaterialApp(theme: buildAppTheme(Brightness.light), darkTheme: buildAppTheme(Brightness.dark), home: const HomeScreen()),
@@ -32,8 +34,7 @@ Widget _app(AsyncValue<HomeViewData> value) => ProviderScope(
 
 void main() {
   testWidgets('loaded Home presents supplied authoritative challenge and progress', (tester) async {
-    final data = HomeViewData(user: _user(), challenge: _challenge(), completed: false);
-    await tester.pumpWidget(_app(AsyncData(data)));
+    await tester.pumpWidget(_app(AsyncData(_data())));
     await tester.pump();
 
     expect(find.textContaining('Akin'), findsOneWidget);
@@ -51,8 +52,7 @@ void main() {
   });
 
   testWidgets('completed Home disables the challenge action and shows completion feedback', (tester) async {
-    final data = HomeViewData(user: _user(), challenge: _challenge(), completed: true);
-    await tester.pumpWidget(_app(AsyncData(data)));
+    await tester.pumpWidget(_app(AsyncData(_data(completed: true))));
     await tester.pump();
 
     expect(find.text('completed'), findsOneWidget);
@@ -86,11 +86,5 @@ void main() {
       PulseMotionState.unavailable,
       PulseMotionState.error,
     ]));
-  });
-
-  test('Home source contract does not select challenges or call Firestore locally', () {
-    const source = '''HomeScreen -> homeControllerProvider -> ChallengeService -> TrustedChallengeBackend''';
-    expect(source.contains('selectRandomChallenge'), isFalse);
-    expect(source.contains('Firestore'), isFalse);
   });
 }
