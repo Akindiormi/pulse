@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -5,7 +7,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:pulse/core/backend/trusted_challenge_backend.dart';
 import 'package:pulse/core/motion/pulse_motion_state.dart';
 import 'package:pulse/core/theme/app_theme.dart';
-import 'package:pulse/core/widgets/pulse_card.dart';
 import 'package:pulse/core/widgets/pulse_states.dart';
 import 'package:pulse/features/challenges/application/challenge_detail_controller.dart';
 import 'package:pulse/features/challenges/application/complete_challenge.dart';
@@ -31,7 +32,7 @@ ChallengeDetailViewData _data({ChallengeDetailPhase phase = ChallengeDetailPhase
     );
 
 Widget _app(AsyncValue<ChallengeDetailViewData> value) => ProviderScope(
-      overrides: [challengeDetailControllerProvider('challenge-1').overrideWithValue(value)],
+      overrides: [challengeDetailControllerProvider('challenge-1').overrideWith(() => _FakeChallengeDetailController(value))],
       child: MaterialApp(theme: buildAppTheme(Brightness.light), home: const ChallengeDetailScreen(challengeId: 'challenge-1')),
     );
 
@@ -205,6 +206,20 @@ void main() {
     ]));
     expect(PulseAchievementMotionState.values, contains(PulseAchievementMotionState.none));
   });
+}
+
+class _FakeChallengeDetailController extends ChallengeDetailController {
+  _FakeChallengeDetailController(this.value);
+  final AsyncValue<ChallengeDetailViewData> value;
+
+  @override
+  Future<ChallengeDetailViewData> build(String arg) {
+    return switch (value) {
+      AsyncLoading<ChallengeDetailViewData>() => Completer<ChallengeDetailViewData>().future,
+      AsyncError<ChallengeDetailViewData>(:final error, :final stackTrace) => Future<ChallengeDetailViewData>.error(error, stackTrace),
+      AsyncData<ChallengeDetailViewData>(:final value) => Future.value(value),
+    };
+  }
 }
 
 class FakeTrustedChallengeBackend implements TrustedChallengeBackend {
