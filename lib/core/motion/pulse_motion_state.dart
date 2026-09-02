@@ -6,11 +6,20 @@ enum PulseMotionState {
   pressed,
   starting,
   loading,
+  changing,
+  success,
+  saved,
   completing,
   completed,
+  celebrating,
+  unlocking,
+  leveledUp,
   alreadyCompleted,
   unavailable,
   error,
+  exiting,
+  skipped,
+  cancelled,
 }
 
 enum PulseProfileMotionState {
