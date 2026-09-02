@@ -14,6 +14,8 @@ class FirestoreUserRepository implements UserRepository {
   Future<void> createOrUpdateUser({required String uid, String? displayName, String? photoUrl}) async { final ref = _ref(uid); await firestore.runTransaction((tx) async { final snapshot = await tx.get(ref); final profile = <String, dynamic>{'displayName': displayName, 'photoUrl': photoUrl}; if (snapshot.exists) { tx.update(ref, profile); } else { tx.set(ref, {...profile, 'username': displayName, 'createdAt': FieldValue.serverTimestamp(), 'totalActivities': 0, 'currentStreak': 0, 'longestStreak': 0, 'xp': 0, 'level': 1, 'lastActivityDate': null, 'completedCategories': <String>[], 'unlockedAchievements': <String>[]}); } }); }
   @override
   Future<Map<String, dynamic>?> getUser(String uid) async => (await _ref(uid).get()).data();
+  @override
+  Future<void> updatePreferences({required String uid, required Map<String, dynamic> preferences}) => _ref(uid).update({'notificationPreferences': preferences});
 }
 
 class FirestoreChallengeRepository implements ChallengeRepository {
