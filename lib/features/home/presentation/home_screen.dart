@@ -21,14 +21,15 @@ class HomeScreen extends ConsumerWidget {
     return home.when(
       loading: () => const _HomeLoading(),
       error: (error, _) => _HomeError(error: error, onRetry: () => ref.read(homeControllerProvider.notifier).retry()),
-      data: (data) => _HomeLoaded(data: data),
+      data: (data) => _HomeLoaded(data: data, onRefresh: () => ref.read(homeControllerProvider.notifier).retry()),
     );
   }
 }
 
 class _HomeLoaded extends StatelessWidget {
-  const _HomeLoaded({required this.data});
+  const _HomeLoaded({required this.data, required this.onRefresh});
   final HomeViewData data;
+  final Future<void> Function() onRefresh;
 
   String _greeting() {
     final hour = DateTime.now().hour;
@@ -44,31 +45,34 @@ class _HomeLoaded extends StatelessWidget {
     final nextLevelXP = XPService.nextLevelXP(data.user.xp);
     final heroState = data.completed ? PulseMotionState.completed : PulseMotionState.idle;
 
-    return ListView(
-      physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(20, 22, 20, 28),
-      children: [
-        Text(greeting, style: Theme.of(context).textTheme.titleLarge),
-        const SizedBox(height: 18),
-        Row(
-          children: [
-            Expanded(child: PulseStreak(current: data.user.currentStreak, longest: data.user.longestStreak, state: data.user.currentStreak > 0 ? PulseStreakMotionState.active : PulseStreakMotionState.inactive)),
-            const SizedBox(width: 16),
-            Expanded(child: PulseXpProgress(currentXp: data.user.xp, nextLevelXp: nextLevelXP, level: data.user.level, motionState: PulseProgressMotionState.initial)),
-          ],
-        ),
-        const SizedBox(height: 28),
-        PulseHeroChallenge(
-          challenge: data.challenge,
-          motionState: heroState,
-          onAction: data.completed ? null : () => context.push('/challenge/${data.challenge.id}'),
-        ),
-        const SizedBox(height: 20),
-        if (data.completed)
-          const PulseCompletionSurface(event: PulseCelebrationEvent.completion)
-        else
-          _ProgressHint(level: data.user.level, xp: data.user.xp),
-      ],
+    return RefreshIndicator(
+      onRefresh: onRefresh,
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.fromLTRB(20, 22, 20, 28),
+        children: [
+          Text(greeting, style: Theme.of(context).textTheme.titleLarge),
+          const SizedBox(height: 18),
+          Row(
+            children: [
+              Expanded(child: PulseStreak(current: data.user.currentStreak, longest: data.user.longestStreak, state: data.user.currentStreak > 0 ? PulseStreakMotionState.active : PulseStreakMotionState.inactive)),
+              const SizedBox(width: 16),
+              Expanded(child: PulseXpProgress(currentXp: data.user.xp, nextLevelXp: nextLevelXP, level: data.user.level, motionState: PulseProgressMotionState.initial)),
+            ],
+          ),
+          const SizedBox(height: 28),
+          PulseHeroChallenge(
+            challenge: data.challenge,
+            motionState: heroState,
+            onAction: data.completed ? null : () => context.push('/challenge/${data.challenge.id}'),
+          ),
+          const SizedBox(height: 20),
+          if (data.completed)
+            const PulseCompletionSurface(event: PulseCelebrationEvent.completion)
+          else
+            _ProgressHint(level: data.user.level, xp: data.user.xp),
+        ],
+      ),
     );
   }
 }
