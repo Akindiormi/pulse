@@ -6,6 +6,8 @@ import '../../../core/di/providers.dart';
 import '../../../core/errors/app_error.dart';
 import '../../../core/motion/pulse_motion_attachment.dart';
 import '../../../core/motion/pulse_motion_state.dart';
+import '../../../core/theme/app_theme.dart';
+import '../../../core/auth/auth_service.dart';
 import '../../../core/widgets/pulse_button.dart';
 import '../application/auth_controller.dart';
 
