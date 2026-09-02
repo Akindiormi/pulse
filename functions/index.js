@@ -2,6 +2,7 @@ const { initializeApp } = require('firebase-admin/app');
 const { getFirestore, Timestamp } = require('firebase-admin/firestore');
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { setGlobalOptions } = require('firebase-functions/v2');
+const { deleteUserData } = require('./account_deletion');
 
 initializeApp();
 setGlobalOptions({ region: 'us-central1', enforceAppCheck: true });
@@ -58,13 +59,6 @@ async function chooseChallenge(transaction, date) {
   const challenges = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })).sort((a, b) => a.id.localeCompare(b.id));
   if (challenges.length === 0) throw new HttpsError('failed-precondition', 'No active challenges are available.');
   return challenges[stableIndex(date, challenges.length)];
-}
-
-async function deleteUserData(database, uid) {
-  if (typeof uid !== 'string' || uid.length === 0) throw new TypeError('A valid authenticated UID is required.');
-  const userRef = database.collection('users').doc(uid);
-  // recursiveDelete is safe to retry: a missing user document/subcollection is already clean.
-  await database.recursiveDelete(userRef);
 }
 
 exports.getOrAssignDailyChallenge = onCall(async (request) => {
