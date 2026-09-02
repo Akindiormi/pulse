@@ -56,7 +56,10 @@ class ProfileController extends AsyncNotifier<ProfileViewData> {
     }
     try {
       final trimmed = value.trim();
-      await ref.read(userRepositoryProvider).createOrUpdateUser(uid: uid, displayName: trimmed.isEmpty ? null : trimmed);
+      await ref.read(userRepositoryProvider).updateProfileFields(
+        uid: uid,
+        fields: <String, dynamic>{'displayName': trimmed.isEmpty ? null : trimmed},
+      );
       final refreshed = await _load();
       state = AsyncData(refreshed);
       editState = ProfileEditState.saved;
