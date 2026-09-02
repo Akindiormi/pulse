@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/backend/trusted_challenge_backend.dart';
+import '../../../core/motion/pulse_motion_attachment.dart';
 import '../../../core/motion/pulse_motion_state.dart';
 import '../../../core/widgets/pulse_card.dart';
 import '../../../core/widgets/pulse_feedback.dart';
@@ -49,26 +50,50 @@ class _HomeLoaded extends StatelessWidget {
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(20, 22, 20, 28),
         children: [
-          Text(greeting, style: Theme.of(context).textTheme.titleLarge),
+          Semantics(header: true, child: Text(greeting, style: Theme.of(context).textTheme.titleLarge)),
           const SizedBox(height: 18),
           Row(
             children: [
-              Expanded(child: PulseStreak(current: data.user.currentStreak, longest: data.user.longestStreak, state: data.user.currentStreak > 0 ? PulseStreakMotionState.active : PulseStreakMotionState.inactive)),
+              Expanded(
+                child: PulseMotionBoundaryV2(
+                  intent: PulseMotionIntent.streakReveal,
+                  state: data.user.currentStreak > 0 ? PulseStreakMotionState.active : PulseStreakMotionState.inactive,
+                  child: PulseStreak(current: data.user.currentStreak, longest: data.user.longestStreak, state: data.user.currentStreak > 0 ? PulseStreakMotionState.active : PulseStreakMotionState.inactive),
+                ),
+              ),
               const SizedBox(width: 16),
-              Expanded(child: PulseXpProgress(currentXp: data.user.xp, nextLevelXp: data.nextLevelXP, level: data.user.level, motionState: PulseProgressMotionState.initial)),
+              Expanded(
+                child: PulseMotionBoundaryV2(
+                  intent: PulseMotionIntent.xpReveal,
+                  state: PulseProgressMotionState.initial,
+                  child: PulseXpProgress(currentXp: data.user.xp, nextLevelXp: data.nextLevelXP, level: data.user.level, motionState: PulseProgressMotionState.initial),
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 28),
-          PulseHeroChallenge(
-            challenge: data.challenge,
-            motionState: heroState,
-            onAction: data.completed ? null : () => context.push('/challenge/${data.challenge.id}'),
+          PulseMotionBoundaryV2(
+            intent: PulseMotionIntent.challengeReveal,
+            state: heroState,
+            child: PulseHeroChallenge(
+              challenge: data.challenge,
+              motionState: heroState,
+              onAction: data.completed ? null : () => context.push('/challenge/${data.challenge.id}'),
+            ),
           ),
           const SizedBox(height: 20),
           if (data.completed)
-            const PulseCompletionSurface(event: PulseCelebrationEvent.completion)
+            PulseMotionBoundaryV2(
+              intent: PulseMotionIntent.challengeCompletion,
+              state: PulseCompletionMotionState.success,
+              child: const PulseCompletionSurface(event: PulseCelebrationEvent.completion),
+            )
           else
-            _ProgressHint(level: data.user.level, xp: data.user.xp),
+            PulseMotionBoundaryV2(
+              intent: PulseMotionIntent.homeEntrance,
+              state: PulseMotionState.idle,
+              child: _ProgressHint(level: data.user.level, xp: data.user.xp),
+            ),
         ],
       ),
     );
