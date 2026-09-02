@@ -33,8 +33,8 @@ class SettingsController extends AsyncNotifier<SettingsViewData> {
     final reducedMotion = await _prefs.getBool(_reducedMotionKey) ?? false;
     PulseMotionPolicy.userReducedMotion = reducedMotion;
     final enabled = await _prefs.getBool(_reminderEnabledKey) ?? false;
-    final hour = (await _prefs.getInt(_reminderHourKey) ?? 9).clamp(0, 23);
-    final minute = (await _prefs.getInt(_reminderMinuteKey) ?? 0).clamp(0, 59);
+    final hour = (await _prefs.getInt(_reminderHourKey) ?? 9).clamp(0, 23).toInt();
+    final minute = (await _prefs.getInt(_reminderMinuteKey) ?? 0).clamp(0, 59).toInt();
     final permission = await ref.read(notificationServiceProvider).getPermissionStatus();
     var serverEnabled = enabled;
     final auth = await ref.read(authServiceProvider).authStateChanges.first;
