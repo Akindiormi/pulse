@@ -4,13 +4,14 @@ import '../design/pulse_tokens.dart';
 import '../motion/pulse_motion_policy.dart';
 
 class PulseShell extends StatelessWidget {
-  const PulseShell({super.key, required this.child});
+  const PulseShell({super.key, required this.child, required this.currentPath});
   final Widget child;
+  final String currentPath;
 
   @override
   Widget build(BuildContext context) => Scaffold(
         body: SafeArea(child: child),
-        bottomNavigationBar: PulseBottomNavigation(currentPath: GoRouterState.of(context).uri.path),
+        bottomNavigationBar: PulseBottomNavigation(currentPath: currentPath),
       );
 }
 

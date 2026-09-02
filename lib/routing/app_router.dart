@@ -11,7 +11,7 @@ final appRouter = GoRouter(
     GoRoute(path: '/onboarding', builder: (_, __) => const PulseFoundationPlaceholder(title: 'welcome', detail: 'onboarding foundation — product flow lands in Phase 3B.')),
     GoRoute(path: '/auth', builder: (_, __) => const PulseFoundationPlaceholder(title: 'sign in', detail: 'authentication foundation — product flow lands in Phase 3B.')),
     ShellRoute(
-      builder: (_, __, child) => PulseShell(child: child),
+      builder: (_, state, child) => PulseShell(currentPath: state.uri.path, child: child),
       routes: [
         GoRoute(path: '/home', builder: (_, __) => const PulseFoundationPlaceholder(title: 'today', detail: 'home foundation — today’s challenge experience lands in the next product phase.')),
         GoRoute(path: '/challenges', builder: (_, __) => const PulseFoundationPlaceholder(title: 'challenges', detail: 'challenge discovery foundation — full screen lands in a later phase.')),
