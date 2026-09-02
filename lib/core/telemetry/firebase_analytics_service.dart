@@ -5,7 +5,7 @@ class FirebaseAnalyticsService implements AnalyticsService {
   FirebaseAnalyticsService(this.analytics);
   final FirebaseAnalytics analytics;
 
-  Future<void> _event(String name, [Map<String, Object?> parameters = const {}]) => analytics.logEvent(name: name, parameters: parameters.map((key, value) => MapEntry(key, value is num || value is String ? value : value?.toString())));
+  Future<void> _event(String name, [Map<String, Object> parameters = const {}]) => analytics.logEvent(name: name, parameters: parameters);
 
   @override Future<void> logAppOpen() => _event('app_open');
   @override Future<void> logOnboardingCompleted() => _event('onboarding_completed');
