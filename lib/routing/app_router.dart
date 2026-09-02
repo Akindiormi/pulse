@@ -4,6 +4,7 @@ import '../features/achievements/presentation/achievements_screen.dart';
 import '../features/challenges/presentation/challenge_detail_screen.dart';
 import '../features/home/presentation/home_screen.dart';
 import '../features/profile/presentation/profile_screen.dart';
+import '../features/settings/presentation/settings_screen.dart';
 import '../features/shell/presentation/pulse_foundation_placeholder.dart';
 import '../features/splash/pulse_splash_foundation.dart';
 import '../features/shell/presentation/pulse_shell.dart';
@@ -24,6 +25,6 @@ final appRouter = GoRouter(
       ],
     ),
     GoRoute(path: '/challenge/:id', builder: (_, state) => ChallengeDetailScreen(challengeId: state.pathParameters['id']!)),
-    GoRoute(path: '/settings', builder: (_, __) => const PulseFoundationPlaceholder(title: 'settings', detail: 'settings experience lands in a later phase.')),
+    GoRoute(path: '/settings', builder: (_, __) => const SettingsScreen()),
   ],
 );
