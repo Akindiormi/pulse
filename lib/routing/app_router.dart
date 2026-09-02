@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../features/challenges/presentation/challenge_detail_screen.dart';
 import '../features/home/presentation/home_screen.dart';
 import '../features/shell/presentation/pulse_foundation_placeholder.dart';
 import '../features/splash/pulse_splash_foundation.dart';
@@ -20,7 +21,10 @@ final appRouter = GoRouter(
         GoRoute(path: '/profile', builder: (_, __) => const PulseFoundationPlaceholder(title: 'profile', detail: 'profile experience lands in a later phase.')),
       ],
     ),
-    GoRoute(path: '/challenge/:id', builder: (_, state) => PulseFoundationPlaceholder(title: 'challenge', detail: 'challenge ${state.pathParameters['id']} — full experience lands in a later phase.')),
+    GoRoute(
+      path: '/challenge/:id',
+      builder: (_, state) => ChallengeDetailScreen(challengeId: state.pathParameters['id']!),
+    ),
     GoRoute(path: '/settings', builder: (_, __) => const PulseFoundationPlaceholder(title: 'settings', detail: 'settings experience lands in a later phase.')),
   ],
 );
