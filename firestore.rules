@@ -7,6 +7,11 @@ service cloud.firestore {
     match /users/{uid} {
       allow read: if own(uid);
       allow create: if own(uid)
+        && request.resource.data.keys().hasOnly([
+          'username','displayName','photoUrl','createdAt','totalActivities',
+          'currentStreak','longestStreak','xp','level','lastActivityDate',
+          'completedCategories','unlockedAchievements'
+        ])
         && request.resource.data.totalActivities == 0
         && request.resource.data.currentStreak == 0
         && request.resource.data.longestStreak == 0
@@ -15,18 +20,15 @@ service cloud.firestore {
         && request.resource.data.unlockedAchievements.size() == 0
         && request.resource.data.completedCategories.size() == 0;
       allow update: if own(uid)
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['username','displayName','photoUrl','timezone','notificationPreferences']);
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'username','displayName','photoUrl','timezone','notificationPreferences'
+        ]);
       allow delete: if false;
 
       match /dailyChallenges/{date} {
         allow read: if own(uid);
-        allow create: if own(uid)
-          && !exists(/databases/$(database)/documents/users/$(uid)/dailyChallenges/$(date))
-          && request.resource.data.keys().hasOnly(['challengeId','date','assignedAt','completed','completedAt'])
-          && request.resource.data.date == date
-          && request.resource.data.completed == false
-          && get(/databases/$(database)/documents/challenges/$(request.resource.data.challengeId)).data.active == true;
-        // Completion assignment state is authoritative and should be written by the trusted backend.
+        // Assignment selection and completion state are trusted-backend only.
+        allow create: if false;
         allow update: if false;
         allow delete: if false;
       }
