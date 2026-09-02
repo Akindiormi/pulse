@@ -48,6 +48,12 @@ class FirestoreUserRepository implements UserRepository {
   Future<Map<String, dynamic>?> getUser(String uid) async => (await _ref(uid).get()).data();
 
   @override
+  Future<UserModel?> getUserModel(String uid) async {
+    final data = await getUser(uid);
+    return data == null ? null : UserModel.fromMap(uid, data);
+  }
+
+  @override
   Future<void> updatePreferences({required String uid, required Map<String, dynamic> preferences}) => _ref(uid).update({'notificationPreferences': preferences});
 }
 
