@@ -4,7 +4,8 @@ sealed class PulseEvent {
 }
 
 class ActivityCompletedEvent extends PulseEvent {
-  const ActivityCompletedEvent({required this.xpAwarded, required this.newXP, required this.previousStreak, required this.newStreak, required this.newAchievements, required this.leveledUp});
+  const ActivityCompletedEvent({required this.challengeId, required this.xpAwarded, required this.newXP, required this.previousStreak, required this.newStreak, required this.newAchievements, required this.leveledUp});
+  final String challengeId;
   final int xpAwarded, newXP, previousStreak, newStreak;
   final List<String> newAchievements;
   final bool leveledUp;
