@@ -24,11 +24,14 @@ test('Firestore rules make challenge content read-only', () => {
   assert.match(rules, /allow write: if false;/);
 });
 
-test('callable completion does not accept client-controlled progress inputs', () => {
+test('callable completion rejects every client field except idempotencyKey', () => {
   assert.match(source, /Only idempotencyKey is accepted/);
-  for (const forbidden of ['challengeId', 'xpAwarded', 'xp:', 'currentStreak:', 'level:', 'date:']) {
-    assert.ok(!source.includes(`request.data.${forbidden}`), `unexpected client-controlled input: ${forbidden}`);
-  }
+  assert.match(source, /key !== 'idempotencyKey'/);
+  assert.doesNotMatch(source, /request\.data\.challengeId/);
+  assert.doesNotMatch(source, /request\.data\.xpAwarded/);
+  assert.doesNotMatch(source, /request\.data\.currentStreak/);
+  assert.doesNotMatch(source, /request\.data\.level/);
+  assert.doesNotMatch(source, /request\.data\.date/);
 });
 
 test('authoritative completion uses the authenticated UID', () => {
