@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../design/pulse_tokens.dart';
+import 'pulse_interaction.dart';
 
 class PulseButton extends StatelessWidget {
   const PulseButton({super.key, required this.label, this.onPressed, this.variant = PulseButtonVariant.primary, this.loading = false, this.icon, this.expand = false});
@@ -31,7 +32,8 @@ class PulseButton extends StatelessWidget {
       PulseButtonVariant.destructive => FilledButton(onPressed: enabled ? onPressed : null, style: _destructiveStyle(context), child: child),
     };
 
-    return expand ? SizedBox(width: double.infinity, child: button) : button;
+    final tactile = PulsePressScale(scale: .985, child: button);
+    return expand ? SizedBox(width: double.infinity, child: tactile) : tactile;
   }
 
   ButtonStyle _style(BuildContext context) => FilledButton.styleFrom(
@@ -73,15 +75,18 @@ class PulseIconButton extends StatelessWidget {
   final bool selected;
 
   @override
-  Widget build(BuildContext context) => IconButton(
-        onPressed: onPressed,
-        tooltip: tooltip,
-        icon: Icon(icon),
-        style: IconButton.styleFrom(
-          minimumSize: const Size(48, 48),
-          backgroundColor: selected ? PulseColors.accentTint : Colors.transparent,
-          foregroundColor: selected ? PulseColors.accent : Theme.of(context).colorScheme.onSurfaceVariant,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(PulseRadius.medium)),
+  Widget build(BuildContext context) => PulsePressScale(
+        scale: .96,
+        child: IconButton(
+          onPressed: onPressed,
+          tooltip: tooltip,
+          icon: Icon(icon),
+          style: IconButton.styleFrom(
+            minimumSize: const Size(48, 48),
+            backgroundColor: selected ? PulseColors.accentTint : Colors.transparent,
+            foregroundColor: selected ? PulseColors.accent : Theme.of(context).colorScheme.onSurfaceVariant,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(PulseRadius.medium)),
+          ),
         ),
       );
 }
