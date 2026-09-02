@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../design/pulse_tokens.dart';
-import '../motion/pulse_interaction.dart';
+import 'pulse_interaction.dart';
 import '../theme/app_theme.dart';
 
 class PulseButton extends StatelessWidget {
