@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'pulse_motion_policy.dart';
+
 enum PulseMotionState {
   entering,
   idle,
@@ -99,5 +101,8 @@ class PulseMotionBoundary extends StatelessWidget {
   final Widget? overlay;
 
   @override
-  Widget build(BuildContext context) => Stack(children: [child, if (overlay != null) Positioned.fill(child: IgnorePointer(child: overlay!))]);
+  Widget build(BuildContext context) {
+    final showOverlay = overlay != null && !PulseMotionPolicy.isReducedMotion(context);
+    return Stack(children: [child, if (showOverlay) Positioned.fill(child: IgnorePointer(child: overlay!))]);
+  }
 }
