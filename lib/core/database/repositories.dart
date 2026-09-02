@@ -1,4 +1,5 @@
 import '../../models/activity_model.dart';
+import '../../models/achievement_model.dart';
 import '../../models/challenge_model.dart';
 import '../../models/user_model.dart';
 
@@ -25,4 +26,5 @@ abstract interface class ActivityRepository {
 
 abstract interface class AchievementRepository {
   Future<Set<String>> getUnlockedIds(String uid);
+  Future<List<AchievementRecord>> getUnlockedRecords(String uid) async => throw UnimplementedError('Achievement record listing is not implemented by this repository.');
 }
