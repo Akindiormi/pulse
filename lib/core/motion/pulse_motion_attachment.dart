@@ -16,8 +16,7 @@ class PulseMotionAttachment extends StatelessWidget {
     final data = PulseMotionAttachmentData(intent: intent, state: state, reducedMotion: PulseMotionPolicy.isReducedMotion(context), duration: PulseMotionPolicy.duration(context, const Duration(milliseconds: 220)));
     final visual = builder?.call(context, data) ?? child;
     if (visual == null) return const SizedBox.shrink();
-    final positioned = Align(alignment: alignment, child: visual);
-    final animated = PulseMotionPresentation(state: state, child: positioned);
+    final animated = PulseMotionPresentation(state: state, child: Align(alignment: alignment, child: visual));
     return excludeFromSemantics ? ExcludeSemantics(child: animated) : animated;
   }
 }
@@ -50,15 +49,13 @@ class _PulseMotionPresentationState extends State<PulseMotionPresentation> with 
   void initState() {
     super.initState();
     _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 280));
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) _controller.forward();
-    });
+    WidgetsBinding.instance.addPostFrameCallback((_) { if (mounted) _controller.forward(); });
   }
 
   @override
   void didUpdateWidget(covariant PulseMotionPresentation oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.state != oldWidget.state && !PulseMotionPolicy.isReducedMotion(context)) _controller.forward(from: 0);
+    if (widget.state != oldWidget.state && _entrance && !PulseMotionPolicy.isReducedMotion(context)) _controller.forward(from: 0);
   }
 
   @override
@@ -75,10 +72,10 @@ class _PulseMotionPresentationState extends State<PulseMotionPresentation> with 
       child: widget.child,
       builder: (context, child) {
         final t = reduced ? 1.0 : Curves.easeOutCubic.transform(_controller.value);
-        final offset = _entrance ? .035 * (1 - t) : 0.0;
+        final offset = _entrance && !reduced ? .035 * (1 - t) : 0.0;
         final pressed = _stateName == 'pressed' && !reduced;
         return Opacity(
-          opacity: reduced ? 1 : t.clamp(.0, 1.0),
+          opacity: _entrance && !reduced ? t.clamp(.0, 1.0) : 1,
           child: Transform.translate(
             offset: Offset(0, 12 * offset),
             child: Transform.scale(scale: pressed ? .985 : 1, child: child),
