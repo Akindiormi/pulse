@@ -6,11 +6,17 @@ import '../../../core/errors/app_error.dart';
 import '../../../core/motion/pulse_motion_attachment.dart';
 import '../../../core/motion/pulse_motion_policy.dart';
 import '../../../core/motion/pulse_motion_state.dart';
+import '../../../core/theme/app_theme.dart';
 import '../application/splash_controller.dart';
 
-class SplashScreen extends ConsumerWidget {
+class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
 
+  @override
+  ConsumerState<SplashScreen> createState() => _SplashScreenState();
+}
+
+class _SplashScreenState extends ConsumerState<SplashScreen> {
   String _route(StartupDestination destination) => switch (destination) {
         StartupDestination.onboarding => '/onboarding',
         StartupDestination.auth => '/auth',
@@ -19,13 +25,23 @@ class SplashScreen extends ConsumerWidget {
         StartupDestination.verifyEmail => '/verify-email',
       };
 
+  void _navigate(StartupDestination destination) {
+    if (!mounted) return;
+    context.go(_route(destination));
+  }
+
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    ref.listen<AsyncValue<StartupDestination>>(startupControllerProvider, (_, next) {
-      next.whenData((destination) {
-        if (context.mounted) context.go(_route(destination));
-      });
-    }, fireImmediately: true);
+  void initState() {
+    super.initState();
+    ref.listenManual<AsyncValue<StartupDestination>>(
+      startupControllerProvider,
+      (_, next) => next.whenData(_navigate),
+      fireImmediately: true,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final state = ref.watch(startupControllerProvider);
     return Scaffold(
       body: SafeArea(
