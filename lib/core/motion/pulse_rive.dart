@@ -131,26 +131,26 @@ class _PulseRiveMotionHostState extends State<PulseRiveMotionHost> {
     if (PulseMotionPolicy.isReducedMotion(context) || widget.assetPath.trim().isEmpty) {
       return widget.fallback;
     }
-    final visual = RiveWidgetBuilder(
+    final visual = rive.RiveWidgetBuilder(
       fileLoader: _loader,
       artboardSelector: widget.artboardName == null
           ? const rive.ArtboardDefault()
-          : rive.ArtboardNamed(widget.artboardName!),
+          : rive.ArtboardSelector.byName(widget.artboardName!),
       stateMachineSelector: widget.stateMachineName == null
           ? const rive.StateMachineDefault()
-          : rive.StateMachineNamed(widget.stateMachineName!),
+          : rive.StateMachineSelector.byName(widget.stateMachineName!),
       onLoaded: (loaded) {
         _controller = PulseRiveMotionController(loaded.controller);
         _applyInputs();
       },
-      builder: (context, state) => switch (state) {
+      builder: (context, rive.RiveState state) => switch (state) {
         rive.RiveLoading() => widget.fallback,
-        rive.RiveFailed() => widget.fallback,
         rive.RiveLoaded() => rive.RiveWidget(
             controller: state.controller,
             fit: widget.fit,
             alignment: widget.alignment,
           ),
+        rive.RiveFailed() => widget.fallback,
       },
     );
     final label = widget.semanticLabel;
