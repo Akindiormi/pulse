@@ -8,30 +8,16 @@ abstract interface class TrustedChallengeBackend {
 }
 
 class DailyChallengeResult {
-  const DailyChallengeResult({required this.date, required this.challengeId, required this.completed, this.assignedAt});
+  const DailyChallengeResult({required this.date, required this.challengeId, required this.completed, required this.assignedAt});
 
   final String date;
   final String challengeId;
   final bool completed;
-  final DateTime? assignedAt;
+  final DateTime assignedAt;
 }
 
 class CompleteChallengeResult {
-  const CompleteChallengeResult({
-    required this.activityCompleted,
-    required this.alreadyCompleted,
-    required this.xpAwarded,
-    required this.previousXP,
-    required this.newXP,
-    required this.previousStreak,
-    required this.newStreak,
-    required this.longestStreak,
-    required this.previousLevel,
-    required this.newLevel,
-    required this.leveledUp,
-    required this.newAchievements,
-    this.challengeId,
-  });
+  const CompleteChallengeResult({required this.activityCompleted, required this.alreadyCompleted, required this.xpAwarded, required this.previousXP, required this.newXP, required this.previousStreak, required this.newStreak, required this.longestStreak, required this.previousLevel, required this.newLevel, required this.leveledUp, required this.newAchievements, this.challengeId});
 
   final bool activityCompleted;
   final bool alreadyCompleted;
@@ -58,16 +44,7 @@ class TrustedBackendException implements Exception {
   String toString() => 'TrustedBackendException(${code.name}): $message';
 }
 
-enum TrustedBackendErrorCode {
-  unauthenticated,
-  permissionDenied,
-  notFound,
-  alreadyCompleted,
-  failedPrecondition,
-  unavailable,
-  invalidArgument,
-  internal,
-}
+enum TrustedBackendErrorCode { unauthenticated, permissionDenied, notFound, alreadyCompleted, failedPrecondition, unavailable, invalidArgument, internal }
 
 class FirebaseCallableChallengeBackend implements TrustedChallengeBackend {
   FirebaseCallableChallengeBackend(this._functions, this._authService);
@@ -78,25 +55,21 @@ class FirebaseCallableChallengeBackend implements TrustedChallengeBackend {
   @override
   Future<DailyChallengeResult> getOrAssignDailyChallenge() async {
     await _requireAuthenticated();
-    final result = await _call('getOrAssignDailyChallenge', const <String, dynamic>{});
-    return _parseDailyChallenge(result);
+    return _parseDailyChallenge(await _call('getOrAssignDailyChallenge', const <String, dynamic>{}));
   }
 
   @override
   Future<CompleteChallengeResult> completeChallenge({String? idempotencyKey}) async {
     await _requireAuthenticated();
     final data = idempotencyKey == null ? const <String, dynamic>{} : <String, dynamic>{'idempotencyKey': idempotencyKey};
-    final result = await _call('completeChallenge', data);
-    return _parseCompletion(result);
+    return _parseCompletion(await _call('completeChallenge', data));
   }
 
   Future<Map<String, dynamic>> _call(String name, Map<String, dynamic> data) async {
     try {
       final result = await _functions.httpsCallable(name).call(data);
       final value = result.data;
-      if (value is! Map) {
-        throw const TrustedBackendException(TrustedBackendErrorCode.internal, 'The backend returned an invalid response.');
-      }
+      if (value is! Map) throw const TrustedBackendException(TrustedBackendErrorCode.internal, 'The backend returned an invalid response.');
       return Map<String, dynamic>.from(value);
     } on FirebaseFunctionsException catch (error) {
       throw _mapFirebaseError(error);
@@ -105,27 +78,22 @@ class FirebaseCallableChallengeBackend implements TrustedChallengeBackend {
 
   Future<void> _requireAuthenticated() async {
     final state = await _authService.authStateChanges.first;
-    if (state.status != AuthStatus.authenticated) {
-      throw const TrustedBackendException(TrustedBackendErrorCode.unauthenticated, 'Authentication is required.');
-    }
+    if (state.status != AuthStatus.authenticated) throw const TrustedBackendException(TrustedBackendErrorCode.unauthenticated, 'Authentication is required.');
   }
 
   DailyChallengeResult _parseDailyChallenge(Map<String, dynamic> data) {
     final date = data['date'];
     final challengeId = data['challengeId'];
     final completed = data['completed'];
-    if (date is! String || challengeId is! String || completed is! bool) {
-      throw const TrustedBackendException(TrustedBackendErrorCode.internal, 'The backend returned an invalid daily challenge.');
-    }
-    return DailyChallengeResult(date: date, challengeId: challengeId, completed: completed, assignedAt: _date(data['assignedAt']));
+    final assignedAt = _date(data['assignedAt']);
+    if (date is! String || challengeId is! String || challengeId.isEmpty || completed is! bool || assignedAt == null) throw const TrustedBackendException(TrustedBackendErrorCode.internal, 'The backend returned an invalid daily challenge.');
+    return DailyChallengeResult(date: date, challengeId: challengeId, completed: completed, assignedAt: assignedAt);
   }
 
   CompleteChallengeResult _parseCompletion(Map<String, dynamic> data) {
     final completed = data['completed'];
     final alreadyCompleted = data['alreadyCompleted'];
-    if (completed is! bool || alreadyCompleted is! bool) {
-      throw const TrustedBackendException(TrustedBackendErrorCode.internal, 'The backend returned an invalid completion result.');
-    }
+    if (completed is! bool || alreadyCompleted is! bool) throw const TrustedBackendException(TrustedBackendErrorCode.internal, 'The backend returned an invalid completion result.');
     return CompleteChallengeResult(
       activityCompleted: completed,
       alreadyCompleted: alreadyCompleted,
@@ -145,34 +113,33 @@ class FirebaseCallableChallengeBackend implements TrustedChallengeBackend {
 
   int _int(Map<String, dynamic> data, String key) => (data[key] as num?)?.toInt() ?? 0;
   bool _bool(Map<String, dynamic> data, String key) => data[key] as bool? ?? false;
-  List<String> _strings(Map<String, dynamic> data, String key) => (data[key] is List ? (data[key] as List).whereType<String>().toList(growable: false) : const <String>[]);
+  List<String> _strings(Map<String, dynamic> data, String key) => data[key] is List ? (data[key] as List).whereType<String>().toList(growable: false) : const <String>[];
 
   DateTime? _date(Object? value) {
     if (value == null) return null;
     if (value is DateTime) return value;
     if (value is String) return DateTime.tryParse(value);
     if (value is Map && value['_seconds'] is num) return DateTime.fromMillisecondsSinceEpoch((value['_seconds'] as num).toInt() * 1000);
-    return null;
+    try {
+      final converted = (value as dynamic).toDate();
+      return converted is DateTime ? converted : null;
+    } catch (_) {
+      return null;
+    }
   }
 
   TrustedBackendException _mapFirebaseError(FirebaseFunctionsException error) {
     switch (error.code) {
-      case 'unauthenticated':
-        return const TrustedBackendException(TrustedBackendErrorCode.unauthenticated, 'Authentication is required.');
-      case 'permission-denied':
-        return const TrustedBackendException(TrustedBackendErrorCode.permissionDenied, 'You do not have permission to perform this action.');
-      case 'not-found':
-        return const TrustedBackendException(TrustedBackendErrorCode.notFound, 'The requested resource was not found.');
-      case 'failed-precondition':
-        return const TrustedBackendException(TrustedBackendErrorCode.failedPrecondition, 'The request cannot be completed in the current state.');
-      case 'invalid-argument':
-        return const TrustedBackendException(TrustedBackendErrorCode.invalidArgument, 'The request is invalid.');
+      case 'unauthenticated': return const TrustedBackendException(TrustedBackendErrorCode.unauthenticated, 'Authentication is required.');
+      case 'permission-denied': return const TrustedBackendException(TrustedBackendErrorCode.permissionDenied, 'You do not have permission to perform this action.');
+      case 'not-found': return const TrustedBackendException(TrustedBackendErrorCode.notFound, 'The requested resource was not found.');
+      case 'failed-precondition': return const TrustedBackendException(TrustedBackendErrorCode.failedPrecondition, 'The request cannot be completed in the current state.');
+      case 'invalid-argument': return const TrustedBackendException(TrustedBackendErrorCode.invalidArgument, 'The request is invalid.');
       case 'unavailable':
-      case 'deadline-exceeded':
-        return const TrustedBackendException(TrustedBackendErrorCode.unavailable, 'The service is temporarily unavailable.');
+      case 'deadline-exceeded': return const TrustedBackendException(TrustedBackendErrorCode.unavailable, 'The service is temporarily unavailable.');
+      case 'already-exists': return const TrustedBackendException(TrustedBackendErrorCode.alreadyCompleted, 'This challenge has already been completed.');
       case 'internal':
-      default:
-        return const TrustedBackendException(TrustedBackendErrorCode.internal, 'Something went wrong on the server.');
+      default: return const TrustedBackendException(TrustedBackendErrorCode.internal, 'Something went wrong on the server.');
     }
   }
 }
