@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import 'pulse_motion_policy.dart';
-import 'pulse_motion_state.dart';
 
 /// A stable visual boundary between product state and future artwork.
 ///
