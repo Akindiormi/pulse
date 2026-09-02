@@ -11,6 +11,7 @@ import '../../../core/widgets/pulse_feedback.dart';
 import '../../../core/widgets/pulse_hero_challenge.dart';
 import '../../../core/widgets/pulse_progress.dart';
 import '../../../core/widgets/pulse_streak.dart';
+import '../../../core/widgets/pulse_states.dart';
 import '../application/home_controller.dart';
 
 class HomeScreen extends ConsumerWidget {
