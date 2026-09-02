@@ -7,6 +7,7 @@ import '../../../core/motion/pulse_motion_attachment.dart';
 import '../../../core/motion/pulse_motion_policy.dart';
 import '../../../core/motion/pulse_motion_state.dart';
 import '../../../core/notifications/notification_service.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/pulse_card.dart';
 import '../../../core/widgets/pulse_states.dart';
 import '../application/settings_controller.dart';
@@ -82,7 +83,7 @@ class _Content extends ConsumerWidget {
   }
 
   Future<void> _confirmDelete(BuildContext context, SettingsController controller) async {
-    final ok = await showDialog<bool>(context: context, builder: (context) => AlertDialog(title: const Text('delete account?'), content: const Text('this is permanent. Pulse will ask the current authentication service to delete your account. backend profile-data cleanup may require a separate deletion workflow.'), actions: [TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('cancel')), FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('delete account'))]));
+    final ok = await showDialog<bool>(context: context, builder: (context) => AlertDialog(title: const Text('delete account?'), content: const Text('this is permanent. Pulse will ask the current authentication service to delete your account. profile data will be removed through the trusted deletion workflow.'), actions: [TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('cancel')), FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('delete account'))]));
     if (ok == true) await _run(context, controller.deleteAccount);
   }
 
