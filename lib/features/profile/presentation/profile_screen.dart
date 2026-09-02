@@ -130,7 +130,7 @@ class _IdentityCard extends StatelessWidget {
           Text(user.createdAt == null ? 'building your journey' : 'your Pulse journey', style: AppTypography.metadata),
         ])),
         IconButton(onPressed: onEdit, tooltip: 'edit profile', icon: const Icon(Icons.edit_outlined)),
-      ],
+      ]),
       const SizedBox(height: PulseSpace.xl),
       Text('this is your Pulse.', style: AppTypography.body.copyWith(fontWeight: FontWeight.w700)),
       const SizedBox(height: PulseSpace.xs),
