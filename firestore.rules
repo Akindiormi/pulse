@@ -17,6 +17,7 @@ service cloud.firestore {
         && request.resource.data.longestStreak == 0
         && request.resource.data.xp == 0
         && request.resource.data.level == 1
+        && request.resource.data.lastActivityDate == null
         && request.resource.data.unlockedAchievements.size() == 0
         && request.resource.data.completedCategories.size() == 0;
       allow update: if own(uid)
@@ -26,8 +27,8 @@ service cloud.firestore {
       allow delete: if false;
 
       match /dailyChallenges/{date} {
-        allow read: if own(uid);
         // Assignment selection and completion state are trusted-backend only.
+        allow read: if own(uid);
         allow create: if false;
         allow update: if false;
         allow delete: if false;
