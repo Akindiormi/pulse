@@ -16,6 +16,7 @@ import '../telemetry/analytics_service.dart';
 import '../telemetry/crash_reporter.dart';
 import '../telemetry/firebase_analytics_service.dart';
 import '../telemetry/firebase_crash_reporter.dart';
+import '../../features/achievements/application/achievement_service.dart';
 import '../../features/challenges/application/challenge_service.dart';
 import '../../features/challenges/application/complete_challenge.dart';
 import '../../services/firebase_auth_service.dart';
@@ -34,7 +35,7 @@ final activityRepositoryProvider = Provider<ActivityRepository>((ref) => Firesto
 final achievementRepositoryProvider = Provider<AchievementRepository>((ref) => FirestoreAchievementRepository(ref.watch(firestoreProvider)));
 
 final trustedChallengeBackendProvider = Provider<TrustedChallengeBackend>((ref) => FirebaseCallableChallengeBackend(ref.watch(functionsProvider), ref.watch(authServiceProvider)));
-final achievementServiceProvider = Provider<Object>((ref) => const Object());
+final achievementServiceProvider = Provider<AchievementService>((ref) => const AchievementService());
 final challengeServiceProvider = Provider<ChallengeService>((ref) => ChallengeService(repository: ref.watch(challengeRepositoryProvider), backend: ref.watch(trustedChallengeBackendProvider)));
 final completeChallengeProvider = Provider<CompleteChallenge>((ref) => CompleteChallenge(backend: ref.watch(trustedChallengeBackendProvider)));
 
