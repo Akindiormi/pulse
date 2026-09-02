@@ -18,7 +18,6 @@ const ACHIEVEMENTS = [
   { id: 'MASTER_EXPLORER', type: 'categoryCount', threshold: 8, xpReward: 300 },
 ];
 const XP_THRESHOLDS = [0, 100, 250, 450, 700, 1000, 1400, 1850, 2350, 2900];
-
 function levelForXP(xp) {
   let level = 1;
   for (let i = 0; i < XP_THRESHOLDS.length; i += 1) if (xp >= XP_THRESHOLDS[i]) level = i + 1;
@@ -102,15 +101,16 @@ exports.completeChallenge = onCall(async (request) => {
 
     let assignment = assignmentSnapshot.exists ? assignmentSnapshot.data() : null;
     let challenge;
-    let challengeSnapshot = null;
+    let needsAssignmentWrite = false;
     let activitySnapshot;
     if (!assignment || assignment.source !== 'server') {
       challenge = await chooseChallenge(transaction, date);
       const activityRef = userRef.collection('activities').doc(`${date}-${challenge.id}`);
       activitySnapshot = await transaction.get(activityRef);
       assignment = serverAssignment(challenge, date);
+      needsAssignmentWrite = true;
     } else {
-      challengeSnapshot = await transaction.get(db.collection('challenges').doc(assignment.challengeId));
+      const challengeSnapshot = await transaction.get(db.collection('challenges').doc(assignment.challengeId));
       const activityRef = userRef.collection('activities').doc(`${date}-${assignment.challengeId}`);
       activitySnapshot = await transaction.get(activityRef);
       if (!challengeSnapshot.exists) throw new HttpsError('failed-precondition', 'The assigned challenge does not exist.');
@@ -155,9 +155,10 @@ exports.completeChallenge = onCall(async (request) => {
     const nextLevel = levelForXP(nextXP);
     const activityRef = userRef.collection('activities').doc(`${date}-${assignment.challengeId}`);
     transaction.create(activityRef, { userId: uid, challengeId: assignment.challengeId, date, xpAwarded: reward, completedAt: Timestamp.fromDate(now), category: challenge.category });
-    if (!assignmentSnapshot.exists || assignment.source !== 'server') transaction.set(assignmentRef, assignment);
+    const completedAssignment = { ...assignment, completed: true, completedAt: Timestamp.fromDate(now) };
+    if (needsAssignmentWrite) transaction.create(assignmentRef, completedAssignment);
+    else transaction.update(assignmentRef, { completed: true, completedAt: Timestamp.fromDate(now) });
     transaction.update(userRef, { totalActivities: nextActivityCount, currentStreak: streak.current, longestStreak: streak.longest, xp: nextXP, level: nextLevel, lastActivityDate: Timestamp.fromDate(now), completedCategories: [...categories].sort(), unlockedAchievements: [...unlocked].sort() });
-    transaction.update(assignmentRef, { completed: true, completedAt: Timestamp.fromDate(now) });
 
     return { completed: true, alreadyCompleted: false, challengeId: assignment.challengeId, xpAwarded: totalReward, challengeXP: reward, achievementXP, previousXP: currentXP, currentXP: nextXP, previousStreak: currentStreak, currentStreak: streak.current, longestStreak: streak.longest, previousLevel: currentLevel, newLevel: nextLevel, leveledUp: nextLevel > currentLevel, newAchievements };
   });
