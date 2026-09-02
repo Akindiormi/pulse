@@ -7,6 +7,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../auth/auth_service.dart';
+import '../backend/trusted_account_backend.dart';
 import '../backend/trusted_challenge_backend.dart';
 import '../database/firestore_repositories.dart';
 import '../database/repositories.dart';
@@ -29,14 +30,15 @@ final analyticsProvider = Provider<FirebaseAnalytics>((ref) => FirebaseAnalytics
 final messagingProvider = Provider<FirebaseMessaging>((ref) => FirebaseMessaging.instance);
 final crashlyticsProvider = Provider<FirebaseCrashlytics>((ref) => FirebaseCrashlytics.instance);
 
-final authServiceProvider = Provider<AuthService>((ref) => FirebaseAuthService(ref.watch(authProvider)));
+final trustedCallableClientProvider = Provider<TrustedCallableClient>((ref) => FirebaseTrustedCallableClient(ref.watch(functionsProvider)));
+final trustedAccountBackendProvider = Provider<TrustedAccountBackend>((ref) => FirebaseCallableAccountBackend(ref.watch(trustedCallableClientProvider)));
+final authServiceProvider = Provider<AuthService>((ref) => FirebaseAuthService(ref.watch(authProvider), ref.watch(trustedAccountBackendProvider)));
 final authStateProvider = StreamProvider<AuthState>((ref) => ref.watch(authServiceProvider).authStateChanges);
 final userRepositoryProvider = Provider<UserRepository>((ref) => FirestoreUserRepository(ref.watch(firestoreProvider)));
 final challengeRepositoryProvider = Provider<ChallengeRepository>((ref) => FirestoreChallengeRepository(ref.watch(firestoreProvider)));
 final activityRepositoryProvider = Provider<ActivityRepository>((ref) => FirestoreActivityRepository(ref.watch(firestoreProvider)));
 final achievementRepositoryProvider = Provider<AchievementRepository>((ref) => FirestoreAchievementRepository(ref.watch(firestoreProvider)));
 
-final trustedCallableClientProvider = Provider<TrustedCallableClient>((ref) => FirebaseTrustedCallableClient(ref.watch(functionsProvider)));
 final trustedChallengeBackendProvider = Provider<TrustedChallengeBackend>((ref) => FirebaseCallableChallengeBackend(ref.watch(trustedCallableClientProvider), ref.watch(authServiceProvider)));
 final achievementServiceProvider = Provider<AchievementService>((ref) => const AchievementService());
 final challengeServiceProvider = Provider<ChallengeService>((ref) => ChallengeService(repository: ref.watch(challengeRepositoryProvider), backend: ref.watch(trustedChallengeBackendProvider)));
