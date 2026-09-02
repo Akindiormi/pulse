@@ -3,6 +3,7 @@ import '../design/pulse_tokens.dart';
 import '../motion/pulse_celebration.dart';
 import '../motion/pulse_motion_policy.dart';
 import '../motion/pulse_motion_state.dart';
+import '../theme/app_theme.dart';
 
 class PulseCompletionSurface extends StatelessWidget {
   const PulseCompletionSurface({
