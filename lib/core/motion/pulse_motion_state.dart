@@ -1,10 +1,58 @@
 import 'package:flutter/material.dart';
 
-enum PulseMotionState { entering, idle, pressed, loading, completing, completed, unavailable, error }
-enum PulseProgressMotionState { initial, changed, xpGained, levelUp, full }
-enum PulseStreakMotionState { inactive, active, increased, maintained, broken, milestone }
-enum PulseAchievementMotionState { locked, unlocked, newlyUnlocked, milestone }
-enum PulseCelebrationEvent { completion, xpGain, streakUpdate, achievementUnlock, levelUp }
+enum PulseMotionState {
+  entering,
+  idle,
+  pressed,
+  starting,
+  loading,
+  completing,
+  completed,
+  alreadyCompleted,
+  unavailable,
+  error,
+}
+
+enum PulseProgressMotionState {
+  initial,
+  unchanged,
+  changed,
+  xpGained,
+  levelUp,
+  full,
+}
+
+enum PulseStreakMotionState {
+  inactive,
+  active,
+  increased,
+  maintained,
+  broken,
+  milestone,
+}
+
+enum PulseAchievementMotionState {
+  none,
+  locked,
+  unlocked,
+  newlyUnlocked,
+  milestone,
+}
+
+enum PulseCelebrationEvent {
+  completion,
+  xpGain,
+  streakUpdate,
+  achievementUnlock,
+  levelUp,
+}
+
+enum PulseCompletionMotionState {
+  pending,
+  success,
+  alreadyCompleted,
+  error,
+}
 
 class PulseMotionSlot extends StatelessWidget {
   const PulseMotionSlot({super.key, required this.child, this.alignment = Alignment.center});
