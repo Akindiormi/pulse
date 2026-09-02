@@ -60,6 +60,13 @@ async function chooseChallenge(transaction, date) {
   return challenges[stableIndex(date, challenges.length)];
 }
 
+async function deleteUserData(database, uid) {
+  if (typeof uid !== 'string' || uid.length === 0) throw new TypeError('A valid authenticated UID is required.');
+  const userRef = database.collection('users').doc(uid);
+  // recursiveDelete is safe to retry: a missing user document/subcollection is already clean.
+  await database.recursiveDelete(userRef);
+}
+
 exports.getOrAssignDailyChallenge = onCall(async (request) => {
   const uid = requireAuth(request);
   requireEmptyObject(request.data);
@@ -164,4 +171,11 @@ exports.completeChallenge = onCall(async (request) => {
   });
 });
 
-exports.__test = { levelForXP, utcDateKey, utcDayDifference, calculateStreak, stableIndex };
+exports.deleteAccountData = onCall(async (request) => {
+  const uid = requireAuth(request);
+  requireEmptyObject(request.data);
+  await deleteUserData(db, uid);
+  return { deleted: true };
+});
+
+exports.__test = { levelForXP, utcDateKey, utcDayDifference, calculateStreak, stableIndex, deleteUserData };
