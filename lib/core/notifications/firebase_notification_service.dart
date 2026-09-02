@@ -6,8 +6,17 @@ class FirebaseNotificationService implements NotificationService {
   final FirebaseMessaging messaging;
 
   @override
-  Future<void> initialize() async {
-    await messaging.subscribeToTopic('daily_challenge_reminders');
+  Future<void> initialize() async {}
+
+  @override
+  Future<NotificationPermissionStatus> getPermissionStatus() async {
+    final settings = await messaging.getNotificationSettings();
+    return switch (settings.authorizationStatus) {
+      AuthorizationStatus.authorized => NotificationPermissionStatus.authorized,
+      AuthorizationStatus.provisional => NotificationPermissionStatus.provisional,
+      AuthorizationStatus.denied => NotificationPermissionStatus.denied,
+      AuthorizationStatus.notDetermined => NotificationPermissionStatus.notDetermined,
+    };
   }
 
   @override
@@ -22,4 +31,7 @@ class FirebaseNotificationService implements NotificationService {
   Future<void> scheduleDailyChallengeReminder({required int hour, required int minute}) async {
     throw UnsupportedError('FCM does not schedule local delivery times; configure the daily reminder in the trusted backend/Cloud Scheduler.');
   }
+
+  @override
+  Future<void> cancelDailyChallengeReminder() async {}
 }
