@@ -2,19 +2,8 @@ import 'package:flutter/material.dart';
 
 import 'pulse_motion_policy.dart';
 
-/// Stable presentation boundary between authoritative product state and motion.
-/// The attachment never owns business logic or changes application state.
 class PulseMotionAttachment extends StatelessWidget {
-  const PulseMotionAttachment({
-    super.key,
-    required this.intent,
-    required this.state,
-    this.builder,
-    this.child,
-    this.alignment = Alignment.center,
-    this.excludeFromSemantics = true,
-  });
-
+  const PulseMotionAttachment({super.key, required this.intent, required this.state, this.builder, this.child, this.alignment = Alignment.center, this.excludeFromSemantics = true});
   final PulseMotionIntent intent;
   final Enum state;
   final Widget Function(BuildContext context, PulseMotionAttachmentData data)? builder;
@@ -24,16 +13,9 @@ class PulseMotionAttachment extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final data = PulseMotionAttachmentData(
-      intent: intent,
-      state: state,
-      reducedMotion: PulseMotionPolicy.isReducedMotion(context),
-      duration: PulseMotionPolicy.duration(context, const Duration(milliseconds: 220)),
-    );
-
+    final data = PulseMotionAttachmentData(intent: intent, state: state, reducedMotion: PulseMotionPolicy.isReducedMotion(context), duration: PulseMotionPolicy.duration(context, const Duration(milliseconds: 220)));
     final visual = builder?.call(context, data) ?? child;
     if (visual == null) return const SizedBox.shrink();
-
     final positioned = Align(alignment: alignment, child: visual);
     final animated = PulseMotionPresentation(state: state, child: positioned);
     return excludeFromSemantics ? ExcludeSemantics(child: animated) : animated;
@@ -41,76 +23,68 @@ class PulseMotionAttachment extends StatelessWidget {
 }
 
 class PulseMotionAttachmentData {
-  const PulseMotionAttachmentData({
-    required this.intent,
-    required this.state,
-    required this.reducedMotion,
-    required this.duration,
-  });
-
+  const PulseMotionAttachmentData({required this.intent, required this.state, required this.reducedMotion, required this.duration});
   final PulseMotionIntent intent;
   final Enum state;
   final bool reducedMotion;
   final Duration duration;
 }
 
-enum PulseMotionIntent {
-  splashBrand,
-  onboardingIllustration,
-  onboardingTransition,
-  onboardingCta,
-  homeEntrance,
-  streakReveal,
-  streakChange,
-  xpReveal,
-  xpChange,
-  challengeReveal,
-  challengeInteraction,
-  challengeCompletion,
-  challengeReward,
-  achievementReveal,
-  achievementUnlock,
-  levelUp,
-  profileEntrance,
-  profileSave,
-  settingsChange,
-  navigationTransition,
-  retry,
-  errorRecovery,
-}
+enum PulseMotionIntent { splashBrand, onboardingIllustration, onboardingTransition, onboardingCta, homeEntrance, streakReveal, streakChange, xpReveal, xpChange, challengeReveal, challengeInteraction, challengeCompletion, challengeReward, achievementReveal, achievementUnlock, levelUp, profileEntrance, profileSave, settingsChange, navigationTransition, retry, errorRecovery }
 
-class PulseMotionPresentation extends StatelessWidget {
+class PulseMotionPresentation extends StatefulWidget {
   const PulseMotionPresentation({super.key, required this.state, required this.child});
-
   final Enum state;
   final Widget child;
+  @override
+  State<PulseMotionPresentation> createState() => _PulseMotionPresentationState();
+}
 
-  bool _isActive(Enum value) => value.toString().split('.').last == 'pressed';
-  bool _isEntering(Enum value) {
-    final name = value.toString().split('.').last;
-    return name == 'entering' || name == 'starting' || name == 'unlocking' || name == 'celebrating';
+class _PulseMotionPresentationState extends State<PulseMotionPresentation> with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  String get _stateName => widget.state.toString().split('.').last;
+  bool get _entrance => const {'entering', 'starting', 'unlocking', 'celebrating'}.contains(_stateName);
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 280));
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _controller.forward();
+    });
+  }
+
+  @override
+  void didUpdateWidget(covariant PulseMotionPresentation oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.state != oldWidget.state && !PulseMotionPolicy.isReducedMotion(context)) _controller.forward(from: 0);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final reduced = PulseMotionPolicy.isReducedMotion(context);
-    final pressed = _isActive(state);
-    final entering = _isEntering(state);
-    return AnimatedOpacity(
-      opacity: 1,
-      duration: PulseMotionPolicy.duration(context, const Duration(milliseconds: 180)),
-      curve: PulseMotionPolicy.curve(context),
-      child: AnimatedSlide(
-        offset: reduced || !entering ? Offset.zero : const Offset(0, .035),
-        duration: PulseMotionPolicy.duration(context, const Duration(milliseconds: 280)),
-        curve: PulseMotionPolicy.curve(context, normal: Curves.easeOutCubic),
-        child: AnimatedScale(
-          scale: reduced ? 1 : (pressed ? .985 : 1),
-          duration: PulseMotionPolicy.microDuration(context),
-          curve: PulseMotionPolicy.curve(context, normal: Curves.easeOutCubic),
-          child: child,
-        ),
-      ),
+    return AnimatedBuilder(
+      animation: _controller,
+      child: widget.child,
+      builder: (context, child) {
+        final t = reduced ? 1.0 : Curves.easeOutCubic.transform(_controller.value);
+        final offset = _entrance ? .035 * (1 - t) : 0.0;
+        final pressed = _stateName == 'pressed' && !reduced;
+        return Opacity(
+          opacity: reduced ? 1 : t.clamp(.0, 1.0),
+          child: Transform.translate(
+            offset: Offset(0, 12 * offset),
+            child: Transform.scale(scale: pressed ? .985 : 1, child: child),
+          ),
+        );
+      },
     );
   }
 }
@@ -132,19 +106,11 @@ class PulseMotionBoundaryV2 extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final data = PulseMotionAttachmentData(
-      intent: intent,
-      state: state,
-      reducedMotion: PulseMotionPolicy.isReducedMotion(context),
-      duration: PulseMotionPolicy.duration(context, const Duration(milliseconds: 220)),
-    );
+    final data = PulseMotionAttachmentData(intent: intent, state: state, reducedMotion: PulseMotionPolicy.isReducedMotion(context), duration: PulseMotionPolicy.duration(context, const Duration(milliseconds: 220)));
     final overlay = overlayBuilder?.call(context, data);
-    return Stack(
-      fit: StackFit.passthrough,
-      children: [
-        PulseMotionPresentation(state: state, child: child),
-        if (overlay != null && !data.reducedMotion) Positioned.fill(child: IgnorePointer(child: overlay)),
-      ],
-    );
+    return Stack(fit: StackFit.passthrough, children: [
+      PulseMotionPresentation(state: state, child: child),
+      if (overlay != null && !data.reducedMotion) Positioned.fill(child: IgnorePointer(child: overlay)),
+    ]);
   }
 }
