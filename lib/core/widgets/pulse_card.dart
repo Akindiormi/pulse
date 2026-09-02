@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../design/pulse_tokens.dart';
+import '../motion/pulse_motion_policy.dart';
+import 'pulse_interaction.dart';
 
 class PulseCard extends StatelessWidget {
   const PulseCard({super.key, required this.child, this.padding = const EdgeInsets.all(PulseSpace.xxl), this.elevated = false});
@@ -12,11 +14,29 @@ class PulseCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: elevated ? Theme.of(context).colorScheme.surfaceContainerHighest : Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(PulseRadius.large),
-          boxShadow: elevated
-              ? const [BoxShadow(blurRadius: 18, offset: Offset(0, 8), spreadRadius: -10)]
-              : const [],
+          boxShadow: elevated ? const [BoxShadow(blurRadius: 18, offset: Offset(0, 8), spreadRadius: -10)] : const [],
         ),
         child: Padding(padding: padding, child: child),
+      );
+}
+
+class PulseInteractiveCard extends StatelessWidget {
+  const PulseInteractiveCard({super.key, required this.child, required this.onTap, this.scale = .988});
+  final Widget child;
+  final VoidCallback onTap;
+  final double scale;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+        button: true,
+        child: PulsePressScale(
+          scale: scale,
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(PulseRadius.large),
+            child: child,
+          ),
+        ),
       );
 }
 
@@ -39,6 +59,13 @@ class PulseHeroCard extends StatelessWidget {
       ),
       child: Stack(children: [child, if (motionOverlay != null) Positioned.fill(child: IgnorePointer(child: motionOverlay!))]),
     );
-    return onTap == null ? card : Semantics(button: true, child: InkWell(onTap: onTap, borderRadius: BorderRadius.circular(PulseRadius.hero), child: card));
+    if (onTap == null) return card;
+    return Semantics(
+      button: true,
+      child: PulsePressScale(
+        scale: .988,
+        child: InkWell(onTap: onTap, borderRadius: BorderRadius.circular(PulseRadius.hero), child: card),
+      ),
+    );
   }
 }
