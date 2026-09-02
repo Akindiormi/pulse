@@ -3,6 +3,27 @@ class ActivityModel {
   final String id, userId, challengeId, date;
   final int xpAwarded;
   final DateTime completedAt;
+
+  Map<String, dynamic> toMap() => {'userId': userId, 'challengeId': challengeId, 'date': date, 'xpAwarded': xpAwarded, 'completedAt': completedAt};
+
+  factory ActivityModel.fromMap(String id, Map<String, dynamic> map) => ActivityModel(
+        id: id,
+        userId: map['userId'] as String? ?? '',
+        challengeId: map['challengeId'] as String? ?? '',
+        date: map['date'] as String? ?? '',
+        xpAwarded: (map['xpAwarded'] as num?)?.toInt() ?? 0,
+        completedAt: _date(map['completedAt']) ?? DateTime.fromMillisecondsSinceEpoch(0),
+      );
+
+  static DateTime? _date(Object? value) {
+    if (value == null) return null;
+    if (value is DateTime) return value;
+    try {
+      return (value as dynamic).toDate() as DateTime;
+    } catch (_) {
+      return DateTime.tryParse(value.toString());
+    }
+  }
 }
 
 class ShareCardData {
