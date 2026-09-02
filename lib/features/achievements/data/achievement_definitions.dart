@@ -1,4 +1,4 @@
-import '../models/achievement_model.dart';
+import '../../../models/achievement_model.dart';
 
 const achievementDefinitions = <AchievementDefinition>[
   AchievementDefinition(id: 'FIRST_STEP', name: 'First Step', description: 'Complete your first challenge', type: AchievementType.activityCount, threshold: 1, xpReward: 25, iconAsset: 'first_step'),
