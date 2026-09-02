@@ -15,6 +15,7 @@ class FirebaseNotificationService implements NotificationService {
       AuthorizationStatus.authorized => NotificationPermissionStatus.authorized,
       AuthorizationStatus.provisional => NotificationPermissionStatus.provisional,
       AuthorizationStatus.denied => NotificationPermissionStatus.denied,
+      AuthorizationStatus.deniedPermanently => NotificationPermissionStatus.denied,
       AuthorizationStatus.notDetermined => NotificationPermissionStatus.notDetermined,
     };
   }
