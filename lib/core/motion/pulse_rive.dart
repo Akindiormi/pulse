@@ -55,6 +55,7 @@ class PulseRiveMotionHost extends StatefulWidget {
   const PulseRiveMotionHost({
     super.key,
     required this.assetPath,
+    required this.intent,
     required this.state,
     required this.fallback,
     this.artboardName,
@@ -68,6 +69,7 @@ class PulseRiveMotionHost extends StatefulWidget {
   });
 
   final String assetPath;
+  final PulseMotionIntent intent;
   final Enum state;
   final Widget fallback;
   final String? artboardName;
@@ -196,6 +198,7 @@ class PulseRiveAttachment extends StatelessWidget {
   @override
   Widget build(BuildContext context) => PulseRiveMotionHost(
         assetPath: assetPath,
+        intent: data.intent,
         state: data.state,
         fallback: fallback,
         artboardName: artboardName,
