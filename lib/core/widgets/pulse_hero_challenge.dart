@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../models/challenge_model.dart';
 import '../design/pulse_tokens.dart';
 import '../motion/pulse_motion_state.dart';
+import '../theme/app_theme.dart';
 import 'pulse_button.dart';
 import 'pulse_card.dart';
 
