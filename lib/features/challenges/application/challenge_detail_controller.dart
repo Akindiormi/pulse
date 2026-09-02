@@ -76,13 +76,14 @@ class ChallengeDetailViewData {
       : PulseAchievementMotionState.none;
 }
 
-class ChallengeDetailController extends AsyncNotifier<ChallengeDetailViewData> {
-  ChallengeDetailController(this.challengeId);
-
-  final String challengeId;
+class ChallengeDetailController extends FamilyAsyncNotifier<ChallengeDetailViewData, String> {
+  late final String challengeId;
 
   @override
-  Future<ChallengeDetailViewData> build() => _load();
+  Future<ChallengeDetailViewData> build(String arg) {
+    challengeId = arg;
+    return _load();
+  }
 
   Future<ChallengeDetailViewData> _load() async {
     final authState = await ref.read(authServiceProvider).authStateChanges.first;
@@ -144,9 +145,7 @@ class ChallengeDetailController extends AsyncNotifier<ChallengeDetailViewData> {
       final dispatcher = ref.read(pulseEventDispatcherProvider);
       unawaited(_dispatchEvents(dispatcher, result.events));
     } on TrustedBackendException catch (error) {
-      if (error.code == TrustedBackendErrorCode.unavailable) {
-        state = AsyncError(error, StackTrace.current);
-      } else if (error.code == TrustedBackendErrorCode.alreadyCompleted) {
+      if (error.code == TrustedBackendErrorCode.alreadyCompleted) {
         state = AsyncData(current.copyWith(phase: ChallengeDetailPhase.alreadyCompleted));
       } else {
         state = AsyncError(error, StackTrace.current);
