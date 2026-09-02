@@ -6,6 +6,7 @@ final themeControllerProvider = NotifierProvider<ThemeController, ThemeMode>(The
 
 class ThemeController extends Notifier<ThemeMode> {
   static const _key = 'pulse.theme_mode';
+  static final _prefs = SharedPreferencesAsync();
 
   @override
   ThemeMode build() {
@@ -14,23 +15,14 @@ class ThemeController extends Notifier<ThemeMode> {
   }
 
   Future<void> _restore() async {
-    final prefs = await SharedPreferencesAsync().getString(_key);
-    if (prefs == null) return;
-    final mode = switch (prefs) {
-      'light' => ThemeMode.light,
-      'dark' => ThemeMode.dark,
-      _ => ThemeMode.system,
-    };
-    state = mode;
+    final value = await _prefs.getString(_key);
+    if (value == null) return;
+    state = switch (value) { 'light' => ThemeMode.light, 'dark' => ThemeMode.dark, _ => ThemeMode.system };
   }
 
   Future<void> setMode(ThemeMode mode) async {
     state = mode;
-    await SharedPreferencesAsync().setString(_key, switch (mode) {
-      ThemeMode.light => 'light',
-      ThemeMode.dark => 'dark',
-      ThemeMode.system => 'system',
-    });
+    await _prefs.setString(_key, switch (mode) { ThemeMode.light => 'light', ThemeMode.dark => 'dark', ThemeMode.system => 'system' });
   }
 
   Future<void> toggle() async => setMode(state == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark);
