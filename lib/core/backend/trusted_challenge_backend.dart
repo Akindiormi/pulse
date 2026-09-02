@@ -23,6 +23,8 @@ class FirebaseTrustedCallableClient implements TrustedCallableClient {
       final value = result.data;
       if (value is! Map) throw const TrustedBackendException(TrustedBackendErrorCode.internal, 'The backend returned an invalid response.');
       return Map<String, dynamic>.from(value);
+    } on TrustedBackendException {
+      rethrow;
     } on FirebaseFunctionsException catch (error) {
       throw FirebaseTrustedCallableClient.mapError(error);
     } catch (_) {
