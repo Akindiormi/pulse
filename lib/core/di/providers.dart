@@ -10,6 +10,7 @@ import '../auth/auth_service.dart';
 import '../backend/trusted_challenge_backend.dart';
 import '../database/firestore_repositories.dart';
 import '../database/repositories.dart';
+import '../motion/pulse_event_dispatcher.dart';
 import '../notifications/firebase_notification_service.dart';
 import '../notifications/notification_service.dart';
 import '../telemetry/analytics_service.dart';
@@ -41,5 +42,6 @@ final challengeServiceProvider = Provider<ChallengeService>((ref) => ChallengeSe
 final completeChallengeProvider = Provider<CompleteChallenge>((ref) => CompleteChallenge(backend: ref.watch(trustedChallengeBackendProvider)));
 
 final analyticsServiceProvider = Provider<AnalyticsService>((ref) => FirebaseAnalyticsService(ref.watch(analyticsProvider)));
+final pulseEventDispatcherProvider = Provider<PulseEventDispatcher>((ref) => PulseEventDispatcher(ref.watch(analyticsServiceProvider)));
 final crashReporterProvider = Provider<CrashReporter>((ref) => FirebaseCrashReporter(ref.watch(crashlyticsProvider)));
 final notificationServiceProvider = Provider<NotificationService>((ref) => FirebaseNotificationService(ref.watch(messagingProvider)));
