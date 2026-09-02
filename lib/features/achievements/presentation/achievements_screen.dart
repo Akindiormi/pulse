@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/design/pulse_tokens.dart';
+import '../../../core/motion/pulse_motion_attachment.dart';
 import '../../../core/motion/pulse_motion_policy.dart';
 import '../../../core/motion/pulse_motion_state.dart';
 import '../../../core/widgets/pulse_card.dart';
@@ -43,7 +44,11 @@ class _Collection extends StatelessWidget {
     return RefreshIndicator(
       onRefresh: onRefresh,
       child: ListView(padding: const EdgeInsets.fromLTRB(PulseSpace.lg, PulseSpace.md, PulseSpace.lg, PulseSpace.xxxl), children: [
-        _ProgressHeader(user: data.user, progress: progress, nextLevelXP: nextXp),
+        PulseMotionBoundaryV2(
+          intent: PulseMotionIntent.levelUp,
+          state: PulseProgressMotionState.unchanged,
+          child: _ProgressHeader(user: data.user, progress: progress, nextLevelXP: nextXp),
+        ),
         const SizedBox(height: PulseSpace.xxl),
         _SectionTitle(title: 'your collection', count: data.items.length),
         const SizedBox(height: PulseSpace.md),
@@ -67,9 +72,9 @@ class _ProgressHeader extends StatelessWidget {
   final int nextLevelXP;
   @override
   Widget build(BuildContext context) => PulseCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-    Row(children: [Expanded(child: Text('level ${user.level}', style: AppTypography.title)), Text('${user.xp} XP', style: AppTypography.metadata.copyWith(fontWeight: FontWeight.w700))]),
+    Row(children: [Expanded(child: Text('level ${user.level}', style: AppTypography.title)), Text('${user.xp} XP', style: AppTypography.numberSmall)]),
     const SizedBox(height: PulseSpace.md),
-    Semantics(label: '${user.xp} XP toward level ${user.level + 1}', value: '${(progress * 100).round()} percent', child: ClipRRect(borderRadius: BorderRadius.circular(PulseRadius.small), child: LinearProgressIndicator(value: progress, minHeight: 8))),
+    Semantics(label: '${user.xp} XP toward level ${user.level + 1}', value: '${(progress * 100).round()} percent', child: ClipRRect(borderRadius: BorderRadius.circular(PulseRadius.small), child: TweenAnimationBuilder<double>(tween: Tween(begin: 0, end: progress), duration: PulseMotionPolicy.transitionDuration(context), curve: PulseMotionPolicy.curve(context), builder: (_, value, __) => LinearProgressIndicator(value: value, minHeight: 8)))),
     const SizedBox(height: PulseSpace.sm),
     Text('$nextLevelXP XP target for next level', style: AppTypography.metadata),
     const SizedBox(height: PulseSpace.lg),
@@ -88,7 +93,7 @@ class _Metric extends StatelessWidget {
   final String label, value;
   final Object state;
   @override
-  Widget build(BuildContext context) => Semantics(label: '$label: $value', child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(value, style: AppTypography.body.copyWith(fontWeight: FontWeight.w700)), const SizedBox(height: 2), Text(label, style: AppTypography.metadata)]));
+  Widget build(BuildContext context) => Semantics(label: '$label: $value', child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(value, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppTypography.numberSmall), const SizedBox(height: 2), Text(label, style: AppTypography.metadata)]));
 }
 
 class _SectionTitle extends StatelessWidget {
@@ -117,13 +122,17 @@ class _AchievementTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final motion = newlyUnlocked ? PulseAchievementMotionState.newlyUnlocked : item.unlocked ? PulseAchievementMotionState.unlocked : PulseAchievementMotionState.locked;
-    return Semantics(button: true, label: '${item.definition.name}, ${item.unlocked ? 'unlocked' : 'locked'}: ${item.definition.description}', child: InkWell(
-      borderRadius: BorderRadius.circular(PulseRadius.large),
-      onTap: () => showModalBottomSheet<void>(context: context, showDragHandle: true, builder: (_) => _AchievementDetail(item: item, newlyUnlocked: newlyUnlocked)),
-      child: AnimatedContainer(duration: PulseMotionPolicy.duration(context, const Duration(milliseconds: 220)), padding: const EdgeInsets.all(PulseSpace.lg), decoration: BoxDecoration(color: item.unlocked ? PulseColors.accentTint : Theme.of(context).colorScheme.surfaceContainerHighest, borderRadius: BorderRadius.circular(PulseRadius.large)), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        _BadgeIcon(unlocked: item.unlocked, motion: motion), const Spacer(), Text(item.definition.name, maxLines: 2, overflow: TextOverflow.ellipsis, style: AppTypography.body.copyWith(fontWeight: FontWeight.w700)), const SizedBox(height: PulseSpace.xs), Text(item.unlocked ? 'unlocked' : 'locked', style: AppTypography.metadata),
-        if (!item.unlocked && item.progress != null) ...[const SizedBox(height: PulseSpace.sm), LinearProgressIndicator(value: item.progress!.current / item.progress!.target, minHeight: 4), const SizedBox(height: 4), Text('${item.progress!.current} / ${item.progress!.target}', style: AppTypography.metadata)],
-      ])),
+    return Semantics(button: true, label: '${item.definition.name}, ${item.unlocked ? 'unlocked' : 'locked'}: ${item.definition.description}', child: PulseMotionBoundaryV2(
+      intent: newlyUnlocked ? PulseMotionIntent.achievementUnlock : PulseMotionIntent.achievementReveal,
+      state: motion,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(PulseRadius.large),
+        onTap: () => showModalBottomSheet<void>(context: context, showDragHandle: true, builder: (_) => _AchievementDetail(item: item, newlyUnlocked: newlyUnlocked)),
+        child: AnimatedContainer(duration: PulseMotionPolicy.duration(context, const Duration(milliseconds: 220)), padding: const EdgeInsets.all(PulseSpace.lg), decoration: BoxDecoration(color: item.unlocked ? PulseColors.accentTint : Theme.of(context).colorScheme.surfaceContainerHighest, borderRadius: BorderRadius.circular(PulseRadius.large)), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          _BadgeIcon(unlocked: item.unlocked, motion: motion), const Spacer(), Text(item.definition.name, maxLines: 2, overflow: TextOverflow.ellipsis, style: AppTypography.body.copyWith(fontWeight: FontWeight.w700)), const SizedBox(height: PulseSpace.xs), Text(item.unlocked ? 'unlocked' : 'locked', style: AppTypography.metadata),
+          if (!item.unlocked && item.progress != null) ...[const SizedBox(height: PulseSpace.sm), LinearProgressIndicator(value: item.progress!.current / item.progress!.target, minHeight: 4), const SizedBox(height: 4), Text('${item.progress!.current} / ${item.progress!.target}', style: AppTypography.metadata)],
+        ])),
+      ),
     ));
   }
 }
@@ -133,7 +142,12 @@ class _BadgeIcon extends StatelessWidget {
   final bool unlocked;
   final PulseAchievementMotionState motion;
   @override
-  Widget build(BuildContext context) => Semantics(label: motion.name, child: Container(width: 54, height: 54, decoration: BoxDecoration(shape: BoxShape.circle, color: unlocked ? Theme.of(context).colorScheme.surface : Theme.of(context).colorScheme.surface.withValues(alpha: .55)), child: Icon(unlocked ? Icons.workspace_premium_rounded : Icons.lock_outline_rounded, color: unlocked ? PulseColors.accent : Theme.of(context).colorScheme.onSurfaceVariant, size: 28)));
+  Widget build(BuildContext context) => PulseMotionAttachment(
+        intent: PulseMotionIntent.achievementReveal,
+        state: motion,
+        child: Semantics(label: unlocked ? 'unlocked achievement badge' : 'locked achievement badge', image: true, child: Container(width: 54, height: 54, decoration: BoxDecoration(shape: BoxShape.circle, color: unlocked ? Theme.of(context).colorScheme.surface : Theme.of(context).colorScheme.surface.withValues(alpha: .55)), child: Icon(unlocked ? Icons.workspace_premium_rounded : Icons.lock_outline_rounded, color: unlocked ? PulseColors.accent : Theme.of(context).colorScheme.onSurfaceVariant, size: 28))),
+        excludeFromSemantics: false,
+      );
 }
 
 class _AchievementDetail extends StatelessWidget {
