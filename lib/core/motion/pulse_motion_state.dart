@@ -23,6 +23,16 @@ enum PulseProfileMotionState {
   error,
 }
 
+enum PulseSettingsMotionState {
+  entering,
+  idle,
+  pressed,
+  changing,
+  saving,
+  saved,
+  error,
+}
+
 enum PulseProgressMotionState {
   initial,
   unchanged,
@@ -80,10 +90,5 @@ class PulseMotionBoundary extends StatelessWidget {
   final Widget? overlay;
 
   @override
-  Widget build(BuildContext context) => Stack(
-        children: [
-          child,
-          if (overlay != null) Positioned.fill(child: IgnorePointer(child: overlay!)),
-        ],
-      );
+  Widget build(BuildContext context) => Stack(children: [child, if (overlay != null) Positioned.fill(child: IgnorePointer(child: overlay!))]);
 }
