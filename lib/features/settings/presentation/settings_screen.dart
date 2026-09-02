@@ -72,21 +72,34 @@ class _Content extends ConsumerWidget {
 
   Future<void> _showThemePicker(BuildContext context, WidgetRef ref) async {
     final current = data.themeMode;
+    final messenger = ScaffoldMessenger.of(context);
     final selected = await showModalBottomSheet<ThemeMode>(context: context, showDragHandle: true, builder: (context) => SafeArea(child: Column(mainAxisSize: MainAxisSize.min, children: ThemeMode.values.map((mode) => RadioListTile<ThemeMode>(value: mode, groupValue: current, title: Text(_themeLabel(mode)), onChanged: (value) => Navigator.pop(context, value))).toList())));
-    if (selected != null && selected != current) await _run(context, () => ref.read(settingsControllerProvider.notifier).setTheme(selected));
+    if (selected != null && selected != current) await _runWithMessenger(messenger, () => ref.read(settingsControllerProvider.notifier).setTheme(selected));
   }
 
   Future<void> _confirmSignOut(BuildContext context, SettingsController controller) async {
+    final messenger = ScaffoldMessenger.of(context);
     final ok = await showDialog<bool>(context: context, builder: (context) => AlertDialog(title: const Text('sign out?'), content: const Text('you’ll need to sign in again to continue your Pulse journey.'), actions: [TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('cancel')), FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('sign out'))]));
-    if (ok == true) await _run(context, controller.signOut);
+    if (ok == true) await _runWithMessenger(messenger, controller.signOut);
   }
 
   Future<void> _confirmDelete(BuildContext context, SettingsController controller) async {
+    final messenger = ScaffoldMessenger.of(context);
     final ok = await showDialog<bool>(context: context, builder: (context) => AlertDialog(title: const Text('delete account?'), content: const Text('this is permanent. Pulse will ask the current authentication service to delete your account. profile data will be removed through the trusted deletion workflow.'), actions: [TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('cancel')), FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('delete account'))]));
-    if (ok == true) await _run(context, controller.deleteAccount);
+    if (ok == true) await _runWithMessenger(messenger, controller.deleteAccount);
   }
 
-  Future<void> _run(BuildContext context, Future<void> Function() action) async { try { await action(); } catch (error) { if (!context.mounted) return; final message = error is SettingsException ? error.message : 'we couldn’t save that setting. please try again.'; ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message))); } }
+  Future<void> _run(BuildContext context, Future<void> Function() action) => _runWithMessenger(ScaffoldMessenger.of(context), action);
+
+  Future<void> _runWithMessenger(ScaffoldMessengerState messenger, Future<void> Function() action) async {
+    try {
+      await action();
+    } catch (error) {
+      if (!messenger.mounted) return;
+      final message = error is SettingsException ? error.message : 'we couldn’t save that setting. please try again.';
+      messenger.showSnackBar(SnackBar(content: Text(message)));
+    }
+  }
 }
 
 class _Section extends StatelessWidget {

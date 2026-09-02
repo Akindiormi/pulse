@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import '../../lib/core/design/pulse_tokens.dart';
-import '../../lib/core/theme/app_theme.dart';
-import '../../lib/core/motion/pulse_motion_state.dart';
-import '../../lib/core/widgets/pulse_achievement_badge.dart';
-import '../../lib/core/widgets/pulse_button.dart';
-import '../../lib/core/widgets/pulse_progress.dart';
-import '../../lib/core/widgets/pulse_states.dart';
-import '../../lib/core/widgets/pulse_streak.dart';
-import '../../lib/features/shell/presentation/pulse_shell.dart';
-import '../../lib/models/achievement_model.dart';
-import '../../lib/models/challenge_model.dart';
+import 'package:pulse/core/design/pulse_tokens.dart';
+import 'package:pulse/core/theme/app_theme.dart';
+import 'package:pulse/core/motion/pulse_motion_state.dart';
+import 'package:pulse/core/widgets/pulse_achievement_badge.dart';
+import 'package:pulse/core/widgets/pulse_button.dart';
+import 'package:pulse/core/widgets/pulse_progress.dart';
+import 'package:pulse/core/widgets/pulse_states.dart';
+import 'package:pulse/core/widgets/pulse_streak.dart';
+import 'package:pulse/features/shell/presentation/pulse_shell.dart';
+import 'package:pulse/models/achievement_model.dart';
+import 'package:pulse/models/challenge_model.dart';
 
 void main() {
   test('Pulse theme keeps the product color contract', () {
