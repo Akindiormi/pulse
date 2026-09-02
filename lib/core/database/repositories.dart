@@ -1,3 +1,4 @@
+import '../../models/activity_model.dart';
 import '../../models/challenge_model.dart';
 import '../../models/user_model.dart';
 
