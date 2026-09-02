@@ -16,12 +16,14 @@ class FirestoreUserRepository implements UserRepository {
     final ref = _ref(uid);
     await firestore.runTransaction((tx) async {
       final snapshot = await tx.get(ref);
-      final profile = <String, dynamic>{'displayName': displayName, 'photoUrl': photoUrl};
       if (snapshot.exists) {
+        final profile = <String, dynamic>{'displayName': displayName};
+        if (photoUrl != null) profile['photoUrl'] = photoUrl;
         tx.update(ref, profile);
       } else {
         tx.set(ref, {
-          ...profile,
+          'displayName': displayName,
+          'photoUrl': photoUrl,
           'username': displayName,
           'createdAt': FieldValue.serverTimestamp(),
           'totalActivities': 0,
