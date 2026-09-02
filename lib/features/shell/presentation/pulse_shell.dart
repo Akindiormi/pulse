@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../design/pulse_tokens.dart';
-import '../motion/pulse_motion_policy.dart';
+
+import '../../../core/design/pulse_tokens.dart';
+import '../../../core/motion/pulse_motion_policy.dart';
+import '../../../core/theme/app_theme.dart';
 
 class PulseShell extends StatelessWidget {
   const PulseShell({super.key, required this.child, required this.currentPath});
