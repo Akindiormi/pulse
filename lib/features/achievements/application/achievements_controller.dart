@@ -1,7 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/auth/auth_service.dart';
-import '../../../core/database/repositories.dart';
 import '../../../core/di/providers.dart';
 import '../../../core/motion/pulse_events.dart';
 import '../../../models/achievement_model.dart';
@@ -42,7 +40,7 @@ class AchievementsController extends AsyncNotifier<AchievementsViewData> {
 
   Future<AchievementsViewData> _load({Set<String> newlyUnlockedIds = const <String>{}}) async {
     final auth = await ref.read(authServiceProvider).authStateChanges.first;
-    final uid = auth?.uid;
+    final uid = auth.uid;
     if (uid == null) throw StateError('not authenticated');
 
     final user = await ref.read(userRepositoryProvider).getUserModel(uid);
