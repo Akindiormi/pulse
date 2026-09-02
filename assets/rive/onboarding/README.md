@@ -1,0 +1,1 @@
+Reserved for supplied Pulse onboarding `.riv` artwork.
