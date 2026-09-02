@@ -1,9 +1,7 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-
 import 'package:pulse/core/backend/trusted_challenge_backend.dart';
 import 'package:pulse/core/motion/pulse_motion_state.dart';
 import 'package:pulse/core/theme/app_theme.dart';
@@ -12,11 +10,9 @@ import 'package:pulse/features/challenges/application/challenge_detail_controlle
 import 'package:pulse/features/challenges/application/complete_challenge.dart';
 import 'package:pulse/features/challenges/presentation/challenge_detail_screen.dart';
 import 'package:pulse/models/challenge_model.dart';
-
 Challenge _challenge() => const Challenge(id: 'challenge-1', title: 'take a ten minute walk', description: 'step outside and take a calm ten minute walk.', category: ChallengeCategory.health, difficulty: Difficulty.easy, xpReward: 25, estimatedMinutes: 10, estimatedCost: 0, active: true);
 ChallengeDetailViewData _data({ChallengeDetailPhase phase = ChallengeDetailPhase.ready, CompletionResult? completion}) => ChallengeDetailViewData(challenge: _challenge(), phase: phase, completion: completion);
 Widget _app(AsyncValue<ChallengeDetailViewData> value) => ProviderScope(overrides: [challengeDetailControllerProvider.overrideWith(() => _FakeChallengeDetailController(value))], child: MaterialApp(theme: buildAppTheme(Brightness.light), home: const ChallengeDetailScreen(challengeId: 'challenge-1')));
-
 void main() {
   testWidgets('loading renders polished skeletons', (tester) async { await tester.pumpWidget(_app(const AsyncLoading())); expect(find.byType(PulseCardLoading), findsWidgets); });
   testWidgets('loaded challenge presents supplied model data', (tester) async { await tester.pumpWidget(_app(AsyncData(_data()))); await tester.pump(); expect(find.text(_challenge().title), findsOneWidget); expect(find.text(_challenge().description), findsOneWidget); expect(find.text('Health'), findsOneWidget); expect(find.text('Easy'), findsOneWidget); expect(find.text('10 min'), findsOneWidget); expect(find.text('25 XP'), findsOneWidget); expect(find.text('start challenge'), findsOneWidget); });
@@ -30,28 +26,13 @@ void main() {
   test('CompleteChallenge does not invent rewards for an already completed result', () async { final backend = FakeTrustedChallengeBackend(const CompleteChallengeResult(activityCompleted: false, alreadyCompleted: true, xpAwarded: 0, previousXP: 165, newXP: 165, previousStreak: 4, newStreak: 4, longestStreak: 4, previousLevel: 2, newLevel: 2, leveledUp: false, newAchievements: [], challengeId: 'challenge-1')); final result = await CompleteChallenge(backend: backend).call(); expect(result.alreadyCompleted, true); expect(result.xpAwarded, 0); expect(result.newAchievements, isEmpty); expect(result.events, isEmpty); });
   test('Phase 3C motion vocabulary exposes the required attachment states', () { expect(PulseMotionState.values, containsAll([PulseMotionState.entering, PulseMotionState.idle, PulseMotionState.pressed, PulseMotionState.starting, PulseMotionState.completing, PulseMotionState.completed, PulseMotionState.alreadyCompleted, PulseMotionState.error, PulseMotionState.unavailable])); expect(PulseCompletionMotionState.values, containsAll([PulseCompletionMotionState.pending, PulseCompletionMotionState.success, PulseCompletionMotionState.alreadyCompleted, PulseCompletionMotionState.error])); expect(PulseProgressMotionState.values, containsAll([PulseProgressMotionState.unchanged, PulseProgressMotionState.xpGained, PulseProgressMotionState.levelUp])); expect(PulseStreakMotionState.values, containsAll([PulseStreakMotionState.maintained, PulseStreakMotionState.increased, PulseStreakMotionState.milestone])); expect(PulseAchievementMotionState.values, contains(PulseAchievementMotionState.none)); });
 }
-
 class _FakeChallengeDetailController extends ChallengeDetailController {
   _FakeChallengeDetailController(this.value);
   final AsyncValue<ChallengeDetailViewData> value;
-
-  @override
-  Future<ChallengeDetailViewData> build(String arg) {
-    if (value is AsyncLoading<ChallengeDetailViewData>) return Completer<ChallengeDetailViewData>().future;
-    if (value is AsyncError<ChallengeDetailViewData>) {
-      final error = value.error;
-      final stackTrace = value.stackTrace;
-      return Future<ChallengeDetailViewData>.error(error!, stackTrace!);
-    }
-    return Future.value(value.requireValue);
-  }
+  @override Future<ChallengeDetailViewData> build(String arg) { if (value is AsyncLoading<ChallengeDetailViewData>) return Completer<ChallengeDetailViewData>().future; if (value is AsyncError<ChallengeDetailViewData>) return Future<ChallengeDetailViewData>.error(value.error!, value.stackTrace!); return Future.value(value.requireValue); }
 }
-
 class FakeTrustedChallengeBackend implements TrustedChallengeBackend {
-  FakeTrustedChallengeBackend(this.result);
-  final CompleteChallengeResult result;
-  int completeCalls = 0;
-  String? lastIdempotencyKey;
+  FakeTrustedChallengeBackend(this.result); final CompleteChallengeResult result; int completeCalls = 0; String? lastIdempotencyKey;
   @override Future<CompleteChallengeResult> completeChallenge({String? idempotencyKey}) async { completeCalls += 1; lastIdempotencyKey = idempotencyKey; return result; }
   @override Future<DailyChallengeResult> getOrAssignDailyChallenge() => throw UnimplementedError();
 }
