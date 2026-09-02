@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../lib/features/profile/application/profile_controller.dart';
-import '../../../lib/features/profile/presentation/profile_screen.dart';
-import '../../../lib/models/achievement_model.dart';
-import '../../../lib/models/user_model.dart';
+import 'package:pulse/features/profile/application/profile_controller.dart';
+import 'package:pulse/features/profile/presentation/profile_screen.dart';
+import 'package:pulse/models/achievement_model.dart';
+import 'package:pulse/models/user_model.dart';
 
 void main() {
   final user = UserModel(uid: 'user-1', displayName: 'Akin Pulse', username: 'akinpulse', totalActivities: 12, currentStreak: 5, longestStreak: 9, xp: 640, level: 3, completedCategories: {'focus', 'health', 'learning'}, unlockedAchievements: {'first_step'});
