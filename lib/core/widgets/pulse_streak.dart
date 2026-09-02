@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../design/pulse_tokens.dart';
 import '../motion/pulse_motion_policy.dart';
 import '../motion/pulse_motion_state.dart';
+import '../theme/app_theme.dart';
 
 class PulseStreak extends StatefulWidget {
   const PulseStreak({super.key, required this.current, this.longest = 0, this.state = PulseStreakMotionState.inactive, this.compact = false});
