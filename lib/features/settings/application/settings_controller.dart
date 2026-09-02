@@ -83,17 +83,16 @@ class SettingsController extends AsyncNotifier<SettingsViewData> {
         working = state.valueOrNull ?? working;
         if (working.permissionStatus == NotificationPermissionStatus.denied || working.permissionStatus == NotificationPermissionStatus.unavailable) throw const SettingsException('notifications are not available on this device right now.');
       }
-      if (enabled) {
-        await ref.read(notificationServiceProvider).scheduleDailyChallengeReminder(hour: working.reminderTime.hour, minute: working.reminderTime.minute);
-      } else {
-        await ref.read(notificationServiceProvider).cancelDailyChallengeReminder();
+      if (working.reminderDeliveryAvailable) {
+        if (enabled) {
+          await ref.read(notificationServiceProvider).scheduleDailyChallengeReminder(hour: working.reminderTime.hour, minute: working.reminderTime.minute);
+        } else {
+          await ref.read(notificationServiceProvider).cancelDailyChallengeReminder();
+        }
       }
       await _prefs.setBool(_reminderEnabledKey, enabled);
       await _saveNotificationPreference(enabled: enabled, time: working.reminderTime);
       state = AsyncData(working.copyWith(dailyReminderEnabled: enabled));
-    } on UnsupportedError {
-      state = AsyncData(current.copyWith(dailyReminderEnabled: false, reminderDeliveryAvailable: false));
-      throw const SettingsException('daily reminder delivery is not configured in the current notification backend yet.');
     } catch (error) {
       if (error is SettingsException) rethrow;
       state = AsyncData(current);
