@@ -1,5 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
-import '../auth/auth_service.dart';
+import '../core/auth/auth_service.dart';
 import '../core/backend/trusted_account_backend.dart';
 import '../core/errors/app_error.dart';
 
