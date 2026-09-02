@@ -2,7 +2,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/auth/auth_service.dart';
 import '../../../core/database/repositories.dart';
+import '../../../core/motion/pulse_events.dart';
 import '../../../models/achievement_model.dart';
+import '../../../models/user_model.dart';
 import '../data/achievement_definitions.dart';
 
 final achievementsControllerProvider = AsyncNotifierProvider<AchievementsController, AchievementsViewData>(AchievementsController.new);
@@ -47,18 +49,15 @@ class AchievementsController extends AsyncNotifier<AchievementsViewData> {
 
     final records = await ref.read(achievementRepositoryProvider).getUnlockedRecords(uid);
     final recordById = {for (final record in records) record.achievementId: record};
-    final items = achievementDefinitions
-        .where((definition) => definition.active)
-        .map((definition) {
-          final record = recordById[definition.id];
-          return AchievementItem(
-            definition: definition,
-            unlocked: record != null || user.unlockedAchievements.contains(definition.id),
-            unlockedAt: record?.unlockedAt,
-            progress: _progressFor(definition, user),
-          );
-        })
-        .toList(growable: false);
+    final items = achievementDefinitions.where((definition) => definition.active).map((definition) {
+      final record = recordById[definition.id];
+      return AchievementItem(
+        definition: definition,
+        unlocked: record != null || user.unlockedAchievements.contains(definition.id),
+        unlockedAt: record?.unlockedAt,
+        progress: _progressFor(definition, user),
+      );
+    }).toList(growable: false);
 
     return AchievementsViewData(user: user, items: items, newlyUnlockedIds: newlyUnlockedIds);
   }
@@ -82,10 +81,6 @@ class AchievementsController extends AsyncNotifier<AchievementsViewData> {
   void applyAchievementUnlocked(AchievementUnlockedEvent event) {
     final current = state.valueOrNull;
     if (current == null) return;
-    state = AsyncData(AchievementsViewData(
-      user: current.user,
-      items: current.items,
-      newlyUnlockedIds: {...current.newlyUnlockedIds, event.achievementId},
-    ));
+    state = AsyncData(AchievementsViewData(user: current.user, items: current.items, newlyUnlockedIds: {...current.newlyUnlockedIds, event.achievementId}));
   }
 }
