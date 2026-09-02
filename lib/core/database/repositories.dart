@@ -3,6 +3,26 @@ import '../../models/achievement_model.dart';
 import '../../models/challenge_model.dart';
 import '../../models/user_model.dart';
 
+class UserProfileUpdate {
+  const UserProfileUpdate(this.fields);
+
+  final Map<String, dynamic> fields;
+
+  static const allowedFields = <String>{
+    'displayName',
+    'photoUrl',
+    'timezone',
+    'notificationPreferences',
+  };
+
+  Map<String, dynamic> toFirestore() {
+    if (fields.isEmpty || fields.keys.any((key) => !allowedFields.contains(key))) {
+      throw ArgumentError('Profile updates may only change supported profile fields.');
+    }
+    return Map<String, dynamic>.from(fields);
+  }
+}
+
 abstract interface class UserRepository {
   Future<void> createOrUpdateUser({required String uid, String? displayName, String? photoUrl});
   Future<void> updateProfileFields({required String uid, required Map<String, dynamic> fields});
