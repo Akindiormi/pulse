@@ -1,6 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../../core/telemetry/analytics_service.dart';
 import '../../../core/di/providers.dart';
 
 enum OnboardingMotionState { entering, active, exiting, skipped, completed }
