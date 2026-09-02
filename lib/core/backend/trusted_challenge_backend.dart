@@ -7,6 +7,43 @@ abstract interface class TrustedChallengeBackend {
   Future<CompleteChallengeResult> completeChallenge({String? idempotencyKey});
 }
 
+abstract interface class TrustedCallableClient {
+  Future<Map<String, dynamic>> call(String name, Map<String, dynamic> data);
+}
+
+class FirebaseTrustedCallableClient implements TrustedCallableClient {
+  FirebaseTrustedCallableClient(this._functions);
+
+  final FirebaseFunctions _functions;
+
+  @override
+  Future<Map<String, dynamic>> call(String name, Map<String, dynamic> data) async {
+    try {
+      final result = await _functions.httpsCallable(name).call(data);
+      final value = result.data;
+      if (value is! Map) throw const TrustedBackendException(TrustedBackendErrorCode.internal, 'The backend returned an invalid response.');
+      return Map<String, dynamic>.from(value);
+    } on FirebaseFunctionsException catch (error) {
+      throw FirebaseTrustedCallableClient.mapError(error);
+    }
+  }
+
+  static TrustedBackendException mapError(FirebaseFunctionsException error) {
+    switch (error.code) {
+      case 'unauthenticated': return const TrustedBackendException(TrustedBackendErrorCode.unauthenticated, 'Authentication is required.');
+      case 'permission-denied': return const TrustedBackendException(TrustedBackendErrorCode.permissionDenied, 'You do not have permission to perform this action.');
+      case 'not-found': return const TrustedBackendException(TrustedBackendErrorCode.notFound, 'The requested resource was not found.');
+      case 'failed-precondition': return const TrustedBackendException(TrustedBackendErrorCode.failedPrecondition, 'The request cannot be completed in the current state.');
+      case 'invalid-argument': return const TrustedBackendException(TrustedBackendErrorCode.invalidArgument, 'The request is invalid.');
+      case 'unavailable':
+      case 'deadline-exceeded': return const TrustedBackendException(TrustedBackendErrorCode.unavailable, 'The service is temporarily unavailable.');
+      case 'already-exists': return const TrustedBackendException(TrustedBackendErrorCode.alreadyCompleted, 'This challenge has already been completed.');
+      case 'internal':
+      default: return const TrustedBackendException(TrustedBackendErrorCode.internal, 'Something went wrong on the server.');
+    }
+  }
+}
+
 class DailyChallengeResult {
   const DailyChallengeResult({required this.date, required this.challengeId, required this.completed, required this.assignedAt});
 
@@ -47,33 +84,22 @@ class TrustedBackendException implements Exception {
 enum TrustedBackendErrorCode { unauthenticated, permissionDenied, notFound, alreadyCompleted, failedPrecondition, unavailable, invalidArgument, internal }
 
 class FirebaseCallableChallengeBackend implements TrustedChallengeBackend {
-  FirebaseCallableChallengeBackend(this._functions, this._authService);
+  FirebaseCallableChallengeBackend(this._client, this._authService);
 
-  final FirebaseFunctions _functions;
+  final TrustedCallableClient _client;
   final AuthService _authService;
 
   @override
   Future<DailyChallengeResult> getOrAssignDailyChallenge() async {
     await _requireAuthenticated();
-    return _parseDailyChallenge(await _call('getOrAssignDailyChallenge', const <String, dynamic>{}));
+    return _parseDailyChallenge(await _client.call('getOrAssignDailyChallenge', const <String, dynamic>{}));
   }
 
   @override
   Future<CompleteChallengeResult> completeChallenge({String? idempotencyKey}) async {
     await _requireAuthenticated();
     final data = idempotencyKey == null ? const <String, dynamic>{} : <String, dynamic>{'idempotencyKey': idempotencyKey};
-    return _parseCompletion(await _call('completeChallenge', data));
-  }
-
-  Future<Map<String, dynamic>> _call(String name, Map<String, dynamic> data) async {
-    try {
-      final result = await _functions.httpsCallable(name).call(data);
-      final value = result.data;
-      if (value is! Map) throw const TrustedBackendException(TrustedBackendErrorCode.internal, 'The backend returned an invalid response.');
-      return Map<String, dynamic>.from(value);
-    } on FirebaseFunctionsException catch (error) {
-      throw _mapFirebaseError(error);
-    }
+    return _parseCompletion(await _client.call('completeChallenge', data));
   }
 
   Future<void> _requireAuthenticated() async {
@@ -125,21 +151,6 @@ class FirebaseCallableChallengeBackend implements TrustedChallengeBackend {
       return converted is DateTime ? converted : null;
     } catch (_) {
       return null;
-    }
-  }
-
-  TrustedBackendException _mapFirebaseError(FirebaseFunctionsException error) {
-    switch (error.code) {
-      case 'unauthenticated': return const TrustedBackendException(TrustedBackendErrorCode.unauthenticated, 'Authentication is required.');
-      case 'permission-denied': return const TrustedBackendException(TrustedBackendErrorCode.permissionDenied, 'You do not have permission to perform this action.');
-      case 'not-found': return const TrustedBackendException(TrustedBackendErrorCode.notFound, 'The requested resource was not found.');
-      case 'failed-precondition': return const TrustedBackendException(TrustedBackendErrorCode.failedPrecondition, 'The request cannot be completed in the current state.');
-      case 'invalid-argument': return const TrustedBackendException(TrustedBackendErrorCode.invalidArgument, 'The request is invalid.');
-      case 'unavailable':
-      case 'deadline-exceeded': return const TrustedBackendException(TrustedBackendErrorCode.unavailable, 'The service is temporarily unavailable.');
-      case 'already-exists': return const TrustedBackendException(TrustedBackendErrorCode.alreadyCompleted, 'This challenge has already been completed.');
-      case 'internal':
-      default: return const TrustedBackendException(TrustedBackendErrorCode.internal, 'Something went wrong on the server.');
     }
   }
 }
