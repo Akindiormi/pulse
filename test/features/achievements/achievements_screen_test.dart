@@ -33,7 +33,7 @@ void main() {
     expect(find.text('42'), findsOneWidget);
     expect(find.text('First Step'), findsOneWidget);
     expect(find.text('unlocked'), findsNWidgets(2));
-    await tester.drag(find.byType(ListView).first, const Offset(0, -500));
+    await tester.drag(find.ancestor(of: find.byType(GridView).first, matching: find.byType(Scrollable),).first, const Offset(0, -500));
     await tester.pumpAndSettle();
     expect(find.text('Week Warrior'), findsOneWidget);
   });
@@ -43,7 +43,7 @@ void main() {
     try {
       await tester.pumpWidget(_app(_data(newly: const {'WEEK_WARRIOR'})));
       await tester.pump();
-      await tester.drag(find.byType(ListView).first, const Offset(0, -500));
+      await tester.drag(find.ancestor(of: find.byType(GridView).first, matching: find.byType(Scrollable),).first, const Offset(0, -500));
       await tester.pumpAndSettle();
       expect(find.bySemanticsLabel(RegExp(r'^newlyUnlocked')), findsOneWidget);
       await tester.tap(find.text('Week Warrior'));
@@ -58,7 +58,7 @@ void main() {
   testWidgets('locked detail shows reliable progress', (tester) async {
     await tester.pumpWidget(_app(_data(user: _user(unlocked: const {'FIRST_STEP'}, streak: 3))));
     await tester.pump();
-    await tester.drag(find.byType(ListView).first, const Offset(0, -500));
+    await tester.drag(find.ancestor(of: find.byType(GridView).first, matching: find.byType(Scrollable),).first, const Offset(0, -500));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Week Warrior'));
     await tester.pumpAndSettle();
