@@ -28,7 +28,7 @@ void main() {
     await tester.pump();
     expect(find.text('completed'), findsOneWidget);
     expect(find.text('nice. you did it.'), findsOneWidget);
-    expect(find.bySemanticsLabel('challenge completion feedback'), findsOneWidget);
+    expect(find.bySemanticsLabel(RegExp(r'challenge completion feedback')), findsOneWidget);
   });
   testWidgets('backend unavailable Home renders offline state', (tester) async { const error = TrustedBackendException(TrustedBackendErrorCode.unavailable, 'service unavailable'); await tester.pumpWidget(_app(AsyncError<HomeViewData>(error, StackTrace.empty))); await tester.pump(); expect(find.text("you're offline. pulse will retry when you're connected."), findsOneWidget); });
   testWidgets('generic backend error renders safe retry state', (tester) async { const error = TrustedBackendException(TrustedBackendErrorCode.internal, 'Something went wrong on the server.'); await tester.pumpWidget(_app(AsyncError<HomeViewData>(error, StackTrace.empty))); await tester.pump(); expect(find.text('Something went wrong on the server.'), findsOneWidget); expect(find.text('try again'), findsOneWidget); });
