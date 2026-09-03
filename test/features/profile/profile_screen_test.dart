@@ -13,7 +13,7 @@ void main() {
   testWidgets('renders identity and progression summary', (tester) async {
     final data = ProfileViewData(user: user, achievements: const <AchievementRecord>[]);
     await tester.pumpWidget(_app(FakeProfileController(data)));
-    await tester.pump();
+    await tester.pumpAndSettle();
     expect(find.text('Akin Pulse'), findsOneWidget);
     expect(find.text('@akinpulse'), findsOneWidget);
     expect(find.text('level 3'), findsOneWidget);
@@ -27,7 +27,7 @@ void main() {
   testWidgets('uses initials fallback when avatar is unavailable', (tester) async {
     final data = ProfileViewData(user: user, achievements: const <AchievementRecord>[]);
     await tester.pumpWidget(_app(FakeProfileController(data)));
-    await tester.pump();
+    await tester.pumpAndSettle();
     expect(find.text('AP'), findsOneWidget);
     expect(find.bySemanticsLabel('profile avatar for Akin Pulse'), findsOneWidget);
   });
@@ -36,7 +36,7 @@ void main() {
     final longUser = user.copyWith(displayName: 'A very long Pulse display name that should wrap safely');
     final data = ProfileViewData(user: longUser, achievements: const <AchievementRecord>[]);
     await tester.pumpWidget(_app(FakeProfileController(data)));
-    await tester.pump();
+    await tester.pumpAndSettle();
     expect(find.text(longUser.displayName!), findsOneWidget);
     expect(find.byTooltip('edit profile'), findsOneWidget);
   });
@@ -44,12 +44,12 @@ void main() {
   testWidgets('edit flow calls save once', (tester) async {
     final controller = FakeProfileController(ProfileViewData(user: user, achievements: const <AchievementRecord>[]));
     await tester.pumpWidget(_app(controller));
-    await tester.pump();
+    await tester.pumpAndSettle();
     await tester.tap(find.byTooltip('edit profile'));
     await tester.pumpAndSettle();
     expect(find.text('edit profile'), findsOneWidget);
     await tester.tap(find.text('save'));
-    await tester.pump();
+    await tester.pumpAndSettle();
     expect(controller.saveCalls, 1);
   });
 

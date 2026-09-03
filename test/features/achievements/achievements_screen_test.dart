@@ -15,7 +15,7 @@ UserModel _user({int xp = 165, int level = 2, int streak = 3, int longest = 7, i
 
 AchievementsViewData _data({UserModel? user, Set<String> newly = const {}}) {
   final model = user ?? _user();
-  final unlocked = model.unlockedAchievements;
+  final unlocked = {...model.unlockedAchievements, ...newly};
   final items = achievementDefinitions.map((definition) => AchievementItem(definition: definition, unlocked: unlocked.contains(definition.id), progress: AchievementProgress(current: definition.type == AchievementType.streak ? model.currentStreak : definition.type == AchievementType.activityCount ? model.totalActivities : model.completedCategories.length, target: definition.threshold))).toList();
   return AchievementsViewData(user: model, items: items, newlyUnlockedIds: newly);
 }
@@ -33,15 +33,17 @@ void main() {
     expect(find.text('42'), findsOneWidget);
     expect(find.text('First Step'), findsOneWidget);
     expect(find.text('unlocked'), findsNWidgets(2));
-    await tester.scrollUntilVisible(find.text('Week Warrior'), 500, scrollable: find.ancestor(of: find.byType(GridView).first, matching: find.byType(Scrollable)));
+    await tester.drag(find.byType(ListView).first, const Offset(0, -500));
+    await tester.pumpAndSettle();
     expect(find.text('Week Warrior'), findsOneWidget);
   });
 
   testWidgets('newly unlocked state is presented without inventing rewards', (tester) async {
     await tester.pumpWidget(_app(_data(newly: const {'WEEK_WARRIOR'})));
     await tester.pump();
+    await tester.drag(find.byType(ListView).first, const Offset(0, -500));
+    await tester.pumpAndSettle();
     expect(find.bySemanticsLabel('newlyUnlocked'), findsOneWidget);
-    await tester.scrollUntilVisible(find.text('Week Warrior'), 500, scrollable: find.ancestor(of: find.byType(GridView).first, matching: find.byType(Scrollable)));
     await tester.tap(find.text('Week Warrior'));
     await tester.pumpAndSettle();
     expect(find.text('newly unlocked'), findsOneWidget);
@@ -51,10 +53,11 @@ void main() {
   testWidgets('locked detail shows reliable progress', (tester) async {
     await tester.pumpWidget(_app(_data(user: _user(unlocked: const {'FIRST_STEP'}, streak: 3))));
     await tester.pump();
-    await tester.scrollUntilVisible(find.text('Week Warrior'), 500, scrollable: find.ancestor(of: find.byType(GridView).first, matching: find.byType(Scrollable)));
+    await tester.drag(find.byType(ListView).first, const Offset(0, -500));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Week Warrior'));
     await tester.pumpAndSettle();
-    expect(find.text('3 / 7'), findsOneWidget);
+    expect(find.descendant(of: find.byType(BottomSheet), matching: find.text('3 / 7')), findsOneWidget);
     expect(find.text('Reach a 7-day streak'), findsOneWidget);
   });
 

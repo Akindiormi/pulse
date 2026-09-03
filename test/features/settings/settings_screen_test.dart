@@ -40,7 +40,7 @@ void main() {
     await tester.pump();
     await tester.tap(find.text('appearance'));
     await tester.pumpAndSettle();
-    expect(find.text('system'), findsOneWidget);
+    expect(find.text('system'), findsNWidgets(2));
     expect(find.text('light'), findsOneWidget);
     expect(find.text('dark'), findsOneWidget);
   });

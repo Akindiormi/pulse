@@ -43,7 +43,7 @@ class PulseCompletionSurface extends StatelessWidget {
     return PulseFeedbackSurface(
       semanticLabel: 'challenge completion feedback',
       icon: Icons.check_rounded,
-      title: levelChanged ? 'level up.' : 'nice. you did it.',
+      title: 'nice. you did it.',
       detail: lines.isEmpty ? 'challenge completed' : lines.join('\n'),
       overlay: overlay,
     );

@@ -30,7 +30,10 @@ class PulseInteractiveCard extends StatelessWidget {
         button: true,
         child: PulsePressScale(
           scale: scale,
-          child: InkWell(onTap: onTap, borderRadius: BorderRadius.circular(PulseRadius.large), child: child),
+          child: Material(
+            type: MaterialType.transparency,
+            child: InkWell(onTap: onTap, borderRadius: BorderRadius.circular(PulseRadius.large), child: child),
+          ),
         ),
       );
 }
@@ -59,7 +62,10 @@ class PulseHeroCard extends StatelessWidget {
       button: true,
       child: PulsePressScale(
         scale: .988,
-        child: InkWell(onTap: onTap, borderRadius: BorderRadius.circular(PulseRadius.hero), child: card),
+        child: Material(
+          type: MaterialType.transparency,
+          child: InkWell(onTap: onTap, borderRadius: BorderRadius.circular(PulseRadius.hero), child: card),
+        ),
       ),
     );
   }

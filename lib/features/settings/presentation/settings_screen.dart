@@ -38,7 +38,7 @@ class _Content extends ConsumerWidget {
         state: PulseSettingsMotionState.idle,
         child: _Section(title: 'preferences', children: [
           _SwitchRow(icon: Icons.notifications_none_rounded, title: 'daily challenge reminder', subtitle: _notificationSubtitle(data), value: data.dailyReminderEnabled, enabled: data.reminderDeliveryAvailable || data.permissionStatus != NotificationPermissionStatus.unavailable, onChanged: (value) => _run(() => controller.setDailyReminder(value), ScaffoldMessenger.maybeOf(context))),
-          if (!data.reminderDeliveryAvailable) Padding(padding: const EdgeInsets.fromLTRB(PulseSpace.lg, 0, PulseSpace.lg, PulseSpace.md), child: Text('your reminder preference is kept safely, but delivery is not configured yet. no notification will be sent until the trusted notification backend supports scheduling.', style: AppTypography.metadata)),
+          if (!data.reminderDeliveryAvailable) Padding(padding: const EdgeInsets.fromLTRB(PulseSpace.lg, 0, PulseSpace.lg, PulseSpace.md), child: Text('your reminder preference is kept safely, but reminder delivery is not configured yet. no notification will be sent until the trusted notification backend supports scheduling.', style: AppTypography.metadata)),
           _TapRow(icon: Icons.palette_outlined, title: 'appearance', subtitle: _themeLabel(data.themeMode), onTap: () => _showThemePicker(context, ref)),
           _SwitchRow(icon: Icons.motion_photos_off_outlined, title: 'reduced motion', subtitle: data.reducedMotion ? 'nonessential motion is reduced' : 'full Pulse motion', value: data.reducedMotion, onChanged: (value) => _run(() => controller.setReducedMotion(value), ScaffoldMessenger.maybeOf(context))),
         ]),
