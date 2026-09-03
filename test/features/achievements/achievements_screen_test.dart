@@ -55,11 +55,17 @@ void main() {
     expect(find.text('Reach a 7-day streak'), findsOneWidget);
   });
 
-  test('achievement unlock event maps to presentation state without unlocking locally', () {
-    final controller = _FakeAchievementsController(_data());
+  test('achievement unlock event maps to presentation state without unlocking locally', () async {
+    final container = ProviderContainer(
+      overrides: [achievementsControllerProvider.overrideWith(() => _FakeAchievementsController(_data()))],
+    );
+    addTearDown(container.dispose);
+    await container.read(achievementsControllerProvider.future);
+    final controller = container.read(achievementsControllerProvider.notifier);
     controller.applyAchievementUnlocked(const AchievementUnlockedEvent('WEEK_WARRIOR'));
-    expect(controller.state.valueOrNull!.newlyUnlockedIds, contains('WEEK_WARRIOR'));
-    expect(controller.state.valueOrNull!.user.unlockedAchievements, isNot(contains('WEEK_WARRIOR')));
+    final result = container.read(achievementsControllerProvider).valueOrNull!;
+    expect(result.newlyUnlockedIds, contains('WEEK_WARRIOR'));
+    expect(result.user.unlockedAchievements, isNot(contains('WEEK_WARRIOR')));
   });
 
   test('motion vocabulary contains achievement and progression states', () {
@@ -70,7 +76,7 @@ void main() {
 }
 
 class _FakeAchievementsController extends AchievementsController {
-  _FakeAchievementsController(this.initial) { state = AsyncData(initial); }
+  _FakeAchievementsController(this.initial);
   final AchievementsViewData initial;
   @override Future<AchievementsViewData> build() async => initial;
 }
