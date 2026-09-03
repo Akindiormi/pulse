@@ -27,8 +27,7 @@ void main() {
   testWidgets('uses initials fallback when avatar is unavailable', (tester) async {
     final semantics = tester.ensureSemantics();
     try {
-      final data = ProfileViewData(user: user, achievements: const <AchievementRecord>[]);
-      await tester.pumpWidget(_app(FakeProfileController(data)));
+      await tester.pumpWidget(_app(FakeProfileController(ProfileViewData(user: user, achievements: const <AchievementRecord>[]))));
       await tester.pumpAndSettle();
       expect(find.text('AP'), findsOneWidget);
       expect(find.bySemanticsLabel(RegExp(r'^profile avatar for Akin Pulse')), findsOneWidget);
