@@ -43,7 +43,6 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
           import re
-
           path = Path('settings.gradle.kts')
           text = path.read_text()
           pattern = r'(id\("org\.jetbrains\.kotlin\.android"\)\s+version\s+")[^"]+("\s+apply\s+false)'
@@ -52,7 +51,6 @@ jobs:
               raise SystemExit(f'Expected exactly one Kotlin plugin declaration, found {count}')
           path.write_text(updated)
           PY
-          grep -n 'org.jetbrains.kotlin.android' settings.gradle.kts
 
       - name: Configure generated Kotlin compiler options
         working-directory: android/app
@@ -60,7 +58,6 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
           import re
-
           path = Path('build.gradle.kts')
           text = path.read_text()
           pattern = r'\n\s*kotlinOptions\s*\{\s*jvmTarget\s*=\s*JavaVersion\.VERSION_11\.toString\(\)\s*\}'
@@ -70,7 +67,6 @@ jobs:
           updated += '\n\nkotlin {\n    compilerOptions {\n        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11)\n    }\n}\n'
           path.write_text(updated)
           PY
-          grep -n -A4 -B1 'compilerOptions' build.gradle.kts
 
       - name: Configure Android SDK versions
         working-directory: android/app
@@ -79,7 +75,40 @@ jobs:
           sed -i 's/ndkVersion = flutter.ndkVersion/ndkVersion = "27.0.12077973"/' build.gradle.kts
           sed -i 's/minSdk = flutter.minSdkVersion/minSdk = 23/' build.gradle.kts
           sed -i 's/targetSdk = flutter.targetSdkVersion/targetSdk = 36/' build.gradle.kts
-          grep -E 'compileSdk|ndkVersion|minSdk|targetSdk' build.gradle.kts
+
+      - name: Restore release signing keystore
+        if: ${{ secrets.PULSE_KEYSTORE_BASE64 != '' }}
+        env:
+          PULSE_KEYSTORE_BASE64: ${{ secrets.PULSE_KEYSTORE_BASE64 }}
+        run: |
+          mkdir -p android/app/keystore
+          printf '%s' "$PULSE_KEYSTORE_BASE64" | base64 --decode > android/app/keystore/pulse-release.jks
+          test -s android/app/keystore/pulse-release.jks
+
+      - name: Configure release signing
+        if: ${{ secrets.PULSE_KEYSTORE_BASE64 != '' }}
+        working-directory: android/app
+        env:
+          PULSE_KEYSTORE_PASSWORD: ${{ secrets.PULSE_KEYSTORE_PASSWORD }}
+          PULSE_KEY_ALIAS: ${{ secrets.PULSE_KEY_ALIAS }}
+          PULSE_KEY_PASSWORD: ${{ secrets.PULSE_KEY_PASSWORD }}
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('build.gradle.kts')
+          text = path.read_text()
+          marker = 'android {'
+          signing = '''android {\n    signingConfigs {\n        create("release") {\n            storeFile = file("keystore/pulse-release.jks")\n            storePassword = System.getenv("PULSE_KEYSTORE_PASSWORD")\n            keyAlias = System.getenv("PULSE_KEY_ALIAS")\n            keyPassword = System.getenv("PULSE_KEY_PASSWORD")\n        }\n    }'''
+          if marker not in text:
+              raise SystemExit('android block not found')
+          text = text.replace(marker, signing, 1)
+          release_marker = '    buildTypes {\n        release {\n'
+          replacement = '    buildTypes {\n        release {\n            signingConfig = signingConfigs.getByName("release")\n'
+          if release_marker not in text:
+              raise SystemExit('release buildTypes block not found')
+          text = text.replace(release_marker, replacement, 1)
+          path.write_text(text)
+          PY
 
       - name: Build release APK
         run: flutter build apk --release
@@ -91,7 +120,12 @@ jobs:
         run: |
           test -f build/app/outputs/bundle/release/app-release.aab
           test -s build/app/outputs/bundle/release/app-release.aab
-          ls -lh build/app/outputs/bundle/release/app-release.aab
+
+      - name: Verify release signing
+        if: ${{ secrets.PULSE_KEYSTORE_BASE64 != '' }}
+        run: |
+          apksigner verify --verbose build/app/outputs/flutter-apk/app-release.apk
+          jarsigner -verify -verbose -certs build/app/outputs/bundle/release/app-release.aab >/dev/null
 
       - name: Upload release APK
         uses: actions/upload-artifact@v4
@@ -112,22 +146,17 @@ jobs:
   functions:
     name: Firebase Functions tests
     runs-on: ubuntu-latest
-
     defaults:
       run:
         working-directory: functions
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '22'
-
       - name: Install Functions dependencies
         run: npm install
-
       - name: Run Functions tests
         run: npm test
