@@ -39,6 +39,8 @@ void main() {
   });
 
   testWidgets('newly unlocked state is presented without inventing rewards', (tester) async {
+    final semantics = tester.ensureSemantics();
+    addTearDown(semantics.dispose);
     await tester.pumpWidget(_app(_data(newly: const {'WEEK_WARRIOR'})));
     await tester.pump();
     await tester.drag(find.byType(ListView).first, const Offset(0, -500));
