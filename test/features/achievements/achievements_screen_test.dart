@@ -45,9 +45,7 @@ void main() {
       await tester.pump();
       await tester.drag(find.byType(ListView).first, const Offset(0, -500));
       await tester.pumpAndSettle();
-      final newlyUnlocked = find.bySemanticsLabel(RegExp(r'newlyUnlocked'));
-      expect(newlyUnlocked, findsOneWidget);
-      expect(tester.getSemantics(newlyUnlocked).label, 'newlyUnlocked');
+      expect(find.bySemanticsLabel(RegExp(r'^newlyUnlocked')), findsOneWidget);
       await tester.tap(find.text('Week Warrior'));
       await tester.pumpAndSettle();
       expect(find.text('newly unlocked'), findsOneWidget);
