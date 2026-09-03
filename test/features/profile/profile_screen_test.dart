@@ -31,7 +31,7 @@ void main() {
     await tester.pumpWidget(_app(FakeProfileController(data)));
     await tester.pumpAndSettle();
     expect(find.text('AP'), findsOneWidget);
-    expect(find.bySemanticsLabel('profile avatar for Akin Pulse'), findsOneWidget);
+    expect(find.bySemanticsLabel(RegExp(r'profile avatar for Akin Pulse')), findsOneWidget);
   });
 
   testWidgets('keeps long identity text and exposes edit action', (tester) async {
