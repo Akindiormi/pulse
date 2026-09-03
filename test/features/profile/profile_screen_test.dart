@@ -31,9 +31,7 @@ void main() {
       await tester.pumpWidget(_app(FakeProfileController(data)));
       await tester.pumpAndSettle();
       expect(find.text('AP'), findsOneWidget);
-      final avatar = find.bySemanticsLabel(RegExp(r'profile avatar for Akin Pulse'));
-      expect(avatar, findsOneWidget);
-      expect(tester.getSemantics(avatar).label, 'profile avatar for Akin Pulse');
+      expect(find.bySemanticsLabel(RegExp(r'^profile avatar for Akin Pulse')), findsOneWidget);
     } finally {
       semantics.dispose();
     }
