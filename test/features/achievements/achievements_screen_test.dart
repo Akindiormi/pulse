@@ -33,7 +33,7 @@ void main() {
     expect(find.text('42'), findsOneWidget);
     expect(find.text('First Step'), findsOneWidget);
     expect(find.text('unlocked'), findsNWidgets(2));
-    await tester.scrollUntilVisible(find.text('Week Warrior'), 500, scrollable: find.byType(ListView));
+    await tester.scrollUntilVisible(find.text('Week Warrior'), 500, scrollable: find.descendant(of: find.byType(RefreshIndicator), matching: find.byType(Scrollable)));
     expect(find.text('Week Warrior'), findsOneWidget);
   });
 
@@ -41,7 +41,7 @@ void main() {
     await tester.pumpWidget(_app(_data(newly: const {'WEEK_WARRIOR'})));
     await tester.pump();
     expect(find.bySemanticsLabel('newlyUnlocked'), findsOneWidget);
-    await tester.scrollUntilVisible(find.text('Week Warrior'), 500, scrollable: find.byType(ListView));
+    await tester.scrollUntilVisible(find.text('Week Warrior'), 500, scrollable: find.descendant(of: find.byType(RefreshIndicator), matching: find.byType(Scrollable)));
     await tester.tap(find.text('Week Warrior'));
     await tester.pumpAndSettle();
     expect(find.text('newly unlocked'), findsOneWidget);
@@ -51,7 +51,7 @@ void main() {
   testWidgets('locked detail shows reliable progress', (tester) async {
     await tester.pumpWidget(_app(_data(user: _user(unlocked: const {'FIRST_STEP'}, streak: 3))));
     await tester.pump();
-    await tester.scrollUntilVisible(find.text('Week Warrior'), 500, scrollable: find.byType(ListView));
+    await tester.scrollUntilVisible(find.text('Week Warrior'), 500, scrollable: find.descendant(of: find.byType(RefreshIndicator), matching: find.byType(Scrollable)));
     await tester.tap(find.text('Week Warrior'));
     await tester.pumpAndSettle();
     expect(find.text('3 / 7'), findsOneWidget);
