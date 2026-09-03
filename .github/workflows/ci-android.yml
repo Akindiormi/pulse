@@ -54,6 +54,24 @@ jobs:
           PY
           grep -n 'org.jetbrains.kotlin.android' settings.gradle.kts
 
+      - name: Configure generated Kotlin compiler options
+        working-directory: android/app
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          path = Path('build.gradle.kts')
+          text = path.read_text()
+          pattern = r'\n\s*kotlinOptions\s*\{\s*jvmTarget\s*=\s*JavaVersion\.VERSION_11\.toString\(\)\s*\}'
+          updated, count = re.subn(pattern, '', text)
+          if count != 1:
+              raise SystemExit(f'Expected exactly one legacy kotlinOptions.jvmTarget block, found {count}')
+          updated += '\n\nkotlin {\n    compilerOptions {\n        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11)\n    }\n}\n'
+          path.write_text(updated)
+          PY
+          grep -n -A4 -B1 'compilerOptions' build.gradle.kts
+
       - name: Configure Android SDK versions
         working-directory: android/app
         run: |
