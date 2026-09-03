@@ -37,6 +37,23 @@ jobs:
       - name: Generate Android project scaffolding
         run: flutter create . --platforms=android --project-name pulse --org com.pulse
 
+      - name: Configure Android build toolchain
+        working-directory: android
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          path = Path('settings.gradle.kts')
+          text = path.read_text()
+          pattern = r'(id\("org\.jetbrains\.kotlin\.android"\)\s+version\s+")[^"]+("\s+apply\s+false)'
+          updated, count = re.subn(pattern, r'\g<1>2.3.0\g<2>', text)
+          if count != 1:
+              raise SystemExit(f'Expected exactly one Kotlin plugin declaration, found {count}')
+          path.write_text(updated)
+          PY
+          grep -n 'org.jetbrains.kotlin.android' settings.gradle.kts
+
       - name: Configure Android SDK versions
         working-directory: android/app
         run: |
