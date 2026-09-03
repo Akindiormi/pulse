@@ -26,12 +26,17 @@ void main() {
 
   testWidgets('uses initials fallback when avatar is unavailable', (tester) async {
     final semantics = tester.ensureSemantics();
-    addTearDown(semantics.dispose);
-    final data = ProfileViewData(user: user, achievements: const <AchievementRecord>[]);
-    await tester.pumpWidget(_app(FakeProfileController(data)));
-    await tester.pumpAndSettle();
-    expect(find.text('AP'), findsOneWidget);
-    expect(find.bySemanticsLabel(RegExp(r'profile avatar for Akin Pulse')), findsOneWidget);
+    try {
+      final data = ProfileViewData(user: user, achievements: const <AchievementRecord>[]);
+      await tester.pumpWidget(_app(FakeProfileController(data)));
+      await tester.pumpAndSettle();
+      expect(find.text('AP'), findsOneWidget);
+      final avatar = find.bySemanticsLabel(RegExp(r'profile avatar for Akin Pulse'));
+      expect(avatar, findsOneWidget);
+      expect(tester.getSemantics(avatar).label, 'profile avatar for Akin Pulse');
+    } finally {
+      semantics.dispose();
+    }
   });
 
   testWidgets('keeps long identity text and exposes edit action', (tester) async {
