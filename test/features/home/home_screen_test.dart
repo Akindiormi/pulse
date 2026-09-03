@@ -7,6 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:pulse/core/backend/trusted_challenge_backend.dart';
 import 'package:pulse/core/theme/app_theme.dart';
 import 'package:pulse/core/motion/pulse_motion_state.dart';
+import 'package:pulse/core/widgets/pulse_feedback.dart';
 import 'package:pulse/core/widgets/pulse_states.dart';
 import 'package:pulse/features/home/application/home_controller.dart';
 import 'package:pulse/features/home/presentation/home_screen.dart';
@@ -23,12 +24,17 @@ void main() {
   testWidgets('loading Home renders loading foundations', (tester) async { await tester.pumpWidget(_app(const AsyncLoading())); expect(find.byType(PulseCardLoading), findsWidgets); });
   testWidgets('completed Home disables the challenge action and shows completion feedback', (tester) async {
     final semantics = tester.ensureSemantics();
-    addTearDown(semantics.dispose);
-    await tester.pumpWidget(_app(AsyncData(_data(completed: true))));
-    await tester.pump();
-    expect(find.text('completed'), findsOneWidget);
-    expect(find.text('nice. you did it.'), findsOneWidget);
-    expect(find.bySemanticsLabel(RegExp(r'challenge completion feedback')), findsOneWidget);
+    try {
+      await tester.pumpWidget(_app(AsyncData(_data(completed: true))));
+      await tester.pump();
+      expect(find.text('completed'), findsOneWidget);
+      expect(find.text('nice. you did it.'), findsOneWidget);
+      final feedback = find.byType(PulseCompletionSurface);
+      expect(feedback, findsOneWidget);
+      expect(tester.getSemantics(feedback).label, 'challenge completion feedback');
+    } finally {
+      semantics.dispose();
+    }
   });
   testWidgets('backend unavailable Home renders offline state', (tester) async { const error = TrustedBackendException(TrustedBackendErrorCode.unavailable, 'service unavailable'); await tester.pumpWidget(_app(AsyncError<HomeViewData>(error, StackTrace.empty))); await tester.pump(); expect(find.text("you're offline. pulse will retry when you're connected."), findsOneWidget); });
   testWidgets('generic backend error renders safe retry state', (tester) async { const error = TrustedBackendException(TrustedBackendErrorCode.internal, 'Something went wrong on the server.'); await tester.pumpWidget(_app(AsyncError<HomeViewData>(error, StackTrace.empty))); await tester.pump(); expect(find.text('Something went wrong on the server.'), findsOneWidget); expect(find.text('try again'), findsOneWidget); });
