@@ -25,6 +25,8 @@ void main() {
   });
 
   testWidgets('uses initials fallback when avatar is unavailable', (tester) async {
+    final semantics = tester.ensureSemantics();
+    addTearDown(semantics.dispose);
     final data = ProfileViewData(user: user, achievements: const <AchievementRecord>[]);
     await tester.pumpWidget(_app(FakeProfileController(data)));
     await tester.pumpAndSettle();
@@ -49,8 +51,9 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('edit profile'), findsOneWidget);
     await tester.tap(find.text('save'));
-    await tester.pumpAndSettle();
     expect(controller.saveCalls, 1);
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pumpAndSettle();
   });
 
   test('profile view data exposes authoritative progression and achievement state', () {
