@@ -32,7 +32,7 @@ void main() {
     expect(find.text('7 days'), findsOneWidget);
     expect(find.text('42'), findsOneWidget);
     expect(find.text('First Step'), findsOneWidget);
-    expect(find.text('unlocked'), findsOneWidget);
+    expect(find.text('unlocked'), findsNWidgets(2));
     expect(find.text('Week Warrior'), findsOneWidget);
   });
 
@@ -49,6 +49,7 @@ void main() {
   testWidgets('locked detail shows reliable progress', (tester) async {
     await tester.pumpWidget(_app(_data(user: _user(unlocked: const {'FIRST_STEP'}, streak: 3))));
     await tester.pump();
+    await tester.ensureVisible(find.text('Week Warrior'));
     await tester.tap(find.text('Week Warrior'));
     await tester.pumpAndSettle();
     expect(find.text('3 / 7'), findsOneWidget);
