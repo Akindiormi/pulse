@@ -40,16 +40,21 @@ void main() {
 
   testWidgets('newly unlocked state is presented without inventing rewards', (tester) async {
     final semantics = tester.ensureSemantics();
-    addTearDown(semantics.dispose);
-    await tester.pumpWidget(_app(_data(newly: const {'WEEK_WARRIOR'})));
-    await tester.pump();
-    await tester.drag(find.byType(ListView).first, const Offset(0, -500));
-    await tester.pumpAndSettle();
-    expect(find.bySemanticsLabel(RegExp(r'newlyUnlocked')), findsOneWidget);
-    await tester.tap(find.text('Week Warrior'));
-    await tester.pumpAndSettle();
-    expect(find.text('newly unlocked'), findsOneWidget);
-    expect(find.text('+100 XP'), findsOneWidget);
+    try {
+      await tester.pumpWidget(_app(_data(newly: const {'WEEK_WARRIOR'})));
+      await tester.pump();
+      await tester.drag(find.byType(ListView).first, const Offset(0, -500));
+      await tester.pumpAndSettle();
+      final newlyUnlocked = find.bySemanticsLabel(RegExp(r'newlyUnlocked'));
+      expect(newlyUnlocked, findsOneWidget);
+      expect(tester.getSemantics(newlyUnlocked).label, 'newlyUnlocked');
+      await tester.tap(find.text('Week Warrior'));
+      await tester.pumpAndSettle();
+      expect(find.text('newly unlocked'), findsOneWidget);
+      expect(find.text('+100 XP'), findsOneWidget);
+    } finally {
+      semantics.dispose();
+    }
   });
 
   testWidgets('locked detail shows reliable progress', (tester) async {
