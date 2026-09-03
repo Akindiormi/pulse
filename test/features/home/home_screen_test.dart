@@ -7,7 +7,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:pulse/core/backend/trusted_challenge_backend.dart';
 import 'package:pulse/core/theme/app_theme.dart';
 import 'package:pulse/core/motion/pulse_motion_state.dart';
-import 'package:pulse/core/widgets/pulse_feedback.dart';
 import 'package:pulse/core/widgets/pulse_states.dart';
 import 'package:pulse/features/home/application/home_controller.dart';
 import 'package:pulse/features/home/presentation/home_screen.dart';
