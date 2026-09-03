@@ -37,6 +37,15 @@ jobs:
       - name: Generate Android project scaffolding
         run: flutter create . --platforms=android --project-name pulse --org com.pulse
 
+      - name: Configure Android SDK versions
+        working-directory: android/app
+        run: |
+          sed -i 's/compileSdk = flutter.compileSdkVersion/compileSdk = 36/' build.gradle.kts
+          sed -i 's/ndkVersion = flutter.ndkVersion/ndkVersion = "27.0.12077973"/' build.gradle.kts
+          sed -i 's/minSdk = flutter.minSdkVersion/minSdk = 23/' build.gradle.kts
+          sed -i 's/targetSdk = flutter.targetSdkVersion/targetSdk = 36/' build.gradle.kts
+          grep -E 'compileSdk|ndkVersion|minSdk|targetSdk' build.gradle.kts
+
       - name: Build release APK
         run: flutter build apk --release
 
