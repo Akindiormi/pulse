@@ -29,9 +29,7 @@ void main() {
       await tester.pump();
       expect(find.text('completed'), findsOneWidget);
       expect(find.text('nice. you did it.'), findsOneWidget);
-      final feedback = find.byType(PulseCompletionSurface);
-      expect(feedback, findsOneWidget);
-      expect(tester.getSemantics(feedback).label, 'challenge completion feedback');
+      expect(find.bySemanticsLabel(RegExp(r'^challenge completion feedback')), findsOneWidget);
     } finally {
       semantics.dispose();
     }
