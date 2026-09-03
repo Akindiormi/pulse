@@ -81,6 +81,7 @@ class PulseFeedbackSurface extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Semantics(
+        container: true,
         label: semanticLabel,
         liveRegion: true,
         child: Stack(children: [
