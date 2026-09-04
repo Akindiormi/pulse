@@ -63,8 +63,8 @@ jobs:
 
           app_build = Path('android/app/build.gradle.kts')
           text = app_build.read_text()
-          anchor = r'(id\("dev\.flutter\.flutter-gradle-plugin"\))'
-          replacement = r'\g<1>\n    id("com.google.gms.google-services")'
+          anchor = r'(\s*)(id\("dev\.flutter\.flutter-gradle-plugin"\))'
+          replacement = r'\g<1>id("com.google.gms.google-services")\g<1>\g<2>'
           updated, count = re.subn(anchor, replacement, text)
           if count != 1:
               raise SystemExit(f'Expected exactly one flutter-gradle-plugin declaration in app/build.gradle.kts, found {count}')
