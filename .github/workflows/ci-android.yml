@@ -126,7 +126,13 @@ jobs:
       - name: Verify release signing
         if: ${{ env.HAS_RELEASE_KEYSTORE == 'true' }}
         run: |
-          apksigner verify --verbose build/app/outputs/flutter-apk/app-release.apk
+          APKSIGNER=$(find "${ANDROID_HOME:-/usr/local/lib/android/sdk}" "${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}" -type f -name apksigner 2>/dev/null | sort -V | tail -n1)
+          if [ -z "$APKSIGNER" ]; then
+            echo "apksigner not found under Android SDK build-tools" >&2
+            exit 1
+          fi
+          echo "Using apksigner: $APKSIGNER"
+          "$APKSIGNER" verify --verbose build/app/outputs/flutter-apk/app-release.apk
           jarsigner -verify -verbose -certs build/app/outputs/bundle/release/app-release.aab >/dev/null
 
       - name: Upload release APK
