@@ -1,0 +1,31 @@
+name: Deploy Firebase (Firestore rules + Functions)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Deploy Firestore rules and Cloud Functions
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install Functions dependencies
+        working-directory: functions
+        run: npm ci
+
+      - name: Restore Firebase service account credentials
+        run: |
+          echo "${{ secrets.PULSE_FIREBASE_SERVICE_ACCOUNT_BASE64 }}" | base64 -d > "${RUNNER_TEMP}/firebase-service-account.json"
+
+      - name: Deploy Firestore rules and Functions
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
+        run: npx firebase-tools@latest deploy --only firestore:rules,functions --project pulse-e9258 --non-interactive
