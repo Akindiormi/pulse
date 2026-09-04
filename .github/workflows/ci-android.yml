@@ -39,6 +39,9 @@ jobs:
       - name: Generate Android project scaffolding
         run: flutter create . --platforms=android --project-name pulse --org com.pulse
 
+      - name: Generate app icons
+        run: dart run flutter_launcher_icons
+
       - name: Configure Android build toolchain
         working-directory: android
         run: |
