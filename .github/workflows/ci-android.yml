@@ -42,6 +42,35 @@ jobs:
       - name: Generate app icons
         run: dart run flutter_launcher_icons
 
+      - name: Restore Firebase Android config
+        working-directory: android/app
+        run: echo "${{ secrets.PULSE_GOOGLE_SERVICES_JSON_BASE64 }}" | base64 -d > google-services.json
+
+      - name: Register Google Services Gradle plugin
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          settings = Path('android/settings.gradle.kts')
+          text = settings.read_text()
+          anchor = r'(id\("org\.jetbrains\.kotlin\.android"\)\s+version\s+"[^"]+"\s+apply\s+false)'
+          replacement = r'\g<1>\n    id("com.google.gms.google-services") version "4.5.0" apply false'
+          updated, count = re.subn(anchor, replacement, text)
+          if count != 1:
+              raise SystemExit(f'Expected exactly one Kotlin plugin declaration in settings.gradle.kts, found {count}')
+          settings.write_text(updated)
+
+          app_build = Path('android/app/build.gradle.kts')
+          text = app_build.read_text()
+          anchor = r'(id\("dev\.flutter\.flutter-gradle-plugin"\))'
+          replacement = r'\g<1>\n    id("com.google.gms.google-services")'
+          updated, count = re.subn(anchor, replacement, text)
+          if count != 1:
+              raise SystemExit(f'Expected exactly one flutter-gradle-plugin declaration in app/build.gradle.kts, found {count}')
+          app_build.write_text(updated)
+          PY
+
       - name: Configure Android build toolchain
         working-directory: android
         run: |
