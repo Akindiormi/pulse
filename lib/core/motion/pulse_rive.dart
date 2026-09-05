@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:rive/rive.dart' as rive;
 
 import 'pulse_motion_attachment.dart';
@@ -89,10 +90,33 @@ class _PulseRiveMotionHostState extends State<PulseRiveMotionHost> {
   late rive.FileLoader _loader;
   PulseRiveMotionController? _controller;
 
+  /// null while the existence check is in flight, true/false once resolved.
+  /// A genuinely-missing asset must never reach [rive.FileLoader.fromAsset]:
+  /// unlike a malformed-but-present file (which resolves to RiveFailed and
+  /// falls back cleanly), a missing asset throws synchronously during the
+  /// Rive package's own widget construction, before this widget ever gets a
+  /// chance to catch it and show [widget.fallback].
+  bool? _assetAvailable;
+
   @override
   void initState() {
     super.initState();
-    _loader = rive.FileLoader.fromAsset(widget.assetPath, riveFactory: rive.Factory.rive);
+    _checkAsset();
+  }
+
+  Future<void> _checkAsset() async {
+    if (widget.assetPath.trim().isEmpty) {
+      if (mounted) setState(() => _assetAvailable = false);
+      return;
+    }
+    try {
+      await rootBundle.load(widget.assetPath);
+      if (!mounted) return;
+      _loader = rive.FileLoader.fromAsset(widget.assetPath, riveFactory: rive.Factory.rive);
+      setState(() => _assetAvailable = true);
+    } catch (_) {
+      if (mounted) setState(() => _assetAvailable = false);
+    }
   }
 
   String _stateName(Enum state) => state.toString().split('.').last;
@@ -115,8 +139,9 @@ class _PulseRiveMotionHostState extends State<PulseRiveMotionHost> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.assetPath != widget.assetPath) {
       _controller = null;
-      _loader.dispose();
-      _loader = rive.FileLoader.fromAsset(widget.assetPath, riveFactory: rive.Factory.rive);
+      if (_assetAvailable == true) _loader.dispose();
+      _assetAvailable = null;
+      _checkAsset();
     }
     if (oldWidget.state != widget.state ||
         oldWidget.booleanInputs != widget.booleanInputs ||
@@ -128,7 +153,7 @@ class _PulseRiveMotionHostState extends State<PulseRiveMotionHost> {
 
   @override
   Widget build(BuildContext context) {
-    if (PulseMotionPolicy.isReducedMotion(context) || widget.assetPath.trim().isEmpty) {
+    if (PulseMotionPolicy.isReducedMotion(context) || _assetAvailable != true) {
       return widget.fallback;
     }
     final visual = rive.RiveWidgetBuilder(
@@ -160,7 +185,7 @@ class _PulseRiveMotionHostState extends State<PulseRiveMotionHost> {
   @override
   void dispose() {
     _controller?.pause();
-    _loader.dispose();
+    if (_assetAvailable == true) _loader.dispose();
     _controller = null;
     super.dispose();
   }
