@@ -6,7 +6,10 @@ import '../../../core/auth/auth_service.dart';
 import '../../../core/design/pulse_tokens.dart';
 import '../../../core/di/providers.dart';
 import '../../../core/motion/pulse_motion_attachment.dart';
+import '../../../core/motion/pulse_motion_policy.dart';
 import '../../../core/motion/pulse_motion_state.dart';
+import '../../../core/motion/pulse_rive.dart';
+import '../../../core/motion/pulse_rive_assets.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/pulse_button.dart';
 import '../application/auth_controller.dart';
@@ -28,15 +31,40 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
   final emailFocus = FocusNode();
   final passwordFocus = FocusNode();
   bool obscure = true;
+  bool emailTouched = false;
+  bool passwordTouched = false;
+  bool submittedSuccessfully = false;
 
   @override
   void initState() {
     super.initState();
     Future.microtask(() => ref.read(analyticsServiceProvider).logAuthScreenViewed());
+    emailFocus.addListener(_onFocusChange);
+    passwordFocus.addListener(_onFocusChange);
+  }
+
+  void _onFocusChange() {
+    if (!emailFocus.hasFocus && email.text.isNotEmpty) emailTouched = true;
+    if (!passwordFocus.hasFocus && password.text.isNotEmpty) passwordTouched = true;
+    if (mounted) setState(() {});
+  }
+
+  /// Drives the optional Pulse auth avatar (see assets/rive/auth/README.md).
+  /// Falls back to nothing if no .riv asset is present yet.
+  PulseAuthAvatarState get avatarState {
+    if (submittedSuccessfully) return PulseAuthAvatarState.success;
+    final emailError = emailTouched && validateEmail() != null;
+    final passwordError = passwordTouched && mode != _AuthMode.reset && validatePassword() != null;
+    if (emailError || passwordError) return PulseAuthAvatarState.error;
+    if (passwordFocus.hasFocus && mode != _AuthMode.reset) return PulseAuthAvatarState.passwordFocused;
+    if (emailFocus.hasFocus) return PulseAuthAvatarState.emailFocused;
+    return PulseAuthAvatarState.idle;
   }
 
   @override
   void dispose() {
+    emailFocus.removeListener(_onFocusChange);
+    passwordFocus.removeListener(_onFocusChange);
     email.dispose();
     password.dispose();
     confirm.dispose();
@@ -98,7 +126,10 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
         await ref.read(authServiceProvider).sendEmailVerification();
         await analytics.logEmailVerificationSent();
       } catch (_) {}
-      if (mounted) context.go('/verify-email');
+      if (mounted) {
+        setState(() => submittedSuccessfully = true);
+        context.go('/verify-email');
+      }
       return;
     }
 
@@ -108,7 +139,10 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
       } else {
         await analytics.logLogin();
       }
-      if (mounted) context.go('/splash');
+      if (mounted) {
+        setState(() => submittedSuccessfully = true);
+        context.go('/splash');
+      }
     }
   }
 
@@ -151,6 +185,25 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                   tooltip: 'back',
                 ),
                 excludeFromSemantics: false,
+              ),
+              const SizedBox(height: PulseSpace.lg),
+              PulseRiveAttachment(
+                data: PulseMotionAttachmentData(
+                  intent: PulseMotionIntent.authAvatar,
+                  state: avatarState,
+                  reducedMotion: PulseMotionPolicy.isReducedMotion(context),
+                  duration: PulseMotionPolicy.duration(context, const Duration(milliseconds: 220)),
+                ),
+                assetPath: PulseRiveAssets.auth,
+                fallback: const SizedBox.shrink(),
+                triggerForState: const {
+                  'idle': 'idle',
+                  'emailFocused': 'emailFocused',
+                  'passwordFocused': 'passwordFocused',
+                  'error': 'error',
+                  'success': 'success',
+                },
+                semanticLabel: 'Pulse assistant avatar',
               ),
               const SizedBox(height: PulseSpace.xl),
               Text(title, style: Theme.of(context).textTheme.displayLarge),
