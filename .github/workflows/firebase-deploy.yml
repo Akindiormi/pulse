@@ -12,6 +12,11 @@ jobs:
   deploy:
     name: Deploy Supabase schema and Edge Functions
     runs-on: ubuntu-latest
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.PULSE_SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_PROJECT_REF: ${{ secrets.PULSE_SUPABASE_PROJECT_REF }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.PULSE_SUPABASE_DB_PASSWORD }}
+      SUPABASE_SECRET_KEY: ${{ secrets.PULSE_SUPABASE_SECRET_KEY }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -25,11 +30,6 @@ jobs:
         run: npm install --global supabase@latest
 
       - name: Validate Supabase deployment configuration
-        env:
-          SUPABASE_ACCESS_TOKEN: ${{ secrets.PULSE_SUPABASE_ACCESS_TOKEN }}
-          SUPABASE_PROJECT_REF: ${{ secrets.PULSE_SUPABASE_PROJECT_REF }}
-          SUPABASE_DB_PASSWORD: ${{ secrets.PULSE_SUPABASE_DB_PASSWORD }}
-          SUPABASE_SECRET_KEY: ${{ secrets.PULSE_SUPABASE_SECRET_KEY }}
         run: |
           test -n "$SUPABASE_ACCESS_TOKEN"
           test -n "$SUPABASE_PROJECT_REF"
@@ -37,34 +37,19 @@ jobs:
           test -n "$SUPABASE_SECRET_KEY"
 
       - name: Link Supabase project
-        env:
-          SUPABASE_ACCESS_TOKEN: ${{ secrets.PULSE_SUPABASE_ACCESS_TOKEN }}
-          SUPABASE_PROJECT_REF: ${{ secrets.PULSE_SUPABASE_PROJECT_REF }}
-          SUPABASE_DB_PASSWORD: ${{ secrets.PULSE_SUPABASE_DB_PASSWORD }}
         run: supabase link --project-ref "$SUPABASE_PROJECT_REF" --password "$SUPABASE_DB_PASSWORD"
 
       - name: Push database migrations
-        env:
-          SUPABASE_ACCESS_TOKEN: ${{ secrets.PULSE_SUPABASE_ACCESS_TOKEN }}
         run: supabase db push
 
       - name: Deploy daily challenge function
-        env:
-          SUPABASE_ACCESS_TOKEN: ${{ secrets.PULSE_SUPABASE_ACCESS_TOKEN }}
         run: supabase functions deploy get-or-assign-daily-challenge --project-ref "$SUPABASE_PROJECT_REF" --no-verify-jwt
 
       - name: Deploy challenge completion function
-        env:
-          SUPABASE_ACCESS_TOKEN: ${{ secrets.PULSE_SUPABASE_ACCESS_TOKEN }}
         run: supabase functions deploy complete-challenge --project-ref "$SUPABASE_PROJECT_REF" --no-verify-jwt
 
       - name: Deploy account deletion function
-        env:
-          SUPABASE_ACCESS_TOKEN: ${{ secrets.PULSE_SUPABASE_ACCESS_TOKEN }}
         run: supabase functions deploy delete-account --project-ref "$SUPABASE_PROJECT_REF" --no-verify-jwt
 
       - name: Set server secret
-        env:
-          SUPABASE_ACCESS_TOKEN: ${{ secrets.PULSE_SUPABASE_ACCESS_TOKEN }}
-          SUPABASE_SECRET_KEY: ${{ secrets.PULSE_SUPABASE_SECRET_KEY }}
         run: supabase secrets set SUPABASE_SECRET_KEY="$SUPABASE_SECRET_KEY"
