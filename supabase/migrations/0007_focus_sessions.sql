@@ -53,17 +53,39 @@ create index focus_sessions_task_idx
   on public.focus_sessions(task_id, started_at desc)
   where task_id is not null;
 
--- Keep the accumulated active time monotonic and prevent impossible lifecycle
+-- Keep accumulated active time monotonic and prevent impossible lifecycle
 -- transitions. Wall-clock time is used only as an upper bound; accumulated
 -- active time remains the authoritative measure of actual focused work.
+-- The trigger also protects ownership invariants that a plain FK cannot prove:
+-- a Focus session may only point at a task owned by the same user, and its
+-- owner cannot be reassigned after creation.
 create or replace function public.validate_focus_session_transition()
 returns trigger
 language plpgsql
 as $$
 declare
   v_elapsed_seconds integer;
+  v_task_user_id uuid;
 begin
+  if new.task_id is not null then
+    select user_id into v_task_user_id
+    from public.tasks
+    where id = new.task_id;
+
+    if v_task_user_id is null then
+      raise exception 'Focus task does not exist';
+    end if;
+
+    if v_task_user_id <> new.user_id then
+      raise exception 'Focus task does not belong to the session owner';
+    end if;
+  end if;
+
   if tg_op = 'UPDATE' then
+    if new.user_id <> old.user_id then
+      raise exception 'Focus session owner cannot change';
+    end if;
+
     if old.status in ('completed', 'cancelled') and new.status <> old.status then
       raise exception 'Terminal focus sessions cannot change lifecycle state';
     end if;
@@ -141,7 +163,6 @@ grant select, insert, update, delete on public.focus_sessions to authenticated;
 grant all on public.focus_sessions to service_role;
 
 grant execute on function public.validate_focus_session_transition() to authenticated;
-
 grant execute on function public.validate_focus_session_transition() to service_role;
 
 comment on table public.focus_sessions is 'Persisted intentional work sessions. active_duration_seconds is the authoritative accumulated focused-work duration.';
