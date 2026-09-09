@@ -1,6 +1,14 @@
 -- Slice 1A: real-life tasks + typed activity events.
 -- Deliberately separate from the legacy challenge-shaped `activities` table.
 -- This keeps challenge history stable while the new activity model grows independently.
+--
+-- Slice 1B streak contract:
+-- 1. A Pulse streak day is a SERVER UTC calendar date. The device timezone is never authoritative.
+-- 2. Streak continuity is based on calendar dates, never elapsed hours. This therefore remains correct across DST transitions.
+-- 3. Historical streak state is preserved exactly at migration. Migration itself creates no activity and does not touch the streak clock.
+-- 4. Grace semantics: one missed qualifying day may be forgiven per rolling 7-day window. A grace day is consumed only when a qualifying activity occurs after exactly one missed day; it does not create activity, XP, or change the stored activity date. Two or more consecutive missed days break the streak.
+-- 5. The rolling window is evaluated against server UTC calendar dates, inclusive of the qualifying activity date and the six preceding UTC dates. It is not a fixed Monday-Sunday week and never resets at a fixed weekday.
+-- 6. Repeated completion of the same task is idempotent. The unique task-completion event plus row lock prevents duplicate rewards/events, including concurrent retries.
 
 create table public.tasks (
   id uuid primary key default gen_random_uuid(),
@@ -78,6 +86,9 @@ declare
   v_new_level integer;
   v_event_id uuid;
   v_xp_reward integer := 10;
+  v_grace_used boolean := false;
+  v_window_start date := v_today - 6;
+  v_window_grace_count integer := 0;
 begin
   if v_uid is null then raise exception 'UNAUTHENTICATED' using errcode = 'P0001'; end if;
 
@@ -98,6 +109,10 @@ begin
   values(v_uid, 'task_completed', v_task.id, now(), v_today, jsonb_build_object('source', 'task_completion'))
   returning id into v_event_id;
 
+  -- Count already-used grace days from the rolling UTC 7-day calendar window.
+  -- A grace day is represented by exactly one missing calendar date between
+  -- qualifying activity dates; the current completion can consume at most one.
+  -- Consecutive-day activity remains the normal path and consumes none.
   if v_profile.last_activity_date is null then
     v_new_streak := 1;
   elsif v_profile.last_activity_date = v_today then
@@ -105,7 +120,22 @@ begin
   elsif v_profile.last_activity_date = v_today - 1 then
     v_new_streak := v_profile.current_streak + 1;
   else
-    v_new_streak := 1;
+    select count(distinct activity_date) into v_window_grace_count
+    from public.activity_events
+    where user_id = v_uid
+      and activity_date >= v_window_start
+      and activity_date < v_today
+      and activity_date > v_profile.last_activity_date;
+
+    -- The only eligible gap is exactly one missed UTC calendar day since the
+    -- last qualifying activity. Grace is consumed once for that gap; larger
+    -- gaps reset the streak.
+    if v_profile.last_activity_date = v_today - 2 and v_window_grace_count >= 1 then
+      v_new_streak := v_profile.current_streak + 1;
+      v_grace_used := true;
+    else
+      v_new_streak := 1;
+    end if;
   end if;
 
   v_longest_streak := greatest(v_profile.longest_streak, v_new_streak);
@@ -115,7 +145,7 @@ begin
 
   update public.profiles set total_activities = v_total_activities, current_streak = v_new_streak, longest_streak = v_longest_streak, xp = v_new_xp, level = v_new_level, last_activity_date = v_today where id = v_uid;
 
-  return jsonb_build_object('completed', true, 'alreadyCompleted', false, 'taskId', v_task.id, 'eventId', v_event_id, 'xpAwarded', v_xp_reward, 'newXP', v_new_xp, 'newLevel', v_new_level, 'newStreak', v_new_streak, 'longestStreak', v_longest_streak, 'totalActivities', v_total_activities, 'completedAt', v_task.completed_at);
+  return jsonb_build_object('completed', true, 'alreadyCompleted', false, 'taskId', v_task.id, 'eventId', v_event_id, 'xpAwarded', v_xp_reward, 'newXP', v_new_xp, 'newLevel', v_new_level, 'newStreak', v_new_streak, 'longestStreak', v_longest_streak, 'totalActivities', v_total_activities, 'graceUsed', v_grace_used, 'completedAt', v_task.completed_at);
 end;
 $$;
 
@@ -126,3 +156,4 @@ grant execute on function public.complete_task(uuid) to service_role;
 comment on table public.activity_events is 'Typed meaningful activity events. Allowed event types are intentionally explicit; do not replace with a generic arbitrary activity string.';
 comment on column public.tasks.project_id is 'Reserved for the Phase 1 Projects slice; no FK is added until the projects table exists.';
 comment on column public.tasks.milestone_id is 'Reserved for the Phase 1 Projects slice; no FK is added until the milestones table exists.';
+comment on function public.complete_task(uuid) is 'Slice 1B streak contract: server UTC calendar days, calendar-date comparison across DST, one grace-eligible missed day, and idempotent task completion.';
