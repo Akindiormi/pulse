@@ -2,7 +2,7 @@ import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' as supabase;
 
 import '../auth/auth_service.dart';
 import '../backend/trusted_account_backend.dart';
@@ -21,7 +21,7 @@ import '../../features/challenges/application/challenge_service.dart';
 import '../../features/challenges/application/complete_challenge.dart';
 import '../../services/supabase_auth_service.dart';
 
-final supabaseProvider = Provider<SupabaseClient>((ref) => Supabase.instance.client);
+final supabaseProvider = Provider<supabase.SupabaseClient>((ref) => supabase.Supabase.instance.client);
 final analyticsProvider = Provider<FirebaseAnalytics>((ref) => FirebaseAnalytics.instance);
 final messagingProvider = Provider<FirebaseMessaging>((ref) => FirebaseMessaging.instance);
 final crashlyticsProvider = Provider<FirebaseCrashlytics>((ref) => FirebaseCrashlytics.instance);
@@ -38,7 +38,7 @@ final achievementRepositoryProvider = Provider<AchievementRepository>((ref) => S
 final trustedChallengeBackendProvider = Provider<TrustedChallengeBackend>((ref) => SupabaseTrustedChallengeBackend(ref.watch(trustedCallableClientProvider), ref.watch(authServiceProvider)));
 final achievementServiceProvider = Provider<AchievementService>((ref) => const AchievementService());
 final challengeServiceProvider = Provider<ChallengeService>((ref) => ChallengeService(repository: ref.watch(challengeRepositoryProvider), backend: ref.watch(trustedChallengeBackendProvider)));
-final completeChallengeProvider = Provider<CompleteChallenge>((ref) => CompleteChallenge(backend: ref.watch(trustedChallengeBackendProvider)));
+final completeChallengeProvider = Provider<CompleteChallenge>((ref) => CompleteChallenge(backend: ref.watch(trustedChallengeBackendProvider));
 
 final analyticsServiceProvider = Provider<AnalyticsService>((ref) => FirebaseAnalyticsService(ref.watch(analyticsProvider)));
 final pulseEventDispatcherProvider = Provider<PulseEventDispatcher>((ref) => PulseEventDispatcher(ref.watch(analyticsServiceProvider)));
