@@ -62,6 +62,8 @@ create index focus_sessions_task_idx
 create or replace function public.validate_focus_session_transition()
 returns trigger
 language plpgsql
+security definer
+set search_path = public
 as $$
 declare
   v_elapsed_seconds integer;
