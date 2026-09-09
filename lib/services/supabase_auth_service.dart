@@ -25,7 +25,7 @@ class SupabaseAuthService implements AuthService {
     } on supabase.AuthException catch (e) {
       throw AuthFailure(_mapErrorCode(e));
     } on supabase.PostgrestException catch (e) {
-      throw AuthFailure(e.code);
+      throw AuthFailure(e.code ?? 'service-unavailable');
     } catch (_) {
       throw const AuthFailure('service-unavailable');
     }
