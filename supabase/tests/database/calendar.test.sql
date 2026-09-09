@@ -1,6 +1,6 @@
 begin;
 
-select plan(20);
+select plan(21);
 
 select has_table('public', 'calendar_events', 'calendar_events table exists');
 select has_column('public', 'calendar_events', 'user_id', 'calendar event has owner');
@@ -33,9 +33,35 @@ select policies_are('public', 'task_calendar_events', ARRAY[
 ], 'calendar link RLS policies exist');
 select has_function('public', 'validate_task_calendar_event_link', ARRAY[]::text[], 'calendar link ownership trigger function exists');
 
--- Verify the deletion contract at the FK level: deleting either side deletes only
--- the link row, never the other record.
-select fk_ok('public', 'task_calendar_events', 'task_id', 'public', 'tasks', 'id', 'task deletion cascades only to link');
+select is(
+  (
+    select c.confdeltype
+    from pg_constraint c
+    join pg_class child on child.oid = c.conrelid
+    join pg_class parent on parent.oid = c.confrelid
+    where child.relname = 'task_calendar_events'
+      and parent.relname = 'tasks'
+      and c.contype = 'f'
+    limit 1
+  ),
+  'c',
+  'deleting a task cascades only to its calendar link'
+);
+
+select is(
+  (
+    select c.confdeltype
+    from pg_constraint c
+    join pg_class child on child.oid = c.conrelid
+    join pg_class parent on parent.oid = c.confrelid
+    where child.relname = 'task_calendar_events'
+      and parent.relname = 'calendar_events'
+      and c.contype = 'f'
+    limit 1
+  ),
+  'c',
+  'deleting a calendar event cascades only to its link'
+);
 
 select * from finish();
 rollback;
