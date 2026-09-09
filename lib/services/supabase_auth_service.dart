@@ -2,6 +2,7 @@ import 'package:supabase_flutter/supabase_flutter.dart' as supabase;
 
 import '../core/auth/auth_service.dart';
 import '../core/backend/trusted_account_backend.dart';
+import '../core/errors/app_error.dart';
 
 class SupabaseAuthService implements AuthService {
   SupabaseAuthService(this._supabase, this._accountBackend);
@@ -24,7 +25,7 @@ class SupabaseAuthService implements AuthService {
     } on supabase.AuthException catch (e) {
       throw AuthFailure(_mapErrorCode(e));
     } on supabase.PostgrestException catch (e) {
-      throw AuthFailure(e.code ?? 'service-unavailable');
+      throw AuthFailure(e.code);
     } catch (_) {
       throw const AuthFailure('service-unavailable');
     }
@@ -33,8 +34,9 @@ class SupabaseAuthService implements AuthService {
   String _mapErrorCode(supabase.AuthException error) {
     final message = error.message.toLowerCase();
     if (message.contains('already registered')) return 'email-already-in-use';
-    if (message.contains('invalid login')) return 'invalid-credential';
+    if (message.contains('invalid login') || message.contains('invalid credentials')) return 'invalid-credential';
     if (message.contains('email not confirmed')) return 'email-not-verified';
+    if (message.contains('invalid email')) return 'invalid-email';
     if (message.contains('password')) return 'weak-password';
     if (message.contains('rate limit')) return 'too-many-requests';
     return 'auth-error';
