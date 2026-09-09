@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(30);
+select plan(36);
 
 select has_table(
   'public', 'focus_sessions',
@@ -127,8 +127,7 @@ insert into auth.users (
 )
 values
   (gen_random_uuid(), 'authenticated', 'authenticated', 'focus-test-owner@example.com', '', now(), '{}', '{}', now(), now()),
-  (gen_random_uuid(), 'authenticated', 'authenticated', 'focus-test-other@example.com', '', now(), '{}', '{}', now(), now())
-returning id;
+  (gen_random_uuid(), 'authenticated', 'authenticated', 'focus-test-other@example.com', '', now(), '{}', '{}', now(), now());
 
 insert into focus_test_users(name, id)
 select 'owner', id from auth.users where email = 'focus-test-owner@example.com';
@@ -160,8 +159,7 @@ insert into public.focus_sessions (
 )
 select id, 'running', 1800, now() - interval '1500 seconds', 0
 from public.tasks
-where title = 'Focus foundation test task'
-returning id;
+where title = 'Focus foundation test task';
 
 update focus_test_rows
 set session_id = (
