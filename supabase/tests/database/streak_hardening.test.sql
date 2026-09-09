@@ -17,8 +17,8 @@ select has_function(
   'public', 'calculate_streak_v1', ARRAY['date', 'integer', 'date', 'date'],
   'authoritative streak transition function exists'
 );
-select has_index(
-  'public', 'activity_events_task_completion_idx',
+select ok(
+  to_regclass('public.activity_events_task_completion_idx') is not null,
   'task completion activity events have a uniqueness guard'
 );
 select is_definer(
