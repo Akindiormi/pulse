@@ -1,5 +1,6 @@
 import '../../models/activity_model.dart';
 import '../../models/achievement_model.dart';
+import '../../models/calendar_event_model.dart';
 import '../../models/challenge_model.dart';
 import '../../models/milestone_model.dart';
 import '../../models/project_model.dart';
@@ -58,6 +59,15 @@ abstract interface class MilestoneRepository {
   Future<Milestone> createMilestone({required String uid, required String projectId, required String name, String? description, DateTime? dueDate});
   Future<Milestone> updateMilestone({required String milestoneId, String? name, String? description, DateTime? dueDate, MilestoneStatus? status});
   Future<void> deleteMilestone({required String milestoneId});
+}
+
+abstract interface class CalendarRepository {
+  Future<List<CalendarEvent>> getEvents({required String uid, required DateTime rangeStart, required DateTime rangeEnd});
+  Future<CalendarEvent> createEvent({required String uid, required String title, String? description, required DateTime startsAt, required DateTime endsAt, bool allDay = false, required String timezone, String? recurrenceRule, String? taskId});
+  Future<CalendarEvent> updateEvent({required String eventId, String? title, String? description, DateTime? startsAt, DateTime? endsAt, bool? allDay, String? timezone, String? recurrenceRule});
+  Future<void> deleteEvent({required String eventId});
+  Future<void> linkTask({required String taskId, required String eventId});
+  Future<void> unlinkTask({required String taskId, required String eventId});
 }
 
 abstract interface class AchievementRepository {
