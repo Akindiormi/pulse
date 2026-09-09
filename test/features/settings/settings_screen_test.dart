@@ -49,6 +49,7 @@ void main() {
     final controller = FakeSettingsController(initial);
     await tester.pumpWidget(_app(controller));
     await tester.pump();
+    await tester.scrollUntilVisible(find.text('sign out'), 300);
     await tester.tap(find.text('sign out'));
     await tester.pumpAndSettle();
     expect(find.text('sign out?'), findsOneWidget);
