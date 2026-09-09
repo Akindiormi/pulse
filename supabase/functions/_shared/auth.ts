@@ -8,7 +8,7 @@ export const corsHeaders = {
 
 export function adminClient() {
   const url = Deno.env.get('SUPABASE_URL') ?? '';
-  const secret = Deno.env.get('SUPABASE_SECRET_KEY') ?? Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+  const secret = Deno.env.get('PULSE_SUPABASE_SECRET_KEY') ?? Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
   if (!url || !secret) throw new Error('Supabase server configuration is missing.');
   return createClient(url, secret, { auth: { autoRefreshToken: false, persistSession: false } });
 }
