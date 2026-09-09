@@ -24,21 +24,38 @@ begin
 
   if tg_op = 'UPDATE' then
     if new.user_id <> old.user_id then raise exception 'Focus session owner cannot change'; end if;
-    if old.status in ('completed', 'cancelled') and new.status <> old.status then
-      raise exception 'Terminal focus sessions cannot change lifecycle state';
-    end if;
-    if old.status = 'running' and new.status not in ('running', 'paused', 'completed', 'cancelled') then
-      raise exception 'Invalid focus session transition';
-    end if;
-    if old.status = 'paused' and new.status not in ('paused', 'running', 'completed', 'cancelled') then
-      raise exception 'Invalid focus session transition';
-    end if;
 
-    if old.status = 'running' then
+    if old.status in ('completed', 'cancelled') then
+      if new.status <> old.status then
+        raise exception 'Terminal focus sessions cannot change lifecycle state';
+      end if;
+      -- ON DELETE SET NULL is allowed to preserve historical sessions.
+      if new.task_id is not distinct from old.task_id and new.active_duration_seconds <> old.active_duration_seconds then
+        raise exception 'Terminal focus sessions are immutable';
+      end if;
+    elsif old.status = 'running' then
+      if new.status = 'running' then
+        raise exception 'Focus session is already running';
+      end if;
+      if new.status not in ('paused', 'completed', 'cancelled') then
+        raise exception 'Invalid focus session transition';
+      end if;
       v_elapsed_seconds := greatest(extract(epoch from (now() - old.updated_at))::integer, 0);
       new.active_duration_seconds := old.active_duration_seconds + v_elapsed_seconds;
-    elsif new.active_duration_seconds < old.active_duration_seconds then
-      raise exception 'Active duration cannot decrease';
+    elsif old.status = 'paused' then
+      if new.status = 'paused' then raise exception 'Focus session is already paused'; end if;
+      if new.status not in ('running', 'completed', 'cancelled') then
+        raise exception 'Invalid focus session transition';
+      end if;
+      if new.active_duration_seconds < old.active_duration_seconds then
+        raise exception 'Active duration cannot decrease';
+      end if;
+    end if;
+
+    if new.status in ('completed', 'cancelled') then
+      new.ended_at = now();
+    elsif new.status in ('running', 'paused') then
+      new.ended_at = null;
     end if;
   end if;
 
