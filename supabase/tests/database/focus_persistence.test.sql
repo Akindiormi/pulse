@@ -1,7 +1,7 @@
 begin;
 
 create extension if not exists pgtap with schema extensions;
-select plan(39);
+select plan(37);
 
 create temporary table focus_test_users (name text primary key, id uuid not null);
 grant select on focus_test_users to authenticated;
@@ -53,7 +53,7 @@ select throws_ok(
 );
 
 select set_config('request.jwt.claim.sub', (select id::text from focus_test_users where name = 'owner'), true);
-select pg_sleep(1);
+select pg_sleep(2);
 update public.focus_sessions set status = 'paused' where task_id is null;
 select is((select status from public.focus_sessions where task_id is null), 'paused', 'running session can pause');
 select ok((select active_duration_seconds >= 1 from public.focus_sessions where task_id is null), 'pause persists server-calculated active duration');
@@ -75,7 +75,7 @@ select throws_ok(
   'repeated resume is rejected'
 );
 
-select pg_sleep(1);
+select pg_sleep(2);
 update public.focus_sessions set status = 'completed' where task_id is null;
 select is((select status from public.focus_sessions where task_id is null), 'completed', 'running session completes');
 select ok((select active_duration_seconds >= 2 from public.focus_sessions where task_id is null), 'completion persists final accumulated active duration');
@@ -91,7 +91,7 @@ select (select id from focus_test_users where name = 'owner'), owner_task_id, 12
 select is((select count(*) from public.focus_sessions where task_id = (select owner_task_id from focus_test_tasks)), 1::bigint, 'task-linked session is created');
 select is((select active_duration_seconds from public.focus_sessions where task_id = (select owner_task_id from focus_test_tasks)), 0, 'task-linked session starts at zero');
 
-select pg_sleep(1);
+select pg_sleep(2);
 update public.focus_sessions set status = 'paused' where task_id = (select owner_task_id from focus_test_tasks);
 select is((select status from public.focus_sessions where task_id = (select owner_task_id from focus_test_tasks)), 'paused', 'task-linked session can pause');
 select ok((select active_duration_seconds >= 1 from public.focus_sessions where task_id = (select owner_task_id from focus_test_tasks)), 'task-linked pause preserves active duration');
@@ -105,7 +105,7 @@ select throws_ok($$update public.focus_sessions set status = 'running' where sta
 
 insert into public.focus_sessions(user_id, planned_duration_seconds)
 select id, 1200 from focus_test_users where name = 'owner';
-select pg_sleep(1);
+select pg_sleep(2);
 update public.focus_sessions set status = 'paused' where status = 'running' and task_id is null;
 select is((select count(*) from public.focus_sessions where user_id = (select id from focus_test_users where name = 'owner') and status in ('running','paused')), 1::bigint, 'exactly one active session is visible');
 select is((select count(*) from public.focus_sessions where user_id = (select id from focus_test_users where name = 'owner') and status = 'completed'), 1::bigint, 'completed session is not active');
@@ -121,7 +121,7 @@ select is((select count(*) from public.focus_sessions), 3::bigint, 'owner histor
 select ok((select count(*) = 3 from (select started_at, lead(started_at) over (order by started_at desc) as next_started_at from public.focus_sessions) ordered where next_started_at is null or started_at >= next_started_at), 'history timestamps have predictable descending order');
 
 delete from public.tasks where id = (select owner_task_id from focus_test_tasks);
-select is((select count(*) from public.focus_sessions where task_id is null), 2::bigint, 'task deletion preserves Focus rows and clears task association');
+select is((select count(*) from public.focus_sessions where task_id is null), 3::bigint, 'task deletion preserves Focus rows and clears task association');
 select is((select count(*) from public.focus_sessions), 3::bigint, 'task deletion does not delete Focus history');
 
 select * from finish();
