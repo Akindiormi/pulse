@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(37);
+select plan(39);
 
 select has_table('public', 'focus_sessions', 'focus_sessions table exists');
 select has_column('public', 'focus_sessions', 'user_id', 'focus session has owner');
@@ -60,18 +60,18 @@ select ok(exists (
   join pg_class r on r.oid = c.conrelid
   join pg_namespace n on n.oid = r.relnamespace
   where n.nspname = 'public' and r.relname = 'focus_sessions'
+    and c.conname = 'focus_sessions_lifecycle_timestamps'
     and c.contype = 'c'
-    and pg_get_constraintdef(c.oid) like '%status in (''running'', ''paused'')%'
-), 'database requires active sessions to have no ended_at timestamp');
+), 'database requires active sessions to have no ended_at and terminal sessions to have ended_at');
 
 select ok(exists (
   select 1 from pg_constraint c
   join pg_class r on r.oid = c.conrelid
   join pg_namespace n on n.oid = r.relnamespace
   where n.nspname = 'public' and r.relname = 'focus_sessions'
+    and c.conname = 'focus_sessions_time_order'
     and c.contype = 'c'
-    and pg_get_constraintdef(c.oid) like '%status in (''completed'', ''cancelled'')%'
-), 'database requires terminal sessions to have ended_at');
+), 'database enforces ended_at not before started_at');
 
 select is((
   select c.confdeltype
@@ -96,10 +96,13 @@ insert into focus_test_users(name, id) select 'other', id from auth.users where 
 insert into public.tasks (user_id, title) select id, 'Focus foundation test task' from focus_test_users where name = 'owner';
 insert into public.tasks (user_id, title) select id, 'Other owner task' from focus_test_users where name = 'other';
 
-create temporary table focus_test_rows (session_id uuid, task_id uuid not null);
+create temporary table focus_test_rows (session_id uuid, task_id uuid not null, other_task_id uuid not null);
 grant select, update on focus_test_rows to authenticated;
-insert into focus_test_rows(session_id, task_id)
-select null::uuid, id from public.tasks where title = 'Focus foundation test task' limit 1;
+insert into focus_test_rows(session_id, task_id, other_task_id)
+select
+  (select null::uuid),
+  (select id from public.tasks where title = 'Focus foundation test task' limit 1),
+  (select id from public.tasks where title = 'Other owner task' limit 1);
 
 set local role authenticated;
 select set_config('request.jwt.claim.sub', (select id::text from focus_test_users where name = 'owner'), true);
@@ -116,8 +119,7 @@ select is((select count(*) from public.focus_sessions where user_id = (select id
 
 select throws_ok(
   $$insert into public.focus_sessions (user_id, task_id, planned_duration_seconds, started_at)
-    select (select id from focus_test_users where name = 'owner'), id, 1800, now()
-    from public.tasks where title = 'Other owner task'$$,
+    values ((select id from focus_test_users where name = 'owner'), (select other_task_id from focus_test_rows), 1800, now())$$,
   'Focus task does not belong to the session owner',
   'database rejects cross-owner task associations'
 );
