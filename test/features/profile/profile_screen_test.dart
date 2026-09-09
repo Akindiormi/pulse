@@ -21,7 +21,10 @@ void main() {
     expect(find.text('5 days'), findsOneWidget);
     expect(find.text('9 days'), findsOneWidget);
     expect(find.text('3 categories explored'), findsOneWidget);
-    expect(find.text('0 unlocked'), findsOneWidget);
+    final unlocked = find.text('0 unlocked');
+    await tester.ensureVisible(unlocked);
+    await tester.pumpAndSettle();
+    expect(unlocked, findsOneWidget);
   });
 
   testWidgets('uses initials fallback when avatar is unavailable', (tester) async {
