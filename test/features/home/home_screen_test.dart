@@ -15,7 +15,7 @@ import 'package:pulse/models/user_model.dart';
 UserModel _user() => const UserModel(uid: 'user-1', displayName: 'Akin', xp: 50, level: 1, currentStreak: 4, longestStreak: 7);
 Task _task(String id, String title, {TaskStatus status = TaskStatus.todo, DateTime? dueDate}) => Task(id: id, userId: 'user-1', title: title, status: status, dueDate: dueDate ?? DateTime.now());
 HomeViewData _data({List<Task>? tasks}) => HomeViewData(user: _user(), tasks: tasks ?? <Task>[_task('task-1', 'finish pharmacology assignment')]);
-Widget _app(AsyncValue<HomeViewData> value) => ProviderScope(overrides: [homeControllerProvider.overrideWith(() => _FakeHomeController(value))], child: MaterialApp(theme: buildAppTheme(Brightness.light), darkTheme: buildAppTheme(Brightness.dark), home: const HomeScreen()));
+Widget _app(AsyncValue<HomeViewData> value) => ProviderScope(overrides: [homeControllerProvider.overrideWith(() => _FakeHomeController(value))], child: MaterialApp(theme: buildAppTheme(Brightness.light), darkTheme: buildAppTheme(Brightness.dark), home: const Scaffold(body: HomeScreen())));
 
 void main() {
   testWidgets('loaded Home presents Today and supplied tasks', (tester) async { await tester.pumpWidget(_app(AsyncData(_data()))); await tester.pump(); expect(find.textContaining('Akin'), findsOneWidget); expect(find.text('today'), findsOneWidget); expect(find.text('finish pharmacology assignment'), findsOneWidget); expect(find.text('4 days'), findsOneWidget); });
