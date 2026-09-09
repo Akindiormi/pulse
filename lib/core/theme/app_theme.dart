@@ -6,7 +6,7 @@ import '../design/pulse_tokens.dart';
 
 class AppTypography {
   static const display = TextStyle(fontSize: 42, height: 1.02, fontWeight: FontWeight.w800, letterSpacing: -1.5);
-  static const headline = TextStyle(fontSize: 32, height: 1.08, fontWeight: FontWeight.w750, letterSpacing: -0.9);
+  static const headline = TextStyle(fontSize: 32, height: 1.08, fontWeight: FontWeight.w800, letterSpacing: -0.9);
   static const title = TextStyle(fontSize: 21, height: 1.22, fontWeight: FontWeight.w700, letterSpacing: -0.2);
   static const body = TextStyle(fontSize: 17, height: 1.5, fontWeight: FontWeight.w500);
   static const bodySmall = TextStyle(fontSize: 15, height: 1.45, fontWeight: FontWeight.w500);
