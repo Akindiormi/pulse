@@ -1,4 +1,4 @@
-import { adminClient, corsHeaders, json, requireUser } from '../_shared/auth.ts';
+import { corsHeaders, json, requireUser } from '../_shared/auth.ts';
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
