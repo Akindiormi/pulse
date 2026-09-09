@@ -5,21 +5,13 @@ import 'package:pulse/models/calendar_event_model.dart';
 class CalendarRecurrence {
   const CalendarRecurrence._();
 
-  static List<CalendarEvent> expand(
-    CalendarEvent event, {
-    required DateTime rangeStart,
-    required DateTime rangeEnd,
-  }) {
+  static List<CalendarEvent> expand(CalendarEvent event, {required DateTime rangeStart, required DateTime rangeEnd}) {
     if (!event.isRecurring) {
-      return event.startsAt.isBefore(rangeEnd) && event.endsAt.isAfter(rangeStart)
-          ? [event]
-          : const [];
+      return event.startsAt.isBefore(rangeEnd) && event.endsAt.isAfter(rangeStart) ? [event] : const [];
     }
-
     final values = _parse(event.recurrenceRule!);
     final freq = values['FREQ'];
     if (freq == null) return const [];
-
     final interval = int.tryParse(values['INTERVAL'] ?? '1') ?? 1;
     if (interval < 1) return const [];
     final count = int.tryParse(values['COUNT'] ?? '');
@@ -30,17 +22,13 @@ class CalendarRecurrence {
     var occurrence = event.startsAt;
     var generated = 0;
 
-    // The visible range is the hard expansion boundary. The safety cap also
-    // protects against malformed/open-ended rules.
     for (var i = 0; i < 5000; i++) {
       if (count != null && generated >= count) break;
       if (until != null && occurrence.isAfter(until)) break;
       if (occurrence.isAfter(rangeEnd)) break;
-
       final candidates = freq == 'WEEKLY' && weekdays.isNotEmpty
           ? _weeklyCandidates(occurrence, interval, weekdays, event.startsAt)
           : [occurrence];
-
       for (final start in candidates) {
         if (count != null && generated >= count) break;
         if (start.isBefore(event.startsAt)) continue;
@@ -51,10 +39,8 @@ class CalendarRecurrence {
           results.add(event.copyWith(startsAt: start, endsAt: end));
         }
       }
-
       occurrence = _advance(occurrence, freq, interval);
     }
-
     return results;
   }
 
@@ -62,34 +48,28 @@ class CalendarRecurrence {
     final map = <String, String>{};
     for (final part in rule.split(';')) {
       final pieces = part.split('=');
-      if (pieces.length >= 2) {
-        map[pieces.first.trim().toUpperCase()] = pieces.sublist(1).join('=').trim();
-      }
+      if (pieces.length >= 2) map[pieces.first.trim().toUpperCase()] = pieces.sublist(1).join('=').trim();
     }
     return map;
   }
 
   static DateTime? _parseUntil(String? value) {
     if (value == null || value.isEmpty) return null;
-    final normalized = value.endsWith('Z') ? value : '${value}Z';
-    return DateTime.tryParse(normalized)?.toUtc();
+    final raw = value.endsWith('Z') ? value.substring(0, value.length - 1) : value;
+    if (RegExp(r'^\d{8}T\d{6}$').hasMatch(raw)) {
+      final parsed = DateTime.tryParse('${raw.substring(0, 4)}-${raw.substring(4, 6)}-${raw.substring(6, 8)}T${raw.substring(9, 11)}:${raw.substring(11, 13)}:${raw.substring(13, 15)}Z');
+      return parsed?.toUtc();
+    }
+    return DateTime.tryParse(value)?.toUtc();
   }
 
   static Set<int> _parseByDay(String? value) {
     const days = {'MO': 1, 'TU': 2, 'WE': 3, 'TH': 4, 'FR': 5, 'SA': 6, 'SU': 7};
     if (value == null) return const {};
-    return value.split(',').map((day) {
-      final key = day.trim().toUpperCase().replaceAll(RegExp(r'[-+]?\d+'), '');
-      return days[key];
-    }).whereType<int>().toSet();
+    return value.split(',').map((day) => days[day.trim().toUpperCase().replaceAll(RegExp(r'[-+]?\d+'), '')]).whereType<int>().toSet();
   }
 
-  static List<DateTime> _weeklyCandidates(
-    DateTime anchor,
-    int interval,
-    Set<int> weekdays,
-    DateTime seriesStart,
-  ) {
+  static List<DateTime> _weeklyCandidates(DateTime anchor, int interval, Set<int> weekdays, DateTime seriesStart) {
     final weekStart = anchor.subtract(Duration(days: anchor.weekday - 1));
     final seriesWeekStart = seriesStart.subtract(Duration(days: seriesStart.weekday - 1));
     return weekdays.map((weekday) {
