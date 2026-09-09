@@ -6,6 +6,8 @@ import '../features/auth/presentation/auth_screen.dart';
 import '../features/auth/presentation/email_verification_screen.dart';
 import '../features/calendar/presentation/calendar_screen.dart';
 import '../features/challenges/presentation/challenge_detail_screen.dart';
+import '../features/focus/presentation/focus_history_screen.dart';
+import '../features/focus/presentation/focus_screen.dart';
 import '../features/home/presentation/home_screen.dart';
 import '../features/onboarding/presentation/onboarding_screen.dart';
 import '../features/profile/presentation/profile_screen.dart';
@@ -40,6 +42,8 @@ final appRouter = GoRouter(initialLocation: '/splash', routes: [
     GoRoute(path: '/achievements', pageBuilder: (context, state) => _motionPage(context: context, key: state.pageKey, child: const AchievementsScreen(), begin: const Offset(.03, 0), scale: true)),
     GoRoute(path: '/profile', pageBuilder: (context, state) => _motionPage(context: context, key: state.pageKey, child: const ProfileScreen(), begin: const Offset(.02, 0))),
   ]),
+  GoRoute(path: '/focus', pageBuilder: (context, state) => _motionPage(context: context, key: state.pageKey, child: FocusScreen(taskId: state.uri.queryParameters['taskId'], plannedDurationSeconds: int.tryParse(state.uri.queryParameters['duration'] ?? '')), begin: const Offset(0, .04), scale: true)),
+  GoRoute(path: '/focus/history', pageBuilder: (context, state) => _motionPage(context: context, key: state.pageKey, child: const FocusHistoryScreen(), begin: const Offset(.04, 0))),
   GoRoute(path: '/challenge/:id', pageBuilder: (context, state) => _motionPage(context: context, key: state.pageKey, child: ChallengeDetailScreen(challengeId: state.pathParameters['id']!), begin: const Offset(0, .08), scale: true)),
   GoRoute(path: '/settings', pageBuilder: (context, state) => _motionPage(context: context, key: state.pageKey, child: const SettingsScreen(), begin: const Offset(.05, 0))),
 ]);
