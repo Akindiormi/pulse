@@ -20,14 +20,12 @@ class SupabaseTrustedCallableClient implements TrustedCallableClient {
   Future<Map<String, dynamic>> call(String name, Map<String, dynamic> data) async {
     try {
       final response = await _supabase.functions.invoke(name, body: data);
-      if (response.data is! Map) throw const TrustedBackendException(TrustedBackendErrorCode.internal, 'The backend returned an invalid response.');
+      if (response.data is! Map) {
+        throw const TrustedBackendException(TrustedBackendErrorCode.internal, 'The backend returned an invalid response.');
+      }
       return Map<String, dynamic>.from(response.data as Map);
-    } on FunctionsHttpError catch (error) {
+    } on FunctionException catch (error) {
       throw mapHttpStatus(error.status);
-    } on FunctionsRelayError {
-      throw const TrustedBackendException(TrustedBackendErrorCode.unavailable, 'The service is temporarily unavailable.');
-    } on FunctionsFetchError {
-      throw const TrustedBackendException(TrustedBackendErrorCode.unavailable, 'The service is temporarily unavailable.');
     } on TrustedBackendException {
       rethrow;
     } catch (_) {
@@ -37,6 +35,7 @@ class SupabaseTrustedCallableClient implements TrustedCallableClient {
 
   static TrustedBackendException mapHttpStatus(int status) {
     switch (status) {
+      case 400: return const TrustedBackendException(TrustedBackendErrorCode.invalidArgument, 'The request is invalid.');
       case 401: return const TrustedBackendException(TrustedBackendErrorCode.unauthenticated, 'Authentication is required.');
       case 403: return const TrustedBackendException(TrustedBackendErrorCode.permissionDenied, 'You do not have permission to perform this action.');
       case 404: return const TrustedBackendException(TrustedBackendErrorCode.notFound, 'The requested resource was not found.');
@@ -103,7 +102,9 @@ class SupabaseTrustedChallengeBackend implements TrustedChallengeBackend {
 
   Future<void> _requireAuthenticated() async {
     final state = await _authService.authStateChanges.first;
-    if (state.status != AuthStatus.authenticated) throw const TrustedBackendException(TrustedBackendErrorCode.unauthenticated, 'Authentication is required.');
+    if (state.status != AuthStatus.authenticated) {
+      throw const TrustedBackendException(TrustedBackendErrorCode.unauthenticated, 'Authentication is required.');
+    }
   }
 
   DailyChallengeResult _parseDailyChallenge(Map<String, dynamic> data) {
@@ -111,14 +112,18 @@ class SupabaseTrustedChallengeBackend implements TrustedChallengeBackend {
     final challengeId = data['challengeId'];
     final completed = data['completed'];
     final assignedAt = _date(data['assignedAt']);
-    if (date is! String || challengeId is! String || challengeId.isEmpty || completed is! bool || assignedAt == null) throw const TrustedBackendException(TrustedBackendErrorCode.internal, 'The backend returned an invalid daily challenge.');
+    if (date is! String || challengeId is! String || challengeId.isEmpty || completed is! bool || assignedAt == null) {
+      throw const TrustedBackendException(TrustedBackendErrorCode.internal, 'The backend returned an invalid daily challenge.');
+    }
     return DailyChallengeResult(date: date, challengeId: challengeId, completed: completed, assignedAt: assignedAt);
   }
 
   CompleteChallengeResult _parseCompletion(Map<String, dynamic> data) {
     final completed = data['completed'];
     final alreadyCompleted = data['alreadyCompleted'];
-    if (completed is! bool || alreadyCompleted is! bool) throw const TrustedBackendException(TrustedBackendErrorCode.internal, 'The backend returned an invalid completion result.');
+    if (completed is! bool || alreadyCompleted is! bool) {
+      throw const TrustedBackendException(TrustedBackendErrorCode.internal, 'The backend returned an invalid completion result.');
+    }
     return CompleteChallengeResult(
       activityCompleted: completed,
       alreadyCompleted: alreadyCompleted,
