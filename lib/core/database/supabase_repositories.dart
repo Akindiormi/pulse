@@ -58,14 +58,15 @@ class SupabaseUserRepository implements UserRepository {
       };
 
   Map<String, dynamic> _toSnakeCase(Map<String, dynamic> fields) => {
-        for (final entry in fields.entries)
-          switch (entry.key) {
-            'displayName' => 'display_name',
-            'photoUrl' => 'photo_url',
-            'timezone' => 'timezone',
-            'notificationPreferences' => 'notification_preferences',
-            _ => entry.key,
-          }: entry.value,
+        for (final entry in fields.entries) _snakeKey(entry.key): entry.value,
+      };
+
+  String _snakeKey(String key) => switch (key) {
+        'displayName' => 'display_name',
+        'photoUrl' => 'photo_url',
+        'timezone' => 'timezone',
+        'notificationPreferences' => 'notification_preferences',
+        _ => key,
       };
 }
 
@@ -85,7 +86,7 @@ class SupabaseChallengeRepository implements ChallengeRepository {
   @override
   Future<List<Challenge>> getActiveChallenges() async {
     final rows = await supabase.from('challenges').select().eq('active', true).order('id');
-    return (rows as List).whereType<Map<String, dynamic>>().map((row) => Challenge.fromMap(row['id'] as String, row)).toList(growable: false);
+    return rows.map((row) => Challenge.fromMap(row['id'] as String, row)).toList(growable: false);
   }
 }
 
@@ -99,7 +100,7 @@ class SupabaseActivityRepository implements ActivityRepository {
   @override
   Future<List<ActivityModel>> getActivities(String uid) async {
     final rows = await supabase.from('activities').select().eq('user_id', uid).order('completed_at', ascending: false);
-    return (rows as List).whereType<Map<String, dynamic>>().map((row) => ActivityModel.fromMap(row['id'] as String, {
+    return rows.map((row) => ActivityModel.fromMap(row['id'] as String, {
           'userId': row['user_id'],
           'challengeId': row['challenge_id'],
           'date': row['date'],
@@ -112,23 +113,24 @@ class SupabaseActivityRepository implements ActivityRepository {
   @override
   Future<Set<String>> getCompletedCategories(String uid) async {
     final rows = await supabase.from('activities').select('category').eq('user_id', uid);
-    return (rows as List).whereType<Map<String, dynamic>>().map((row) => row['category']).whereType<String>().toSet();
+    return rows.map((row) => row['category']).whereType<String>().toSet();
   }
 }
 
 class SupabaseAchievementRepository implements AchievementRepository {
   SupabaseAchievementRepository(this.supabase);
+
   final SupabaseClient supabase;
 
   @override
   Future<Set<String>> getUnlockedIds(String uid) async {
     final rows = await supabase.from('achievements').select('achievement_id').eq('user_id', uid);
-    return (rows as List).whereType<Map<String, dynamic>>().map((row) => row['achievement_id']).whereType<String>().toSet();
+    return rows.map((row) => row['achievement_id']).whereType<String>().toSet();
   }
 
   @override
   Future<List<AchievementRecord>> getUnlockedRecords(String uid) async {
     final rows = await supabase.from('achievements').select().eq('user_id', uid);
-    return (rows as List).whereType<Map<String, dynamic>>().map((row) => AchievementRecord.fromMap(row['achievement_id'] as String, {'achievementId': row['achievement_id'], 'unlockedAt': row['unlocked_at']})).toList(growable: false);
+    return rows.map((row) => AchievementRecord.fromMap(row['achievement_id'] as String, {'achievementId': row['achievement_id'], 'unlockedAt': row['unlocked_at']})).toList(growable: false);
   }
 }
