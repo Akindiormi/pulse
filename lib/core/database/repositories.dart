@@ -1,6 +1,7 @@
 import '../../models/activity_model.dart';
 import '../../models/achievement_model.dart';
 import '../../models/challenge_model.dart';
+import '../../models/project_model.dart';
 import '../../models/task_model.dart';
 import '../../models/user_model.dart';
 
@@ -38,6 +39,14 @@ abstract interface class TaskRepository {
   Future<List<Task>> getTasks({required String uid});
   Future<Task> createTask({required String uid, required String title, DateTime? dueDate, String? dueTime, int priority = 0});
   Future<TaskCompletionResult> completeTask({required String taskId});
+}
+
+abstract interface class ProjectRepository {
+  Future<List<Project>> getProjects({required String uid});
+  Future<Project?> getProject({required String uid, required String projectId});
+  Future<Project> createProject({required String uid, required String name, String? description});
+  Future<Project> updateProject({required String projectId, String? name, String? description, ProjectStatus? status});
+  Future<void> deleteProject({required String projectId});
 }
 
 abstract interface class AchievementRepository {
