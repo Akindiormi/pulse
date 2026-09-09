@@ -1,19 +1,18 @@
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' as supabase;
 
 import '../core/auth/auth_service.dart';
 import '../core/backend/trusted_account_backend.dart';
-import '../core/errors/app_error.dart';
 
 class SupabaseAuthService implements AuthService {
   SupabaseAuthService(this._supabase, this._accountBackend);
 
-  final SupabaseClient _supabase;
+  final supabase.SupabaseClient _supabase;
   final TrustedAccountBackend _accountBackend;
 
   @override
   Stream<AuthState> get authStateChanges => _supabase.auth.onAuthStateChange.map((event) => _mapUser(event.session?.user ?? _supabase.auth.currentUser));
 
-  AuthState _mapUser(User? user) {
+  AuthState _mapUser(supabase.User? user) {
     if (user == null) return const AuthState(status: AuthStatus.unauthenticated);
     final verified = user.emailConfirmedAt != null;
     return AuthState(status: verified ? AuthStatus.authenticated : AuthStatus.authenticatedUnverified, uid: user.id);
@@ -22,16 +21,16 @@ class SupabaseAuthService implements AuthService {
   Future<T> _guard<T>(Future<T> Function() action) async {
     try {
       return await action();
-    } on AuthException catch (e) {
+    } on supabase.AuthException catch (e) {
       throw AuthFailure(_mapErrorCode(e));
-    } on PostgrestException catch (e) {
+    } on supabase.PostgrestException catch (e) {
       throw AuthFailure(e.code ?? 'service-unavailable');
     } catch (_) {
       throw const AuthFailure('service-unavailable');
     }
   }
 
-  String _mapErrorCode(AuthException error) {
+  String _mapErrorCode(supabase.AuthException error) {
     final message = error.message.toLowerCase();
     if (message.contains('already registered')) return 'email-already-in-use';
     if (message.contains('invalid login')) return 'invalid-credential';
@@ -63,7 +62,7 @@ class SupabaseAuthService implements AuthService {
   Future<void> sendEmailVerification() => _guard(() async {
     final user = _supabase.auth.currentUser;
     if (user == null || user.email == null) throw const AuthFailure('session-expired');
-    await _supabase.auth.resend(type: OtpType.signup, email: user.email!);
+    await _supabase.auth.resend(type: supabase.OtpType.signup, email: user.email!);
   });
 
   @override
