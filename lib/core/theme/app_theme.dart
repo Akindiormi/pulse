@@ -16,7 +16,7 @@ class AppTypography {
   static const numberSmall = TextStyle(fontSize: 24, height: 1.0, fontWeight: FontWeight.w800, letterSpacing: -0.7, fontFeatures: [FontFeature.tabularFigures()]);
 }
 
-ThemeData buildAppTheme(Brightness brightness) {
+ThemeData buildAppTheme(Brightness brightness, {bool useGoogleFonts = true}) {
   final dark = brightness == Brightness.dark;
   final background = dark ? PulseColors.darkBackground : PulseColors.lightBackground;
   final surface = dark ? PulseColors.darkSurface : PulseColors.lightSurface;
@@ -35,32 +35,34 @@ ThemeData buildAppTheme(Brightness brightness) {
     error: PulseColors.error,
   );
 
-  final typography = GoogleFonts.manropeTextTheme(
-    TextTheme(
-      displayLarge: AppTypography.display,
-      displayMedium: AppTypography.headline,
-      displaySmall: AppTypography.headline,
-      headlineLarge: AppTypography.display,
-      headlineMedium: AppTypography.headline,
-      headlineSmall: AppTypography.title,
-      titleLarge: AppTypography.title,
-      titleMedium: AppTypography.title.copyWith(fontSize: 17),
-      titleSmall: AppTypography.label,
-      bodyLarge: AppTypography.body,
-      bodyMedium: AppTypography.bodySmall,
-      bodySmall: AppTypography.metadata,
-      labelLarge: AppTypography.label.copyWith(fontSize: 15),
-      labelMedium: AppTypography.label,
-      labelSmall: AppTypography.metadata,
-    ),
-  ).apply(bodyColor: text, displayColor: text);
+  final baseTypography = TextTheme(
+    displayLarge: AppTypography.display,
+    displayMedium: AppTypography.headline,
+    displaySmall: AppTypography.headline,
+    headlineLarge: AppTypography.display,
+    headlineMedium: AppTypography.headline,
+    headlineSmall: AppTypography.title,
+    titleLarge: AppTypography.title,
+    titleMedium: AppTypography.title.copyWith(fontSize: 17),
+    titleSmall: AppTypography.label,
+    bodyLarge: AppTypography.body,
+    bodyMedium: AppTypography.bodySmall,
+    bodySmall: AppTypography.metadata,
+    labelLarge: AppTypography.label.copyWith(fontSize: 15),
+    labelMedium: AppTypography.label,
+    labelSmall: AppTypography.metadata,
+  );
+  final typography = (useGoogleFonts ? GoogleFonts.manropeTextTheme(baseTypography) : baseTypography).apply(
+    bodyColor: text,
+    displayColor: text,
+  );
 
   return ThemeData(
     useMaterial3: true,
     brightness: brightness,
     scaffoldBackgroundColor: background,
     colorScheme: scheme,
-    fontFamily: GoogleFonts.manrope().fontFamily,
+    fontFamily: useGoogleFonts ? GoogleFonts.manrope().fontFamily : null,
     textTheme: typography,
     cardTheme: CardThemeData(
       margin: EdgeInsets.zero,
