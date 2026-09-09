@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(36);
+select plan(37);
 
 select has_table(
   'public', 'focus_sessions',
@@ -136,6 +136,8 @@ select 'other', id from auth.users where email = 'focus-test-other@example.com';
 
 insert into public.tasks (user_id, title)
 select id, 'Focus foundation test task' from focus_test_users where name = 'owner';
+insert into public.tasks (user_id, title)
+select id, 'Other owner task' from focus_test_users where name = 'other';
 
 create temporary table focus_test_rows (
   session_id uuid not null,
@@ -145,8 +147,7 @@ create temporary table focus_test_rows (
 insert into focus_test_rows(session_id, task_id)
 select null::uuid, id from public.tasks where title = 'Focus foundation test task' limit 1;
 
--- Replace the placeholder session id with an actual running session through
--- the authenticated owner role.
+-- Exercise the actual authenticated role and auth.uid()-based RLS policies.
 set local role authenticated;
 select set_config('request.jwt.claim.sub', (select id::text from focus_test_users where name = 'owner'), true);
 
@@ -173,6 +174,12 @@ select is(
   (select count(*) from public.focus_sessions where user_id = (select id from focus_test_users where name = 'owner')),
   1::bigint,
   'owner can create a focus session'
+);
+
+select throws_ok(
+  $$insert into public.focus_sessions (task_id, planned_duration_seconds, started_at) select id, 1800, now() from public.tasks where title = 'Other owner task'$$,
+  'Focus task does not belong to the session owner',
+  'database rejects cross-owner task associations'
 );
 
 update public.focus_sessions
