@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_timezone/flutter_timezone.dart';
 
 import '../../../core/auth/auth_service.dart';
 import '../../../core/backend/trusted_challenge_backend.dart';
@@ -31,10 +32,28 @@ class HomeController extends AsyncNotifier<HomeViewData> {
       throw const TrustedBackendException(TrustedBackendErrorCode.unauthenticated, 'Sign in to see your Pulse.');
     }
     final uid = authState.uid!;
-    final user = await ref.read(userRepositoryProvider).getUserModel(uid);
+    final repository = ref.read(userRepositoryProvider);
+    final user = await repository.getUserModel(uid);
     if (user == null) throw const TrustedBackendException(TrustedBackendErrorCode.notFound, 'Your Pulse profile could not be found.');
+
+    final syncedUser = await _syncDeviceTimezone(uid: uid, user: user);
     final tasks = await ref.read(taskRepositoryProvider).getTasks(uid: uid);
-    return HomeViewData(user: user, tasks: tasks);
+    return HomeViewData(user: syncedUser, tasks: tasks);
+  }
+
+  Future<UserModel> _syncDeviceTimezone({required String uid, required UserModel user}) async {
+    try {
+      final deviceTimezone = await FlutterTimezone.getLocalTimezone();
+      if (deviceTimezone.identifier == user.timezone) return user;
+      await ref.read(userRepositoryProvider).updateProfileFields(
+        uid: uid,
+        fields: <String, dynamic>{'timezone': deviceTimezone.identifier},
+      );
+      return user.copyWith(timezone: deviceTimezone.identifier);
+    } catch (_) {
+      // A timezone read failure must never block Today. The backend falls back to UTC.
+      return user;
+    }
   }
 
   Future<void> retry() async {
