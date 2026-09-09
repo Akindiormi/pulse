@@ -5,6 +5,7 @@ import '../../../core/backend/trusted_challenge_backend.dart';
 import '../../../core/widgets/pulse_card.dart';
 import '../../../core/widgets/pulse_feedback.dart';
 import '../../../core/widgets/pulse_streak.dart';
+import '../../../core/motion/pulse_motion_state.dart';
 import '../application/home_controller.dart';
 import '../../../models/task_model.dart';
 
@@ -119,17 +120,7 @@ class _QuickAdd extends StatelessWidget {
   final bool adding;
   final VoidCallback onSubmit;
   @override
-  Widget build(BuildContext context) => TextField(
-        controller: controller,
-        textInputAction: TextInputAction.done,
-        onSubmitted: (_) => onSubmit(),
-        enabled: !adding,
-        decoration: InputDecoration(
-          hintText: 'what needs to get done?',
-          prefixIcon: const Icon(Icons.add_task_rounded),
-          suffixIcon: IconButton(onPressed: adding ? null : onSubmit, icon: const Icon(Icons.arrow_upward_rounded)),
-        ),
-      );
+  Widget build(BuildContext context) => TextField(controller: controller, textInputAction: TextInputAction.done, onSubmitted: (_) => onSubmit(), enabled: !adding, decoration: InputDecoration(hintText: 'what needs to get done?', prefixIcon: const Icon(Icons.add_task_rounded), suffixIcon: IconButton(onPressed: adding ? null : onSubmit, icon: const Icon(Icons.arrow_upward_rounded))));
 }
 
 class _Section extends StatelessWidget {
@@ -145,16 +136,7 @@ class _TaskTile extends StatelessWidget {
   final Task task;
   final VoidCallback? onComplete;
   @override
-  Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.only(bottom: 8),
-        child: PulseCard(
-          child: Row(children: [
-            Checkbox(value: task.isCompleted, onChanged: task.isCompleted || onComplete == null ? null : (_) => onComplete!()),
-            const SizedBox(width: 8),
-            Expanded(child: Text(task.title, style: Theme.of(context).textTheme.bodyLarge?.copyWith(decoration: task.isCompleted ? TextDecoration.lineThrough : null, color: task.isCompleted ? Theme.of(context).colorScheme.onSurfaceVariant : null))),
-          ]),
-        ),
-      );
+  Widget build(BuildContext context) => Padding(padding: const EdgeInsets.only(bottom: 8), child: PulseCard(child: Row(children: [Checkbox(value: task.isCompleted, onChanged: task.isCompleted || onComplete == null ? null : (_) => onComplete!()), const SizedBox(width: 8), Expanded(child: Text(task.title, style: Theme.of(context).textTheme.bodyLarge?.copyWith(decoration: task.isCompleted ? TextDecoration.lineThrough : null, color: task.isCompleted ? Theme.of(context).colorScheme.onSurfaceVariant : null)))])));
 }
 
 class _EmptyToday extends StatelessWidget {
