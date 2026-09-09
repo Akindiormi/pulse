@@ -49,8 +49,6 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     if (mounted) setState(() {});
   }
 
-  /// Drives the optional Pulse auth avatar (see assets/rive/auth/README.md).
-  /// Falls back to nothing if no .riv asset is present yet.
   PulseAuthAvatarState get avatarState {
     if (submittedSuccessfully) return PulseAuthAvatarState.success;
     final emailError = emailTouched && validateEmail() != null;
@@ -75,14 +73,14 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
 
   String? validateEmail() {
     final value = email.text.trim();
-    if (value.isEmpty) return 'enter your email address.';
-    if (!RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(value)) return 'enter a valid email address.';
+    if (value.isEmpty) return 'Enter your email address.';
+    if (!RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(value)) return 'Enter a valid email address.';
     return null;
   }
 
   String? validatePassword() {
-    if (password.text.isEmpty) return 'enter your password.';
-    if (mode == _AuthMode.signUp && password.text.length < 8) return 'use at least 8 characters for your password.';
+    if (password.text.isEmpty) return 'Enter your password.';
+    if (mode == _AuthMode.signUp && password.text.length < 8) return 'Use at least 8 characters for your password.';
     return null;
   }
 
@@ -103,7 +101,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
       final error = await controller.resetPassword(email.text);
       if (!mounted) return;
       if (error == null) {
-        _show('if an account can receive a reset email, you’ll get one shortly.');
+        _show('If an account can receive a reset email, you’ll get one shortly.');
         setState(() => mode = _AuthMode.signIn);
       }
       return;
@@ -163,10 +161,10 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     if (mode == _AuthMode.entry) return _entry(context);
 
     final title = switch (mode) {
-      _AuthMode.signUp => 'create your account',
-      _AuthMode.reset => 'reset your password',
-      _AuthMode.signIn => 'welcome back',
-      _AuthMode.entry => 'welcome to Pulse',
+      _AuthMode.signUp => 'Create Your Account',
+      _AuthMode.reset => 'Reset Your Password',
+      _AuthMode.signIn => 'Welcome Back',
+      _AuthMode.entry => 'Welcome to Pulse',
     };
 
     return Scaffold(
@@ -182,7 +180,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                   alignment: Alignment.centerLeft,
                   onPressed: () => setState(() => mode = _AuthMode.entry),
                   icon: const Icon(Icons.arrow_back),
-                  tooltip: 'back',
+                  tooltip: 'Back',
                 ),
                 excludeFromSemantics: false,
               ),
@@ -209,7 +207,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
               Text(title, style: Theme.of(context).textTheme.displayLarge),
               const SizedBox(height: PulseSpace.sm),
               Text(
-                mode == _AuthMode.reset ? 'we’ll send a reset link to your email.' : 'your progress starts here.',
+                mode == _AuthMode.reset ? 'We’ll send a reset link to your email.' : 'Your progress starts here.',
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
               ),
               const SizedBox(height: PulseSpace.xxl),
@@ -219,7 +217,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                 keyboardType: TextInputType.emailAddress,
                 textInputAction: mode == _AuthMode.reset ? TextInputAction.done : TextInputAction.next,
                 autofillHints: const [AutofillHints.email],
-                decoration: InputDecoration(labelText: 'email', errorText: validateEmail()),
+                decoration: InputDecoration(labelText: 'Email address', errorText: validateEmail()),
                 onChanged: (_) => setState(() {}),
                 onSubmitted: (_) => mode == _AuthMode.reset ? submit() : passwordFocus.requestFocus(),
               ),
@@ -232,12 +230,12 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                   textInputAction: mode == _AuthMode.signUp ? TextInputAction.next : TextInputAction.done,
                   autofillHints: const [AutofillHints.password],
                   decoration: InputDecoration(
-                    labelText: 'password',
+                    labelText: 'Password',
                     errorText: validatePassword(),
                     suffixIcon: IconButton(
                       onPressed: () => setState(() => obscure = !obscure),
                       icon: Icon(obscure ? Icons.visibility : Icons.visibility_off),
-                      tooltip: obscure ? 'show password' : 'hide password',
+                      tooltip: obscure ? 'Show password' : 'Hide password',
                     ),
                   ),
                   onChanged: (_) => setState(() {}),
@@ -250,8 +248,8 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                     obscureText: obscure,
                     textInputAction: TextInputAction.done,
                     decoration: InputDecoration(
-                      labelText: 'confirm password',
-                      errorText: confirm.text.isNotEmpty && confirm.text != password.text ? 'passwords don’t match.' : null,
+                      labelText: 'Confirm password',
+                      errorText: confirm.text.isNotEmpty && confirm.text != password.text ? 'Passwords don’t match.' : null,
                     ),
                     onChanged: (_) => setState(() {}),
                     onSubmitted: (_) => submit(),
@@ -266,22 +264,22 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                   expand: true,
                   onPressed: auth.loading ? null : submit,
                   loading: auth.loading,
-                  label: mode == _AuthMode.signUp ? 'create account' : mode == _AuthMode.reset ? 'send reset link' : 'sign in',
+                  label: mode == _AuthMode.signUp ? 'Create Account' : mode == _AuthMode.reset ? 'Send Reset Link' : 'Sign In',
                 ),
               ),
               if (mode == _AuthMode.signIn)
                 TextButton(
                   onPressed: auth.loading ? null : () => setState(() => mode = _AuthMode.reset),
-                  child: const Text('forgot password?'),
+                  child: const Text('Forgot password?'),
                 ),
               const SizedBox(height: PulseSpace.md),
               TextButton(
                 onPressed: auth.loading ? null : () => setState(() => mode = mode == _AuthMode.signUp ? _AuthMode.signIn : _AuthMode.signUp),
-                child: Text(mode == _AuthMode.signUp ? 'already have an account? sign in' : 'new to Pulse? create an account'),
+                child: Text(mode == _AuthMode.signUp ? 'Already have an account? Sign in' : 'New to Pulse? Create an account'),
               ),
               const SizedBox(height: PulseSpace.xl),
               Text(
-                'email authentication is currently available. google, apple and phone sign-in are not configured in the current Firebase auth boundary.',
+                'Email authentication is available. Google, Apple and phone sign-in are not configured.',
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.bodySmall,
               ),
@@ -303,18 +301,18 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                 PulseMotionAttachment(
                   intent: PulseMotionIntent.onboardingIllustration,
                   state: PulseMotionState.entering,
-                  child: Text('welcome to Pulse', style: AppTypography.display),
+                  child: Text('Welcome to Pulse', style: AppTypography.display),
                   excludeFromSemantics: false,
                 ),
                 const SizedBox(height: PulseSpace.md),
                 Text(
-                  'make today count. one small action at a time.',
+                  'Make today count. One small action at a time.',
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
                 ),
                 const SizedBox(height: PulseSpace.xxl),
-                PulseButton(expand: true, onPressed: () => setState(() => mode = _AuthMode.signUp), label: 'create account'),
+                PulseButton(expand: true, onPressed: () => setState(() => mode = _AuthMode.signUp), label: 'Create Account'),
                 const SizedBox(height: PulseSpace.sm),
-                PulseButton(expand: true, variant: PulseButtonVariant.secondary, onPressed: () => setState(() => mode = _AuthMode.signIn), label: 'sign in'),
+                PulseButton(expand: true, variant: PulseButtonVariant.secondary, onPressed: () => setState(() => mode = _AuthMode.signIn), label: 'Sign In'),
                 const Spacer(),
               ],
             ),
