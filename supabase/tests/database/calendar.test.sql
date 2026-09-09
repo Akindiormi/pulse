@@ -15,7 +15,7 @@ select has_column('public', 'task_calendar_events', 'calendar_event_id', 'link h
 select has_index('public', 'calendar_events', 'calendar_events_user_start_idx', 'calendar events have range index');
 select has_index('public', 'task_calendar_events', 'task_calendar_events_event_idx', 'calendar links have event index');
 
-select col_is_not_null('public', 'calendar_events', 'timezone', 'timezone is required');
+select col_not_null('public', 'calendar_events', 'timezone', 'timezone is required');
 select col_has_default('public', 'calendar_events', 'all_day', 'all_day defaults false');
 select col_has_default('public', 'calendar_events', 'timezone', 'timezone defaults UTC');
 select fk_ok('public', 'task_calendar_events', 'task_id', 'public', 'tasks', 'id', 'link points to tasks');
