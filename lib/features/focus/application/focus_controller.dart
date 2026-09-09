@@ -69,8 +69,6 @@ class FocusState {
       recoveryComplete: recoveryComplete ?? this.recoveryComplete,
     );
   }
-
-  FocusState idle() => const FocusState(recoveryComplete: true);
 }
 
 class FocusController extends AsyncNotifier<FocusState>
@@ -147,7 +145,6 @@ class FocusController extends AsyncNotifier<FocusState>
         taskId: resolvedTaskId,
         plannedDurationSeconds: duration,
       );
-      if (!mounted) return;
       state = AsyncData(FocusState(
         session: session,
         elapsedDuration: _project(session),
@@ -198,7 +195,6 @@ class FocusController extends AsyncNotifier<FocusState>
 
     try {
       final session = await _repository.getActiveSession();
-      if (!mounted) return;
       if (session == null) {
         _stopTicker();
         state = const AsyncData(FocusState(recoveryComplete: true));
@@ -211,10 +207,8 @@ class FocusController extends AsyncNotifier<FocusState>
       ));
       _syncTicker(session);
     } on FocusRepositoryException catch (error) {
-      if (!mounted) return;
       state = AsyncData(previous.copyWith(isLoading: false, error: error, recoveryComplete: true));
     } catch (error) {
-      if (!mounted) return;
       state = AsyncData(previous.copyWith(
         isLoading: false,
         error: FocusRepositoryException(
@@ -238,14 +232,14 @@ class FocusController extends AsyncNotifier<FocusState>
   }
 
   @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) {
+  void didChangeAppLifecycleState(AppLifecycleState lifecycleState) {
+    if (lifecycleState == AppLifecycleState.resumed) {
       refreshProjection();
-      final current = this.state.valueOrNull?.session;
+      final current = state.valueOrNull?.session;
       if (current?.isRunning == true) _startTicker();
-    } else if (state == AppLifecycleState.paused ||
-        state == AppLifecycleState.inactive ||
-        state == AppLifecycleState.detached) {
+    } else if (lifecycleState == AppLifecycleState.paused ||
+        lifecycleState == AppLifecycleState.inactive ||
+        lifecycleState == AppLifecycleState.detached) {
       _stopTicker();
     }
   }
@@ -266,14 +260,20 @@ class FocusController extends AsyncNotifier<FocusState>
       ));
       return;
     }
+    if (requiredStatus == null && !session.status.isActive) {
+      _setError(const FocusRepositoryException(
+        FocusRepositoryErrorKind.invalidTransition,
+        'Focus is not active.',
+      ));
+      return;
+    }
 
     _beginAction(current);
     try {
       final updated = await operation(session.id);
-      if (!mounted) return;
       state = AsyncData(FocusState(
         session: updated,
-        elapsedDuration: updated.activeDurationSeconds == 0 && updated.isRunning
+        elapsedDuration: updated.isRunning
             ? _project(updated)
             : Duration(seconds: updated.activeDurationSeconds),
         recoveryComplete: true,
@@ -304,7 +304,6 @@ class FocusController extends AsyncNotifier<FocusState>
   }
 
   void _finishWithError(FocusState previous, FocusRepositoryException error) {
-    if (!mounted) return;
     state = AsyncData(previous.copyWith(actionInProgress: false, error: error));
   }
 
