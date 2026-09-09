@@ -1,24 +1,15 @@
 import '../../models/activity_model.dart';
 import '../../models/achievement_model.dart';
 import '../../models/challenge_model.dart';
+import '../../models/task_model.dart';
 import '../../models/user_model.dart';
 
 class UserProfileUpdate {
   const UserProfileUpdate(this.fields);
-
   final Map<String, dynamic> fields;
-
-  static const allowedFields = <String>{
-    'displayName',
-    'photoUrl',
-    'timezone',
-    'notificationPreferences',
-  };
-
+  static const allowedFields = <String>{'displayName', 'photoUrl', 'timezone', 'notificationPreferences'};
   Map<String, dynamic> toFirestore() {
-    if (fields.isEmpty || fields.keys.any((key) => !allowedFields.contains(key))) {
-      throw ArgumentError('Profile updates may only change supported profile fields.');
-    }
+    if (fields.isEmpty || fields.keys.any((key) => !allowedFields.contains(key))) throw ArgumentError('Profile updates may only change supported profile fields.');
     return Map<String, dynamic>.from(fields);
   }
 }
@@ -27,10 +18,7 @@ abstract interface class UserRepository {
   Future<void> createOrUpdateUser({required String uid, String? displayName, String? photoUrl});
   Future<void> updateProfileFields({required String uid, required Map<String, dynamic> fields});
   Future<Map<String, dynamic>?> getUser(String uid);
-  Future<UserModel?> getUserModel(String uid) async {
-    final data = await getUser(uid);
-    return data == null ? null : UserModel.fromMap(uid, data);
-  }
+  Future<UserModel?> getUserModel(String uid) async { final data = await getUser(uid); return data == null ? null : UserModel.fromMap(uid, data); }
   Future<void> updatePreferences({required String uid, required Map<String, dynamic> preferences}) async => throw UnimplementedError('User preferences are not implemented by this repository.');
 }
 
@@ -44,6 +32,12 @@ abstract interface class ActivityRepository {
   Future<bool> isCompleted({required String uid, required String activityId});
   Future<List<ActivityModel>> getActivities(String uid) async => throw UnimplementedError('Activity listing is not implemented by this repository.');
   Future<Set<String>> getCompletedCategories(String uid) async => throw UnimplementedError('Category history is not implemented by this repository.');
+}
+
+abstract interface class TaskRepository {
+  Future<List<Task>> getTasks({required String uid});
+  Future<Task> createTask({required String uid, required String title, DateTime? dueDate, String? dueTime, int priority = 0});
+  Future<TaskCompletionResult> completeTask({required String taskId});
 }
 
 abstract interface class AchievementRepository {
