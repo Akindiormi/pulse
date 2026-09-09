@@ -1,7 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-
-import '../../../../models/focus_session_model.dart';
-import '../../../../features/focus/application/focus_session_state_machine.dart';
+import 'package:pulse/features/focus/application/focus_session_state_machine.dart';
+import 'package:pulse/models/focus_session_model.dart';
 
 void main() {
   final startedAt = DateTime.utc(2026, 9, 9, 10, 0);
@@ -24,54 +23,24 @@ void main() {
 
   group('transition rules', () {
     test('allows running to paused', () {
-      expect(
-        FocusSessionStateMachine.canTransition(
-          FocusSessionStatus.running,
-          FocusSessionStatus.paused,
-        ),
-        isTrue,
-      );
+      expect(FocusSessionStateMachine.canTransition(FocusSessionStatus.running, FocusSessionStatus.paused), isTrue);
     });
 
     test('allows paused to running', () {
-      expect(
-        FocusSessionStateMachine.canTransition(
-          FocusSessionStatus.paused,
-          FocusSessionStatus.running,
-        ),
-        isTrue,
-      );
+      expect(FocusSessionStateMachine.canTransition(FocusSessionStatus.paused, FocusSessionStatus.running), isTrue);
     });
 
     test('allows active states to complete or cancel', () {
-      for (final status in [
-        FocusSessionStatus.running,
-        FocusSessionStatus.paused,
-      ]) {
-        expect(
-          FocusSessionStateMachine.canTransition(status, FocusSessionStatus.completed),
-          isTrue,
-        );
-        expect(
-          FocusSessionStateMachine.canTransition(status, FocusSessionStatus.cancelled),
-          isTrue,
-        );
+      for (final status in [FocusSessionStatus.running, FocusSessionStatus.paused]) {
+        expect(FocusSessionStateMachine.canTransition(status, FocusSessionStatus.completed), isTrue);
+        expect(FocusSessionStateMachine.canTransition(status, FocusSessionStatus.cancelled), isTrue);
       }
     });
 
     test('rejects terminal lifecycle changes', () {
-      for (final status in [
-        FocusSessionStatus.completed,
-        FocusSessionStatus.cancelled,
-      ]) {
-        expect(
-          FocusSessionStateMachine.canTransition(status, FocusSessionStatus.running),
-          isFalse,
-        );
-        expect(
-          FocusSessionStateMachine.canTransition(status, FocusSessionStatus.paused),
-          isFalse,
-        );
+      for (final status in [FocusSessionStatus.completed, FocusSessionStatus.cancelled]) {
+        expect(FocusSessionStateMachine.canTransition(status, FocusSessionStatus.running), isFalse);
+        expect(FocusSessionStateMachine.canTransition(status, FocusSessionStatus.paused), isFalse);
       }
     });
 
@@ -105,26 +74,18 @@ void main() {
 
   group('timer projection', () {
     test('running session projects elapsed active time from persisted state', () {
-      final now = DateTime.utc(2026, 9, 9, 10, 35);
       final result = FocusSessionStateMachine.projectedActiveDuration(
         session(activeSeconds: 1500, updated: updatedAt),
-        now: now,
+        now: DateTime.utc(2026, 9, 9, 10, 35),
       );
-
       expect(result, 2100);
     });
 
     test('paused session does not accumulate wall-clock pause time', () {
-      final now = DateTime.utc(2026, 9, 9, 11, 0);
       final result = FocusSessionStateMachine.projectedActiveDuration(
-        session(
-          status: FocusSessionStatus.paused,
-          activeSeconds: 1500,
-          updated: updatedAt,
-        ),
-        now: now,
+        session(status: FocusSessionStatus.paused, activeSeconds: 1500, updated: updatedAt),
+        now: DateTime.utc(2026, 9, 9, 11, 0),
       );
-
       expect(result, 1500);
     });
 
@@ -144,7 +105,6 @@ void main() {
         ),
         now: DateTime.utc(2026, 9, 9, 12, 0),
       );
-
       expect(result, 1800);
     });
 
@@ -153,7 +113,6 @@ void main() {
         session(activeSeconds: 3590, updated: updatedAt),
         now: DateTime.utc(2026, 9, 9, 11, 0),
       );
-
       expect(remaining, Duration.zero);
     });
   });
@@ -166,11 +125,7 @@ void main() {
     });
 
     test('supports task and calendar handoff metadata', () {
-      const intent = FocusIntent(
-        plannedDurationSeconds: 1800,
-        taskId: 'task-1',
-        calendarEventId: 'event-1',
-      );
+      const intent = FocusIntent(plannedDurationSeconds: 1800, taskId: 'task-1', calendarEventId: 'event-1');
       expect(intent.isTaskBound, isTrue);
       expect(intent.isCalendarBound, isTrue);
     });
