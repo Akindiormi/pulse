@@ -58,6 +58,59 @@ void main() {
     ]);
   });
 
+  test('weekly BYDAY does not count days before the series starts', () {
+    final result = CalendarRecurrence.expand(
+      event(rule: 'FREQ=WEEKLY;BYDAY=MO,WE,FR;COUNT=3'),
+      rangeStart: DateTime.utc(2026, 9, 1),
+      rangeEnd: DateTime.utc(2026, 9, 15),
+    );
+
+    expect(result.map((e) => e.startsAt), [
+      DateTime.utc(2026, 9, 2, 8),
+      DateTime.utc(2026, 9, 4, 8),
+      DateTime.utc(2026, 9, 7, 8),
+    ]);
+  });
+
+  test('monthly and yearly recurrence advance the series', () {
+    final monthly = CalendarRecurrence.expand(
+      event(rule: 'FREQ=MONTHLY;INTERVAL=1;COUNT=3'),
+      rangeStart: DateTime.utc(2026, 9, 1),
+      rangeEnd: DateTime.utc(2026, 12, 1),
+    );
+    expect(monthly.map((e) => e.startsAt), [
+      DateTime.utc(2026, 9, 1, 8),
+      DateTime.utc(2026, 10, 1, 8),
+      DateTime.utc(2026, 11, 1, 8),
+    ]);
+
+    final yearly = CalendarRecurrence.expand(
+      event(rule: 'FREQ=YEARLY;COUNT=2'),
+      rangeStart: DateTime.utc(2026, 1, 1),
+      rangeEnd: DateTime.utc(2028, 1, 2),
+    );
+    expect(yearly.map((e) => e.startsAt), [
+      DateTime.utc(2026, 9, 1, 8),
+      DateTime.utc(2027, 9, 1, 8),
+    ]);
+  });
+
+  test('range boundaries are exclusive', () {
+    final beforeStart = CalendarRecurrence.expand(
+      event(),
+      rangeStart: DateTime.utc(2026, 9, 1, 9),
+      rangeEnd: DateTime.utc(2026, 9, 2),
+    );
+    final atEnd = CalendarRecurrence.expand(
+      event(),
+      rangeStart: DateTime.utc(2026, 9, 1),
+      rangeEnd: DateTime.utc(2026, 9, 1, 8),
+    );
+
+    expect(beforeStart, isEmpty);
+    expect(atEnd, isEmpty);
+  });
+
   test('non-recurring events use normal range overlap semantics', () {
     final result = CalendarRecurrence.expand(
       event(),
