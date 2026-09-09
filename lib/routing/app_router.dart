@@ -4,6 +4,7 @@ import '../core/motion/pulse_motion_policy.dart';
 import '../features/achievements/presentation/achievements_screen.dart';
 import '../features/auth/presentation/auth_screen.dart';
 import '../features/auth/presentation/email_verification_screen.dart';
+import '../features/calendar/presentation/calendar_screen.dart';
 import '../features/challenges/presentation/challenge_detail_screen.dart';
 import '../features/home/presentation/home_screen.dart';
 import '../features/onboarding/presentation/onboarding_screen.dart';
@@ -35,6 +36,7 @@ final appRouter = GoRouter(initialLocation: '/splash', routes: [
     GoRoute(path: '/home', builder: (_, __) => const HomeScreen()),
     GoRoute(path: '/projects', pageBuilder: (context, state) => _motionPage(context: context, key: state.pageKey, child: const ProjectsScreen(), begin: const Offset(.03, 0), scale: true)),
     GoRoute(path: '/projects/:id', pageBuilder: (context, state) => _motionPage(context: context, key: state.pageKey, child: ProjectDetailScreen(projectId: state.pathParameters['id']!), begin: const Offset(.06, 0), scale: true)),
+    GoRoute(path: '/calendar', pageBuilder: (context, state) => _motionPage(context: context, key: state.pageKey, child: const CalendarScreen(), begin: const Offset(.03, 0), scale: true)),
     GoRoute(path: '/achievements', pageBuilder: (context, state) => _motionPage(context: context, key: state.pageKey, child: const AchievementsScreen(), begin: const Offset(.03, 0), scale: true)),
     GoRoute(path: '/profile', pageBuilder: (context, state) => _motionPage(context: context, key: state.pageKey, child: const ProfileScreen(), begin: const Offset(.02, 0))),
   ]),
