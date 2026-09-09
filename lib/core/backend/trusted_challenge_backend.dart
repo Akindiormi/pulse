@@ -20,12 +20,10 @@ class SupabaseTrustedCallableClient implements TrustedCallableClient {
   Future<Map<String, dynamic>> call(String name, Map<String, dynamic> data) async {
     try {
       final response = await _supabase.functions.invoke(name, body: data);
-      if (response.data is! Map) {
-        throw const TrustedBackendException(TrustedBackendErrorCode.internal, 'The backend returned an invalid response.');
-      }
+      if (response.data is! Map) throw const TrustedBackendException(TrustedBackendErrorCode.internal, 'The backend returned an invalid response.');
       return Map<String, dynamic>.from(response.data as Map);
     } on FunctionsHttpError catch (error) {
-      throw _mapHttpError(error.status);
+      throw mapHttpStatus(error.status);
     } on FunctionsRelayError {
       throw const TrustedBackendException(TrustedBackendErrorCode.unavailable, 'The service is temporarily unavailable.');
     } on FunctionsFetchError {
@@ -37,7 +35,7 @@ class SupabaseTrustedCallableClient implements TrustedCallableClient {
     }
   }
 
-  TrustedBackendException _mapHttpError(int status) {
+  static TrustedBackendException mapHttpStatus(int status) {
     switch (status) {
       case 401: return const TrustedBackendException(TrustedBackendErrorCode.unauthenticated, 'Authentication is required.');
       case 403: return const TrustedBackendException(TrustedBackendErrorCode.permissionDenied, 'You do not have permission to perform this action.');
@@ -149,4 +147,9 @@ class SupabaseTrustedChallengeBackend implements TrustedChallengeBackend {
     if (value is Map && value['iso'] is String) return DateTime.tryParse(value['iso'] as String);
     return DateTime.tryParse(value.toString());
   }
+}
+
+/// Compatibility name for older application-layer tests and contracts.
+class FirebaseCallableChallengeBackend extends SupabaseTrustedChallengeBackend {
+  FirebaseCallableChallengeBackend(super.client, super.authService);
 }
