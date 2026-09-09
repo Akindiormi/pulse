@@ -2,6 +2,7 @@ import '../../models/activity_model.dart';
 import '../../models/achievement_model.dart';
 import '../../models/calendar_event_model.dart';
 import '../../models/challenge_model.dart';
+import '../../models/focus_session_model.dart';
 import '../../models/milestone_model.dart';
 import '../../models/project_model.dart';
 import '../../models/task_model.dart';
@@ -68,6 +69,18 @@ abstract interface class CalendarRepository {
   Future<void> deleteEvent({required String eventId});
   Future<void> linkTask({required String taskId, required String eventId});
   Future<void> unlinkTask({required String taskId, required String eventId});
+}
+
+abstract interface class FocusRepository {
+  Future<FocusSession> startSession({String? taskId, required int plannedDurationSeconds});
+  Future<FocusSession?> getActiveSession();
+  Future<FocusSession?> getSession(String sessionId);
+  Future<List<FocusSession>> getSessionHistory({int limit = 100, int offset = 0});
+  Future<List<FocusSession>> getSessionsForTask(String taskId, {int limit = 100, int offset = 0});
+  Future<FocusSession> pauseSession(String sessionId);
+  Future<FocusSession> resumeSession(String sessionId);
+  Future<FocusSession> completeSession(String sessionId);
+  Future<FocusSession> cancelSession(String sessionId);
 }
 
 abstract interface class AchievementRepository {
