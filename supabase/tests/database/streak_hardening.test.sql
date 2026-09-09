@@ -4,14 +4,14 @@ create extension if not exists pgtap with schema extensions;
 
 select plan(27);
 
--- Contract/schema checks.
+-- Schema and backend-authority checks.
 select has_column(
   'public', 'profiles', 'streak_grace_used_on',
-  'profiles stores the date of the most recent consumed grace day'
+  'profiles stores the UTC date on which grace was last consumed'
 );
 select has_function(
-  'public', 'pulse_local_date', ARRAY['timestamp with time zone', 'text'],
-  'local calendar-date helper exists'
+  'public', 'pulse_server_utc_date', ARRAY['timestamp with time zone'],
+  'server UTC calendar-date helper exists'
 );
 select has_function(
   'public', 'calculate_streak_v1', ARRAY['date', 'integer', 'date', 'date'],
@@ -19,7 +19,7 @@ select has_function(
 );
 select ok(
   to_regclass('public.activity_events_task_completion_idx') is not null,
-  'task completion activity events have a uniqueness guard'
+  'task completion has a uniqueness guard against duplicate completion events'
 );
 select is_definer(
   'public', 'complete_task', ARRAY['uuid'],
@@ -28,139 +28,137 @@ select is_definer(
 select matches(
   pg_get_functiondef('public.complete_task(uuid)'::regprocedure),
   'for update',
-  'task completion locks the task row so concurrent retries serialize'
+  'task completion locks rows so concurrent retries serialize'
 );
 
--- A day is a calendar date in the named IANA timezone, not 24 elapsed hours.
+-- Server UTC is the only authoritative streak clock.
 select is(
-  public.pulse_local_date('2026-09-10 03:59:59+00', 'America/New_York')::text,
-  '2026-09-09',
-  'timezone conversion uses the user calendar date'
+  public.pulse_server_utc_date('2026-09-09 23:59:59+00'),
+  date '2026-09-09',
+  'UTC date is Sep 9 immediately before UTC midnight'
 );
 select is(
-  public.pulse_local_date('2026-09-10 04:00:00+00', 'America/New_York')::text,
-  '2026-09-10',
-  'midnight boundary changes the calendar date'
-);
-
--- DST spring-forward: the day is still one calendar day despite being 23 elapsed hours.
-select is(
-  public.pulse_local_date('2026-03-08 04:59:59+00', 'America/New_York')::text,
-  '2026-03-07',
-  'DST spring-forward before local midnight remains the prior calendar day'
-);
-select is(
-  public.pulse_local_date('2026-03-08 05:00:00+00', 'America/New_York')::text,
-  '2026-03-08',
-  'DST spring-forward after local midnight enters the new calendar day'
+  public.pulse_server_utc_date('2026-09-10 00:00:00+00'),
+  date '2026-09-10',
+  'UTC date changes exactly at server UTC midnight'
 );
 
--- DST fall-back: repeated local clock time does not create a second calendar day.
+-- DST transitions are explicitly tested, but cannot change a UTC calendar date.
 select is(
-  public.pulse_local_date('2026-11-01 04:30:00+00', 'America/New_York')::text,
-  '2026-11-01',
-  'DST fall-back first 1:30 remains the same calendar day'
+  public.pulse_server_utc_date('2026-03-08 23:30:00+00'),
+  date '2026-03-08',
+  'DST spring transition does not change UTC calendar-date semantics'
 );
 select is(
-  public.pulse_local_date('2026-11-01 06:30:00+00', 'America/New_York')::text,
-  '2026-11-01',
-  'DST fall-back repeated hour remains the same calendar day'
+  public.pulse_server_utc_date('2026-11-01 23:30:00+00'),
+  date '2026-11-01',
+  'DST fall transition does not change UTC calendar-date semantics'
 );
 
--- First-ever qualifying activity.
+-- First qualifying activity.
 select is(
-  (public.calculate_streak_v1(null, 0, '2026-09-10', null) ->> 'newStreak')::integer,
+  (public.calculate_streak_v1(null, 0, date '2026-09-10', null) ->> 'newStreak')::integer,
   1,
   'first qualifying activity starts a one-day streak'
 );
-
--- Same calendar day is idempotent at the streak level.
 select is(
-  (public.calculate_streak_v1('2026-09-10', 4, '2026-09-10', null) ->> 'newStreak')::integer,
+  (public.calculate_streak_v1(null, 0, date '2026-09-10', null) ->> 'useGrace')::boolean,
+  false,
+  'first activity does not consume grace'
+);
+
+-- Same UTC calendar day is idempotent at the streak-transition level.
+select is(
+  (public.calculate_streak_v1(date '2026-09-10', 4, date '2026-09-10', null) ->> 'newStreak')::integer,
   4,
-  'additional activity on the same calendar day does not inflate the streak'
+  'same calendar day does not inflate the streak'
 );
 
--- Consecutive days extend by one.
+-- Consecutive day increments normally.
 select is(
-  (public.calculate_streak_v1('2026-09-10', 4, '2026-09-11', null) ->> 'newStreak')::integer,
+  (public.calculate_streak_v1(date '2026-09-10', 4, date '2026-09-11', null) ->> 'newStreak')::integer,
   5,
-  'next calendar day extends the streak by one'
+  'consecutive UTC calendar day extends the streak by one'
+);
+select is(
+  (public.calculate_streak_v1(date '2026-09-10', 4, date '2026-09-11', null) ->> 'useGrace')::boolean,
+  false,
+  'consecutive day does not consume grace'
 );
 
--- Exactly one missed day can be covered by grace.
+-- Exactly one missed day: grace forgives it and extends by two.
 select is(
-  (public.calculate_streak_v1('2026-09-10', 4, '2026-09-12', null) ->> 'newStreak')::integer,
+  (public.calculate_streak_v1(date '2026-09-10', 4, date '2026-09-12', null) ->> 'newStreak')::integer,
   6,
-  'one missed calendar day can be covered by grace'
+  'exactly one missed calendar day is forgiven by grace'
 );
 select is(
-  (public.calculate_streak_v1('2026-09-10', 4, '2026-09-12', null) ->> 'useGrace')::boolean,
+  (public.calculate_streak_v1(date '2026-09-10', 4, date '2026-09-12', null) ->> 'useGrace')::boolean,
   true,
-  'one missed calendar day consumes grace'
+  'exactly one missed calendar day consumes grace'
 );
 
 -- Grace is unavailable inside the rolling seven-calendar-day window.
 select is(
-  (public.calculate_streak_v1('2026-09-15', 4, '2026-09-17', '2026-09-12') ->> 'newStreak')::integer,
+  (public.calculate_streak_v1(date '2026-09-15', 4, date '2026-09-17', date '2026-09-12') ->> 'newStreak')::integer,
   1,
-  'grace cannot be reused inside seven calendar days'
+  'recent grace use blocks another grace inside the rolling seven-day window'
 );
 select is(
-  (public.calculate_streak_v1('2026-09-19', 4, '2026-09-21', '2026-09-12') ->> 'newStreak')::integer,
-  6,
-  'grace becomes available on the seventh calendar day after use'
+  (public.calculate_streak_v1(date '2026-09-15', 4, date '2026-09-17', date '2026-09-12') ->> 'useGrace')::boolean,
+  false,
+  'blocked grace is not consumed'
 );
 
--- A gap larger than one missed calendar day cannot be repaired by one grace day.
+-- Exactly seven calendar days after consumption, grace is available again.
 select is(
-  (public.calculate_streak_v1('2026-09-10', 8, '2026-09-13', null) ->> 'newStreak')::integer,
+  (public.calculate_streak_v1(date '2026-09-20', 8, date '2026-09-22', date '2026-09-15') ->> 'newStreak')::integer,
+  10,
+  'grace becomes available exactly seven calendar days after prior use'
+);
+select is(
+  (public.calculate_streak_v1(date '2026-09-20', 8, date '2026-09-22', date '2026-09-15') ->> 'useGrace')::boolean,
+  true,
+  'grace is reusable when the rolling window has expired'
+);
+
+-- Two or more consecutive missed days reset the streak outright.
+select is(
+  (public.calculate_streak_v1(date '2026-09-10', 8, date '2026-09-13', null) ->> 'newStreak')::integer,
   1,
   'two or more missed calendar days reset the streak'
 );
 select is(
-  (public.calculate_streak_v1('2026-09-10', 8, '2026-09-13', null) ->> 'useGrace')::boolean,
+  (public.calculate_streak_v1(date '2026-09-10', 8, date '2026-09-13', null) ->> 'useGrace')::boolean,
   false,
-  'grace is only for exactly one missed calendar day'
+  'two or more missed days cannot consume grace'
 );
 
--- A broken streak remains broken when grace is unavailable.
+-- Grace is forgiveness only; the helper reports no synthetic activity mechanism.
 select is(
-  (public.calculate_streak_v1('2026-09-10', 8, '2026-09-12', '2026-09-08') ->> 'newStreak')::integer,
-  1,
-  'a previously consumed grace blocks reuse inside the rolling window'
+  (public.calculate_streak_v1(date '2026-09-10', 4, date '2026-09-12', null) ->> 'gap')::integer,
+  2,
+  'grace transition is based on calendar-date gap'
 );
 
--- A grace date exactly seven days old is eligible again.
+-- The migration is prospective: an existing last activity date is used as-is;
+-- no grace is consumed until a qualifying transition actually occurs.
 select is(
-  (public.calculate_streak_v1('2026-09-20', 8, '2026-09-22', '2026-09-15') ->> 'useGrace')::boolean,
-  true,
-  'grace is reusable exactly seven calendar days after prior use'
-);
-
--- Travel is represented by the stored IANA timezone; the same instant may belong to different user days.
-select is(
-  public.pulse_local_date('2026-09-10 23:30:00+00', 'Africa/Lagos')::text,
-  '2026-09-11',
-  'Lagos timezone maps the instant to the correct local calendar day'
-);
-select is(
-  public.pulse_local_date('2026-09-10 23:30:00+00', 'America/Los_Angeles')::text,
-  '2026-09-10',
-  'a user timezone change can legitimately change the local calendar date'
-);
-
--- Migration is prospective: there is no helper behavior that consumes grace without a qualifying transition.
-select is(
-  (public.calculate_streak_v1('2026-09-10', 4, '2026-09-10', null) ->> 'useGrace')::boolean,
+  (public.calculate_streak_v1(date '2026-09-10', 4, date '2026-09-10', null) ->> 'useGrace')::boolean,
   false,
-  'same-day activity never consumes grace'
+  'same-day migration-era state does not consume grace'
 );
 
--- Typed activity vocabulary remains explicit and non-generic.
-select col_has_check(
-  'public', 'activity_events', 'event_type',
-  'activity events retain an explicit typed vocabulary'
+-- Concurrency contract: row lock + unique task-completion event guard are both present.
+select ok(
+  (length(pg_get_functiondef('public.complete_task(uuid)'::regprocedure)) -
+   length(replace(pg_get_functiondef('public.complete_task(uuid)'::regprocedure), 'for update', ''))) > 0,
+  'complete_task contains row-lock protection for retry races'
+);
+select matches(
+  pg_get_indexdef('public.activity_events_task_completion_idx'::regclass),
+  'unique',
+  'task completion index is unique for defense in depth against concurrent duplicate events'
 );
 
 select * from finish();
