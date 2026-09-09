@@ -41,7 +41,9 @@ begin
       if new.status not in ('paused', 'completed', 'cancelled') then
         raise exception 'Invalid focus session transition';
       end if;
-      v_elapsed_seconds := greatest(extract(epoch from (now() - old.updated_at))::integer, 0);
+      -- now() is transaction-scoped in PostgreSQL. Focus duration must use the
+      -- wall clock so pg_sleep/background time is reflected in persisted time.
+      v_elapsed_seconds := greatest(extract(epoch from (clock_timestamp() - old.updated_at))::integer, 0);
       new.active_duration_seconds := old.active_duration_seconds + v_elapsed_seconds;
     elsif old.status = 'paused' then
       if new.status = 'paused' then raise exception 'Focus session is already paused'; end if;
@@ -54,7 +56,7 @@ begin
     end if;
 
     if new.status in ('completed', 'cancelled') then
-      new.ended_at = now();
+      new.ended_at = clock_timestamp();
     elsif new.status in ('running', 'paused') then
       new.ended_at = null;
     end if;
@@ -70,13 +72,13 @@ begin
   if new.ended_at is not null then
     v_elapsed_seconds := extract(epoch from (new.ended_at - new.started_at))::integer;
   else
-    v_elapsed_seconds := extract(epoch from (now() - new.started_at))::integer;
+    v_elapsed_seconds := extract(epoch from (clock_timestamp() - new.started_at))::integer;
   end if;
   if new.active_duration_seconds > greatest(v_elapsed_seconds, 0) then
     raise exception 'Active duration cannot exceed elapsed session time';
   end if;
 
-  new.updated_at = now();
+  new.updated_at = clock_timestamp();
   return new;
 end;
 $$;
