@@ -36,6 +36,14 @@ jobs:
       - name: Test
         run: flutter test
 
+      - name: Verify Supabase build configuration
+        env:
+          SUPABASE_URL: ${{ secrets.PULSE_SUPABASE_URL }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.PULSE_SUPABASE_PUBLISHABLE_KEY }}
+        run: |
+          test -n "$SUPABASE_URL"
+          test -n "$SUPABASE_PUBLISHABLE_KEY"
+
       - name: Generate Android project scaffolding
         run: flutter create . --platforms=android --project-name pulse --org com.pulse
 
@@ -51,7 +59,6 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
           import re
-
           settings = Path('android/settings.gradle.kts')
           text = settings.read_text()
           anchor = r'(id\("org\.jetbrains\.kotlin\.android"\)\s+version\s+"[^"]+"\s+apply\s+false)'
@@ -145,10 +152,16 @@ jobs:
           PY
 
       - name: Build release APK
-        run: flutter build apk --release
+        env:
+          SUPABASE_URL: ${{ secrets.PULSE_SUPABASE_URL }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.PULSE_SUPABASE_PUBLISHABLE_KEY }}
+        run: flutter build apk --release --dart-define=SUPABASE_URL="$SUPABASE_URL" --dart-define=SUPABASE_PUBLISHABLE_KEY="$SUPABASE_PUBLISHABLE_KEY"
 
       - name: Build release AAB
-        run: flutter build appbundle --release
+        env:
+          SUPABASE_URL: ${{ secrets.PULSE_SUPABASE_URL }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.PULSE_SUPABASE_PUBLISHABLE_KEY }}
+        run: flutter build appbundle --release --dart-define=SUPABASE_URL="$SUPABASE_URL" --dart-define=SUPABASE_PUBLISHABLE_KEY="$SUPABASE_PUBLISHABLE_KEY"
 
       - name: Verify Play Store AAB
         run: |
@@ -183,8 +196,8 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
-  functions:
-    name: Firebase Functions tests
+  legacy-firebase-functions:
+    name: Legacy Firebase Functions regression tests
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -196,7 +209,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Install Functions dependencies
-        run: npm install
-      - name: Run Functions tests
+      - name: Install legacy dependencies
+        run: npm ci
+      - name: Run legacy regression tests
         run: npm test
