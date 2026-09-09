@@ -25,7 +25,6 @@ final supabaseProvider = Provider<supabase.SupabaseClient>((ref) => supabase.Sup
 final analyticsProvider = Provider<FirebaseAnalytics>((ref) => FirebaseAnalytics.instance);
 final messagingProvider = Provider<FirebaseMessaging>((ref) => FirebaseMessaging.instance);
 final crashlyticsProvider = Provider<FirebaseCrashlytics>((ref) => FirebaseCrashlytics.instance);
-
 final trustedCallableClientProvider = Provider<TrustedCallableClient>((ref) => SupabaseTrustedCallableClient(ref.watch(supabaseProvider)));
 final trustedAccountBackendProvider = Provider<TrustedAccountBackend>((ref) => SupabaseCallableAccountBackend(ref.watch(trustedCallableClientProvider)));
 final authServiceProvider = Provider<AuthService>((ref) => SupabaseAuthService(ref.watch(supabaseProvider), ref.watch(trustedAccountBackendProvider)));
@@ -35,13 +34,12 @@ final challengeRepositoryProvider = Provider<ChallengeRepository>((ref) => Supab
 final activityRepositoryProvider = Provider<ActivityRepository>((ref) => SupabaseActivityRepository(ref.watch(supabaseProvider)));
 final taskRepositoryProvider = Provider<TaskRepository>((ref) => SupabaseTaskRepository(ref.watch(supabaseProvider)));
 final projectRepositoryProvider = Provider<ProjectRepository>((ref) => SupabaseProjectRepository(ref.watch(supabaseProvider)));
+final milestoneRepositoryProvider = Provider<MilestoneRepository>((ref) => SupabaseMilestoneRepository(ref.watch(supabaseProvider)));
 final achievementRepositoryProvider = Provider<AchievementRepository>((ref) => SupabaseAchievementRepository(ref.watch(supabaseProvider)));
-
 final trustedChallengeBackendProvider = Provider<TrustedChallengeBackend>((ref) => SupabaseTrustedChallengeBackend(ref.watch(trustedCallableClientProvider), ref.watch(authServiceProvider)));
 final achievementServiceProvider = Provider<AchievementService>((ref) => const AchievementService());
 final challengeServiceProvider = Provider<ChallengeService>((ref) => ChallengeService(repository: ref.watch(challengeRepositoryProvider), backend: ref.watch(trustedChallengeBackendProvider)));
 final completeChallengeProvider = Provider<CompleteChallenge>((ref) => CompleteChallenge(backend: ref.watch(trustedChallengeBackendProvider)));
-
 final analyticsServiceProvider = Provider<AnalyticsService>((ref) => FirebaseAnalyticsService(ref.watch(analyticsProvider)));
 final pulseEventDispatcherProvider = Provider<PulseEventDispatcher>((ref) => PulseEventDispatcher(ref.watch(analyticsServiceProvider)));
 final crashReporterProvider = Provider<CrashReporter>((ref) => FirebaseCrashReporter(ref.watch(crashlyticsProvider)));
