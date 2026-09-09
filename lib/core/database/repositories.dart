@@ -1,6 +1,7 @@
 import '../../models/activity_model.dart';
 import '../../models/achievement_model.dart';
 import '../../models/challenge_model.dart';
+import '../../models/milestone_model.dart';
 import '../../models/project_model.dart';
 import '../../models/task_model.dart';
 import '../../models/user_model.dart';
@@ -37,7 +38,10 @@ abstract interface class ActivityRepository {
 
 abstract interface class TaskRepository {
   Future<List<Task>> getTasks({required String uid});
-  Future<Task> createTask({required String uid, required String title, DateTime? dueDate, String? dueTime, int priority = 0});
+  Future<List<Task>> getProjectTasks({required String uid, required String projectId});
+  Future<Task> createTask({required String uid, required String title, DateTime? dueDate, String? dueTime, String? projectId, String? milestoneId, int priority = 0});
+  Future<Task> updateTask({required String taskId, String? title, DateTime? dueDate, String? dueTime, String? projectId, String? milestoneId, int? priority});
+  Future<void> deleteTask({required String taskId});
   Future<TaskCompletionResult> completeTask({required String taskId});
 }
 
@@ -47,6 +51,13 @@ abstract interface class ProjectRepository {
   Future<Project> createProject({required String uid, required String name, String? description});
   Future<Project> updateProject({required String projectId, String? name, String? description, ProjectStatus? status});
   Future<void> deleteProject({required String projectId});
+}
+
+abstract interface class MilestoneRepository {
+  Future<List<Milestone>> getMilestones({required String uid, required String projectId});
+  Future<Milestone> createMilestone({required String uid, required String projectId, required String name, String? description, DateTime? dueDate});
+  Future<Milestone> updateMilestone({required String milestoneId, String? name, String? description, DateTime? dueDate, MilestoneStatus? status});
+  Future<void> deleteMilestone({required String milestoneId});
 }
 
 abstract interface class AchievementRepository {
