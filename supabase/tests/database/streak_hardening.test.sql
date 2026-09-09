@@ -155,9 +155,16 @@ select ok(
    length(replace(pg_get_functiondef('public.complete_task(uuid)'::regprocedure), 'for update', ''))) > 0,
   'complete_task contains row-lock protection for retry races'
 );
-select matches(
-  pg_get_indexdef('public.activity_events_task_completion_idx'::regclass),
-  'unique',
+select ok(
+  exists (
+    select 1
+    from pg_index i
+    join pg_class c on c.oid = i.indexrelid
+    join pg_namespace n on n.oid = c.relnamespace
+    where n.nspname = 'public'
+      and c.relname = 'activity_events_task_completion_idx'
+      and i.indisunique
+  ),
   'task completion index is unique for defense in depth against concurrent duplicate events'
 );
 
