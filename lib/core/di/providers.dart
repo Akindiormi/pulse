@@ -35,6 +35,7 @@ final activityRepositoryProvider = Provider<ActivityRepository>((ref) => Supabas
 final taskRepositoryProvider = Provider<TaskRepository>((ref) => SupabaseTaskRepository(ref.watch(supabaseProvider)));
 final projectRepositoryProvider = Provider<ProjectRepository>((ref) => SupabaseProjectRepository(ref.watch(supabaseProvider)));
 final milestoneRepositoryProvider = Provider<MilestoneRepository>((ref) => SupabaseMilestoneRepository(ref.watch(supabaseProvider)));
+final calendarRepositoryProvider = Provider<CalendarRepository>((ref) => SupabaseCalendarRepository(ref.watch(supabaseProvider)));
 final achievementRepositoryProvider = Provider<AchievementRepository>((ref) => SupabaseAchievementRepository(ref.watch(supabaseProvider)));
 final trustedChallengeBackendProvider = Provider<TrustedChallengeBackend>((ref) => SupabaseTrustedChallengeBackend(ref.watch(trustedCallableClientProvider), ref.watch(authServiceProvider)));
 final achievementServiceProvider = Provider<AchievementService>((ref) => const AchievementService());
