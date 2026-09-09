@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pulse/core/auth/auth_service.dart';
 import 'package:pulse/core/database/focus_repository_errors.dart';
 import 'package:pulse/core/database/repositories.dart';
+import 'package:pulse/core/di/providers.dart';
 import 'package:pulse/features/focus/application/focus_controller.dart';
 import 'package:pulse/models/focus_session_model.dart';
 
@@ -88,10 +89,13 @@ class FakeFocusRepository implements FocusRepository {
   Future<List<FocusSession>> getSessionsForTask(String taskId, {int limit = 100, int offset = 0}) async =>
       history.where((session) => session.taskId == taskId).skip(offset).take(limit).toList();
 
-  Future<FocusSession> _change(FocusSessionStatus status, int calls) async {
+  Future<FocusSession> _change(FocusSessionStatus status) async {
     if (nextError != null) throw nextError!;
     final current = activeSession!;
-    final updated = current.copyWith(status: status, updatedAt: DateTime.utc(2026, 9, 10, 10, 30));
+    final updated = current.copyWith(
+      status: status,
+      updatedAt: DateTime.utc(2026, 9, 10, 10, 30),
+    );
     activeSession = status.isActive ? updated : null;
     history.removeWhere((session) => session.id == updated.id);
     history.insert(0, updated);
@@ -101,25 +105,25 @@ class FakeFocusRepository implements FocusRepository {
   @override
   Future<FocusSession> pauseSession(String sessionId) async {
     pauseCalls++;
-    return _change(FocusSessionStatus.paused, pauseCalls);
+    return _change(FocusSessionStatus.paused);
   }
 
   @override
   Future<FocusSession> resumeSession(String sessionId) async {
     resumeCalls++;
-    return _change(FocusSessionStatus.running, resumeCalls);
+    return _change(FocusSessionStatus.running);
   }
 
   @override
   Future<FocusSession> completeSession(String sessionId) async {
     completeCalls++;
-    return _change(FocusSessionStatus.completed, completeCalls);
+    return _change(FocusSessionStatus.completed);
   }
 
   @override
   Future<FocusSession> cancelSession(String sessionId) async {
     cancelCalls++;
-    return _change(FocusSessionStatus.cancelled, cancelCalls);
+    return _change(FocusSessionStatus.cancelled);
   }
 }
 
@@ -164,7 +168,7 @@ void main() {
     final state = await container.read(focusControllerProvider.future);
 
     expect(state.status, FocusControllerStatus.running);
-    expect(state.elapsedDuration, const Duration(minutes: 25, seconds: 0));
+    expect(state.elapsedDuration, const Duration(minutes: 25));
     expect(state.recoveryComplete, isTrue);
   });
 
