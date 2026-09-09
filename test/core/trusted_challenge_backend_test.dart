@@ -1,19 +1,18 @@
-import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pulse/core/auth/auth_service.dart';
 import 'package:pulse/core/backend/trusted_challenge_backend.dart';
 
 void main() {
-  group('FirebaseCallableChallengeBackend', () {
+  group('SupabaseTrustedChallengeBackend', () {
     test('rejects unauthenticated calls before transport', () async {
       final client = FakeCallableClient();
-      final backend = FirebaseCallableChallengeBackend(client, const FakeAuthService(AuthState(status: AuthStatus.unauthenticated)));
+      final backend = SupabaseTrustedChallengeBackend(client, const FakeAuthService(AuthState(status: AuthStatus.unauthenticated)));
 
       await expectLater(backend.completeChallenge(), throwsA(predicate<TrustedBackendException>((e) => e.code == TrustedBackendErrorCode.unauthenticated)));
       expect(client.calls, isEmpty);
     });
 
-    test('uses authenticated Firebase Auth state without sending a uid', () async {
+    test('uses authenticated user state without sending a uid', () async {
       final client = FakeCallableClient(response: {
         'completed': true,
         'alreadyCompleted': false,
@@ -29,14 +28,14 @@ void main() {
         'leveledUp': false,
         'newAchievements': ['FIRST_STEP'],
       });
-      final backend = FirebaseCallableChallengeBackend(client, const FakeAuthService(AuthState(status: AuthStatus.authenticated, uid: 'uid-that-must-not-be-sent')));
+      final backend = SupabaseTrustedChallengeBackend(client, const FakeAuthService(AuthState(status: AuthStatus.authenticated, uid: 'uid-that-must-not-be-sent')));
 
       final result = await backend.completeChallenge();
 
       expect(result.newXP, 35);
       expect(result.newStreak, 1);
       expect(result.newAchievements, ['FIRST_STEP']);
-      expect(client.calls.single.name, 'completeChallenge');
+      expect(client.calls.single.name, 'complete-challenge');
       expect(client.calls.single.data, isEmpty);
       expect(client.calls.single.data.containsKey('uid'), false);
     });
@@ -57,7 +56,7 @@ void main() {
         'leveledUp': false,
         'newAchievements': [],
       });
-      final backend = FirebaseCallableChallengeBackend(client, const FakeAuthService(AuthState(status: AuthStatus.authenticated)));
+      final backend = SupabaseTrustedChallengeBackend(client, const FakeAuthService(AuthState(status: AuthStatus.authenticated)));
 
       final result = await backend.completeChallenge(idempotencyKey: 'retry-1');
 
@@ -72,33 +71,31 @@ void main() {
         'completed': false,
         'assignedAt': '2026-09-02T10:00:00.000Z',
       });
-      final backend = FirebaseCallableChallengeBackend(client, const FakeAuthService(AuthState(status: AuthStatus.authenticated)));
+      final backend = SupabaseTrustedChallengeBackend(client, const FakeAuthService(AuthState(status: AuthStatus.authenticated)));
 
       final result = await backend.getOrAssignDailyChallenge();
 
       expect(result.date, '2026-09-02');
       expect(result.challengeId, 'challenge-1');
       expect(result.assignedAt.toUtc(), DateTime.utc(2026, 9, 2, 10));
-      expect(client.calls.single.name, 'getOrAssignDailyChallenge');
+      expect(client.calls.single.name, 'get-or-assign-daily-challenge');
       expect(client.calls.single.data, isEmpty);
     });
 
-    test('maps Firebase callable errors into safe domain errors', () {
-      final cases = <String, TrustedBackendErrorCode>{
-        'unauthenticated': TrustedBackendErrorCode.unauthenticated,
-        'permission-denied': TrustedBackendErrorCode.permissionDenied,
-        'not-found': TrustedBackendErrorCode.notFound,
-        'failed-precondition': TrustedBackendErrorCode.failedPrecondition,
-        'invalid-argument': TrustedBackendErrorCode.invalidArgument,
-        'unavailable': TrustedBackendErrorCode.unavailable,
-        'deadline-exceeded': TrustedBackendErrorCode.unavailable,
-        'already-exists': TrustedBackendErrorCode.alreadyCompleted,
-        'internal': TrustedBackendErrorCode.internal,
+    test('maps protected backend HTTP statuses into safe domain errors', () {
+      final cases = <int, TrustedBackendErrorCode>{
+        401: TrustedBackendErrorCode.unauthenticated,
+        403: TrustedBackendErrorCode.permissionDenied,
+        404: TrustedBackendErrorCode.notFound,
+        409: TrustedBackendErrorCode.alreadyCompleted,
+        422: TrustedBackendErrorCode.failedPrecondition,
+        429: TrustedBackendErrorCode.unavailable,
+        500: TrustedBackendErrorCode.internal,
       };
       for (final entry in cases.entries) {
-        final mapped = FirebaseTrustedCallableClient.mapError(FirebaseFunctionsException(code: entry.key, message: 'sensitive backend detail'));
+        final mapped = SupabaseTrustedCallableClient.mapHttpStatus(entry.key);
         expect(mapped.code, entry.value);
-        expect(mapped.message.contains('sensitive'), false);
+        expect(mapped.message, isNot(contains('backend')));
       }
     });
   });
