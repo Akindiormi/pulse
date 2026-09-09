@@ -1,11 +1,10 @@
 begin;
 
 create extension if not exists pgtap with schema extensions;
-select plan(8);
+select plan(7);
 
 insert into auth.users (id, aud, role, email, encrypted_password, email_confirmed_at, raw_app_meta_data, raw_user_meta_data, created_at, updated_at)
-values
-  (gen_random_uuid(), 'authenticated', 'authenticated', 'focus-activity-owner@example.com', '', now(), '{}', '{}', now(), now());
+values (gen_random_uuid(), 'authenticated', 'authenticated', 'focus-activity-owner@example.com', '', now(), '{}', '{}', now(), now());
 
 create temporary table focus_activity_user(id uuid not null);
 insert into focus_activity_user select id from auth.users where email = 'focus-activity-owner@example.com';
@@ -16,11 +15,9 @@ select set_config('request.jwt.claim.sub', (select id::text from focus_activity_
 
 insert into public.focus_sessions(user_id, planned_duration_seconds)
 select id, 1200 from focus_activity_user;
-
 select is((select count(*) from public.activity_events where user_id = (select id from focus_activity_user) and event_type = 'focus_completed'), 0::bigint, 'running Focus session has no completion activity');
 
 update public.focus_sessions set status = 'completed' where user_id = (select id from focus_activity_user);
-
 select is((select count(*) from public.activity_events where user_id = (select id from focus_activity_user) and event_type = 'focus_completed'), 1::bigint, 'completed Focus session emits focus_completed');
 select is((select activity_date from public.activity_events where user_id = (select id from focus_activity_user) and event_type = 'focus_completed'), timezone('utc', clock_timestamp())::date, 'focus completion uses server UTC activity date');
 select is((select current_streak from public.profiles where id = (select id from focus_activity_user)), 1, 'focus completion qualifies for streak');
