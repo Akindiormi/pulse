@@ -13,13 +13,18 @@ class FakeCalendarRepository implements CalendarRepository {
   Future<CalendarEvent> createEvent({required String uid, required String title, String? description, required DateTime startsAt, required DateTime endsAt, bool allDay = false, required String timezone, String? recurrenceRule, String? taskId}) async {
     final event = CalendarEvent(id: 'event-${events.length + 1}', userId: uid, title: title, description: description, startsAt: startsAt, endsAt: endsAt, allDay: allDay, timezone: timezone, recurrenceRule: recurrenceRule, taskIds: taskId == null ? const [] : [taskId]);
     events.add(event);
+    if (taskId != null) links.putIfAbsent(event.id, () => []).add(taskId);
     return event;
   }
 
   @override
   Future<CalendarEvent> updateEvent({required String eventId, String? title, String? description, DateTime? startsAt, DateTime? endsAt, bool? allDay, String? timezone, String? recurrenceRule}) async => events.firstWhere((event) => event.id == eventId).copyWith(title: title, description: description, startsAt: startsAt, endsAt: endsAt, allDay: allDay, timezone: timezone, recurrenceRule: recurrenceRule);
 
-  @override Future<void> deleteEvent({required String eventId}) async => events.removeWhere((event) => event.id == eventId);
+  @override Future<void> deleteEvent({required String eventId}) async {
+    events.removeWhere((event) => event.id == eventId);
+    links.remove(eventId);
+  }
+
   @override Future<void> linkTask({required String taskId, required String eventId}) async => links.putIfAbsent(eventId, () => []).add(taskId);
   @override Future<void> unlinkTask({required String taskId, required String eventId}) async => links[eventId]?.remove(taskId);
 }
