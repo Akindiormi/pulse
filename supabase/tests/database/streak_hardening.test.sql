@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(25);
+select plan(27);
 
 -- Contract/schema checks.
 select has_column(
@@ -20,6 +20,15 @@ select has_function(
 select has_index(
   'public', 'activity_events_task_completion_idx',
   'task completion activity events have a uniqueness guard'
+);
+select is_definer(
+  'public', 'complete_task', ARRAY['uuid'],
+  'task completion remains backend-authoritative through a security definer function'
+);
+select matches(
+  pg_get_functiondef('public.complete_task(uuid)'::regprocedure),
+  'for update',
+  'task completion locks the task row so concurrent retries serialize'
 );
 
 -- A day is a calendar date in the named IANA timezone, not 24 elapsed hours.
