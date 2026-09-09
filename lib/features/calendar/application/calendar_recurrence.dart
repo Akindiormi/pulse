@@ -1,9 +1,7 @@
 import 'package:pulse/models/calendar_event_model.dart';
 
 /// Expands the supported RRULE-style recurrence subset for the visible range.
-///
-/// Slice 3 intentionally keeps recurrence series-level only: generated
-/// occurrences are ephemeral and are never written back to Supabase.
+/// Generated occurrences remain in memory; no occurrence rows are persisted.
 class CalendarRecurrence {
   const CalendarRecurrence._();
 
@@ -12,33 +10,29 @@ class CalendarRecurrence {
     required DateTime rangeStart,
     required DateTime rangeEnd,
   }) {
-    final rule = event.recurrenceRule;
-    if (rule == null || rule.trim().isEmpty) {
-      return _overlaps(event, rangeStart, rangeEnd) ? [event] : const [];
+    if (!event.isRecurring) {
+      return event.startsAt.isBefore(rangeEnd) && event.endsAt.isAfter(rangeStart)
+          ? [event]
+          : const [];
     }
 
-    final values = _parse(rule);
+    final values = _parse(event.recurrenceRule!);
     final freq = values['FREQ'];
     if (freq == null) return const [];
 
     final interval = int.tryParse(values['INTERVAL'] ?? '1') ?? 1;
     if (interval < 1) return const [];
-
     final count = int.tryParse(values['COUNT'] ?? '');
     final until = _parseUntil(values['UNTIL']);
     final duration = event.endsAt.difference(event.startsAt);
-    final results = <CalendarEvent>[];
-
-    // v1 supports DAILY, WEEKLY, MONTHLY and YEARLY series. BYDAY is
-    // supported for WEEKLY using ISO weekday numbers (MO=1 ... SU=7).
     final weekdays = _parseByDay(values['BYDAY']);
+    final results = <CalendarEvent>[];
     var occurrence = event.startsAt;
     var generated = 0;
 
-    // Bound iteration by the visible range plus one event duration. This
-    // guarantees an open-ended recurrence is never expanded indefinitely.
-    final safetyLimit = 5000;
-    for (var i = 0; i < safetyLimit; i++) {
+    // The visible range is the hard expansion boundary. The safety cap also
+    // protects against malformed/open-ended rules.
+    for (var i = 0; i < 5000; i++) {
       if (count != null && generated >= count) break;
       if (until != null && occurrence.isAfter(until)) break;
       if (occurrence.isAfter(rangeEnd)) break;
@@ -49,17 +43,13 @@ class CalendarRecurrence {
 
       for (final start in candidates) {
         if (count != null && generated >= count) break;
-        if (until != null && start.isAfter(until)) continue;
         if (start.isBefore(event.startsAt)) continue;
-        if (_overlapsWindow(start, start.add(duration), rangeStart, rangeEnd)) {
-          results.add(event.copyWith(
-            startsAt: start,
-            endsAt: start.add(duration),
-            // Generated occurrences are not separate persisted events.
-            occurrenceStart: start,
-          ));
-        }
+        if (until != null && start.isAfter(until)) continue;
         generated++;
+        final end = start.add(duration);
+        if (start.isBefore(rangeEnd) && end.isAfter(rangeStart)) {
+          results.add(event.copyWith(startsAt: start, endsAt: end));
+        }
       }
 
       occurrence = _advance(occurrence, freq, interval);
@@ -67,17 +57,6 @@ class CalendarRecurrence {
 
     return results;
   }
-
-  static bool _overlaps(CalendarEvent event, DateTime start, DateTime end) =>
-      event.startsAt.isBefore(end) && event.endsAt.isAfter(start);
-
-  static bool _overlapsWindow(
-    DateTime eventStart,
-    DateTime eventEnd,
-    DateTime rangeStart,
-    DateTime rangeEnd,
-  ) =>
-      eventStart.isBefore(rangeEnd) && eventEnd.isAfter(rangeStart);
 
   static Map<String, String> _parse(String rule) {
     final map = <String, String>{};
@@ -112,35 +91,23 @@ class CalendarRecurrence {
     DateTime seriesStart,
   ) {
     final weekStart = anchor.subtract(Duration(days: anchor.weekday - 1));
+    final seriesWeekStart = seriesStart.subtract(Duration(days: seriesStart.weekday - 1));
     return weekdays.map((weekday) {
-      final candidate = weekStart.add(Duration(days: weekday - 1)).copyWith(
-        hour: seriesStart.hour,
-        minute: seriesStart.minute,
-        second: seriesStart.second,
-        millisecond: seriesStart.millisecond,
-        microsecond: seriesStart.microsecond,
-      );
-      return candidate;
+      final day = weekStart.add(Duration(days: weekday - 1));
+      return DateTime(day.year, day.month, day.day, seriesStart.hour, seriesStart.minute, seriesStart.second, seriesStart.millisecond, seriesStart.microsecond);
     }).where((candidate) {
-      final weeks = candidate.difference(
-        seriesStart.subtract(Duration(days: seriesStart.weekday - 1)),
-      ).inDays ~/ 7;
+      final weeks = candidate.difference(seriesWeekStart).inDays ~/ 7;
       return weeks >= 0 && weeks % interval == 0;
     }).toList()..sort();
   }
 
   static DateTime _advance(DateTime date, String freq, int interval) {
     switch (freq) {
-      case 'DAILY':
-        return date.add(Duration(days: interval));
-      case 'WEEKLY':
-        return date.add(Duration(days: 7 * interval));
-      case 'MONTHLY':
-        return _addMonths(date, interval);
-      case 'YEARLY':
-        return date.copyWith(year: date.year + interval);
-      default:
-        return date.add(Duration(days: interval));
+      case 'DAILY': return date.add(Duration(days: interval));
+      case 'WEEKLY': return date.add(Duration(days: 7 * interval));
+      case 'MONTHLY': return _addMonths(date, interval);
+      case 'YEARLY': return date.copyWith(year: date.year + interval);
+      default: return date.add(Duration(days: interval));
     }
   }
 
