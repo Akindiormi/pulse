@@ -33,6 +33,7 @@ final authStateProvider = StreamProvider<AuthState>((ref) => ref.watch(authServi
 final userRepositoryProvider = Provider<UserRepository>((ref) => SupabaseUserRepository(ref.watch(supabaseProvider)));
 final challengeRepositoryProvider = Provider<ChallengeRepository>((ref) => SupabaseChallengeRepository(ref.watch(supabaseProvider)));
 final activityRepositoryProvider = Provider<ActivityRepository>((ref) => SupabaseActivityRepository(ref.watch(supabaseProvider)));
+final taskRepositoryProvider = Provider<TaskRepository>((ref) => SupabaseTaskRepository(ref.watch(supabaseProvider)));
 final achievementRepositoryProvider = Provider<AchievementRepository>((ref) => SupabaseAchievementRepository(ref.watch(supabaseProvider)));
 
 final trustedChallengeBackendProvider = Provider<TrustedChallengeBackend>((ref) => SupabaseTrustedChallengeBackend(ref.watch(trustedCallableClientProvider), ref.watch(authServiceProvider)));
