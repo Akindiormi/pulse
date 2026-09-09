@@ -18,21 +18,9 @@ class Task {
   bool get isCompleted => status == TaskStatus.completed;
   bool get isOpen => status == TaskStatus.todo || status == TaskStatus.inProgress;
 
-  factory Task.fromMap(String id, Map<String, dynamic> map) => Task(
-        id: id,
-        userId: map['user_id'] as String? ?? map['userId'] as String,
-        title: map['title'] as String,
-        description: map['description'] as String?,
-        status: TaskStatus.fromValue(map['status'] as String? ?? 'todo'),
-        dueDate: _date(map['due_date'] ?? map['dueDate']),
-        dueTime: map['due_time']?.toString() ?? map['dueTime']?.toString(),
-        projectId: map['project_id'] as String? ?? map['projectId'] as String?,
-        milestoneId: map['milestone_id'] as String? ?? map['milestoneId'] as String?,
-        priority: (map['priority'] as num?)?.toInt() ?? 0,
-        completedAt: _date(map['completed_at'] ?? map['completedAt']),
-        createdAt: _date(map['created_at'] ?? map['createdAt']),
-        updatedAt: _date(map['updated_at'] ?? map['updatedAt']),
-      );
+  Task copyWith({String? title, String? description, TaskStatus? status, DateTime? dueDate, String? dueTime, String? projectId, String? milestoneId, int? priority, DateTime? completedAt, DateTime? updatedAt}) => Task(id: id, userId: userId, title: title ?? this.title, description: description ?? this.description, status: status ?? this.status, dueDate: dueDate ?? this.dueDate, dueTime: dueTime ?? this.dueTime, projectId: projectId ?? this.projectId, milestoneId: milestoneId ?? this.milestoneId, priority: priority ?? this.priority, completedAt: completedAt ?? this.completedAt, createdAt: createdAt, updatedAt: updatedAt ?? this.updatedAt);
+
+  factory Task.fromMap(String id, Map<String, dynamic> map) => Task(id: id, userId: map['user_id'] as String? ?? map['userId'] as String, title: map['title'] as String, description: map['description'] as String?, status: TaskStatus.fromValue(map['status'] as String? ?? 'todo'), dueDate: _date(map['due_date'] ?? map['dueDate']), dueTime: map['due_time']?.toString() ?? map['dueTime']?.toString(), projectId: map['project_id'] as String? ?? map['projectId'] as String?, milestoneId: map['milestone_id'] as String? ?? map['milestoneId'] as String?, priority: (map['priority'] as num?)?.toInt() ?? 0, completedAt: _date(map['completed_at'] ?? map['completedAt']), createdAt: _date(map['created_at'] ?? map['createdAt']), updatedAt: _date(map['updated_at'] ?? map['updatedAt']));
 
   static DateTime? _date(Object? value) => value == null ? null : (value is DateTime ? value : DateTime.tryParse(value.toString()));
 }
@@ -45,13 +33,11 @@ enum TaskStatus {
 
   const TaskStatus(this.value);
   final String value;
-
   static TaskStatus fromValue(String value) => TaskStatus.values.firstWhere((item) => item.value == value, orElse: () => TaskStatus.todo);
 }
 
 class TaskCompletionResult {
   const TaskCompletionResult({required this.completed, required this.alreadyCompleted, this.taskId, this.eventId, this.xpAwarded = 0, this.newXP, this.newLevel, this.newStreak, this.longestStreak, this.totalActivities, this.completedAt});
-
   final bool completed;
   final bool alreadyCompleted;
   final String? taskId;
@@ -63,18 +49,5 @@ class TaskCompletionResult {
   final int? longestStreak;
   final int? totalActivities;
   final DateTime? completedAt;
-
-  factory TaskCompletionResult.fromMap(Map<String, dynamic> map) => TaskCompletionResult(
-        completed: map['completed'] as bool? ?? false,
-        alreadyCompleted: map['alreadyCompleted'] as bool? ?? false,
-        taskId: map['taskId']?.toString(),
-        eventId: map['eventId']?.toString(),
-        xpAwarded: (map['xpAwarded'] as num?)?.toInt() ?? 0,
-        newXP: (map['newXP'] as num?)?.toInt(),
-        newLevel: (map['newLevel'] as num?)?.toInt(),
-        newStreak: (map['newStreak'] as num?)?.toInt(),
-        longestStreak: (map['longestStreak'] as num?)?.toInt(),
-        totalActivities: (map['totalActivities'] as num?)?.toInt(),
-        completedAt: Task._date(map['completedAt']),
-      );
+  factory TaskCompletionResult.fromMap(Map<String, dynamic> map) => TaskCompletionResult(completed: map['completed'] as bool? ?? false, alreadyCompleted: map['alreadyCompleted'] as bool? ?? false, taskId: map['taskId']?.toString(), eventId: map['eventId']?.toString(), xpAwarded: (map['xpAwarded'] as num?)?.toInt() ?? 0, newXP: (map['newXP'] as num?)?.toInt(), newLevel: (map['newLevel'] as num?)?.toInt(), newStreak: (map['newStreak'] as num?)?.toInt(), longestStreak: (map['longestStreak'] as num?)?.toInt(), totalActivities: (map['totalActivities'] as num?)?.toInt(), completedAt: Task._date(map['completedAt']));
 }
