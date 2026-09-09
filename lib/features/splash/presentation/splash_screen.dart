@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/design/pulse_tokens.dart';
 import '../../../core/errors/app_error.dart';
+import '../../../core/theme/app_colors.dart';
 import '../../../core/motion/pulse_motion_attachment.dart';
 import '../../../core/motion/pulse_motion_policy.dart';
 import '../../../core/motion/pulse_motion_state.dart';
@@ -97,7 +98,7 @@ class _SplashMark extends StatelessWidget {
                 height: 72,
                 decoration: BoxDecoration(color: PulseColors.accent, borderRadius: BorderRadius.circular(PulseRadius.large)),
                 alignment: Alignment.center,
-                child: const Text('P', style: TextStyle(fontSize: 38, fontWeight: FontWeight.w900, color: Color(0xFF1A100D))),
+                child: const Text('P', style: TextStyle(fontSize: 38, fontWeight: FontWeight.w900, color: AppColors.textOnAccent)),
               ),
             ),
             const SizedBox(height: PulseSpace.xl),
