@@ -1,0 +1,10 @@
+project_id = "pulse"
+
+[functions.get-or-assign-daily-challenge]
+verify_jwt = false
+
+[functions.complete-challenge]
+verify_jwt = false
+
+[functions.delete-account]
+verify_jwt = false
