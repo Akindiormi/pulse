@@ -40,7 +40,8 @@ class FakeFocusRepository implements FocusRepository {
   FakeFocusRepository({this.activeSession});
 
   FocusSession? activeSession;
-  FocusRepositoryException? nextError;
+  FocusRepositoryException? nextRecoveryError;
+  FocusRepositoryException? nextOperationError;
   int startCalls = 0;
   int pauseCalls = 0;
   int resumeCalls = 0;
@@ -53,7 +54,7 @@ class FakeFocusRepository implements FocusRepository {
   @override
   Future<FocusSession> startSession({String? taskId, required int plannedDurationSeconds}) async {
     startCalls++;
-    if (nextError != null) throw nextError!;
+    if (nextOperationError != null) throw nextOperationError!;
     if (startCompleter != null) return startCompleter!.future;
     final now = DateTime.utc(2026, 9, 10, 10);
     final session = FocusSession(
@@ -73,7 +74,7 @@ class FakeFocusRepository implements FocusRepository {
 
   @override
   Future<FocusSession?> getActiveSession() async {
-    if (nextError != null) throw nextError!;
+    if (nextRecoveryError != null) throw nextRecoveryError!;
     return activeSession;
   }
 
@@ -90,7 +91,7 @@ class FakeFocusRepository implements FocusRepository {
       history.where((session) => session.taskId == taskId).skip(offset).take(limit).toList();
 
   Future<FocusSession> _change(FocusSessionStatus status) async {
-    if (nextError != null) throw nextError!;
+    if (nextOperationError != null) throw nextOperationError!;
     final current = activeSession!;
     final updated = current.copyWith(
       status: status,
@@ -204,14 +205,14 @@ void main() {
 
   test('pause failure keeps the last known running state and exposes error', () async {
     final repository = FakeFocusRepository(activeSession: runningSession());
-    repository.nextError = const FocusRepositoryException(
-      FocusRepositoryErrorKind.database,
-      'network failed',
-    );
     final container = containerFor(repository);
     addTearDown(container.dispose);
     final controller = container.read(focusControllerProvider.notifier);
     await container.read(focusControllerProvider.future);
+    repository.nextOperationError = const FocusRepositoryException(
+      FocusRepositoryErrorKind.database,
+      'network failed',
+    );
 
     await controller.pause();
 
@@ -275,7 +276,7 @@ void main() {
 
   test('repository recovery failure is controlled rather than thrown as a UI error', () async {
     final repository = FakeFocusRepository()
-      ..nextError = const FocusRepositoryException(
+      ..nextRecoveryError = const FocusRepositoryException(
         FocusRepositoryErrorKind.database,
         'recovery failed',
       );
