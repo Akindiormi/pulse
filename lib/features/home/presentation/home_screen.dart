@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/backend/trusted_challenge_backend.dart';
-import '../../../core/widgets/pulse_card.dart';
-import '../../../core/widgets/pulse_feedback.dart';
-import '../../../core/widgets/pulse_streak.dart';
 import '../../../core/motion/pulse_motion_state.dart';
-import '../application/home_controller.dart';
+import '../../../core/widgets/pulse_card.dart';
+import '../../../core/widgets/pulse_streak.dart';
+import '../../../core/widgets/pulse_states.dart';
 import '../../../models/task_model.dart';
+import '../application/home_controller.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -18,7 +18,6 @@ class HomeScreen extends ConsumerStatefulWidget {
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   final _quickAddController = TextEditingController();
   bool _adding = false;
-
   @override
   void dispose() { _quickAddController.dispose(); super.dispose(); }
 
@@ -26,23 +25,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final title = _quickAddController.text.trim();
     if (title.isEmpty || _adding) return;
     setState(() => _adding = true);
-    try {
-      await ref.read(homeControllerProvider.notifier).addTask(title);
-      if (mounted) _quickAddController.clear();
-    } catch (error) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error.toString())));
-    } finally {
-      if (mounted) setState(() => _adding = false);
-    }
+    try { await ref.read(homeControllerProvider.notifier).addTask(title); if (mounted) _quickAddController.clear(); }
+    catch (error) { if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error.toString()))); }
+    finally { if (mounted) setState(() => _adding = false); }
   }
 
   Future<void> _complete(Task task) async {
     try {
       final result = await ref.read(homeControllerProvider.notifier).completeTask(task.id);
       if (mounted && result?.completed == true) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('+${result!.xpAwarded} XP')));
-    } catch (error) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error.toString())));
-    }
+    } catch (error) { if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error.toString()))); }
   }
 
   @override
@@ -65,51 +57,29 @@ class _HomeLoaded extends StatelessWidget {
   final Future<void> Function(Task) onComplete;
   final Future<void> Function() onRefresh;
 
-  String _greeting() {
-    final hour = DateTime.now().hour;
-    if (hour < 12) return 'good morning';
-    if (hour < 17) return 'good afternoon';
-    return 'good evening';
-  }
-
-  String _dateLabel() {
-    final now = DateTime.now();
-    const months = ['january','february','march','april','may','june','july','august','september','october','november','december'];
-    const days = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'];
-    return '${days[now.weekday - 1]}, ${months[now.month - 1]} ${now.day}';
-  }
+  String _greeting() { final hour = DateTime.now().hour; if (hour < 12) return 'good morning'; if (hour < 17) return 'good afternoon'; return 'good evening'; }
+  String _dateLabel() { final now = DateTime.now(); const months = ['january','february','march','april','may','june','july','august','september','october','november','december']; const days = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday']; return '${days[now.weekday - 1]}, ${months[now.month - 1]} ${now.day}'; }
 
   @override
   Widget build(BuildContext context) {
     final firstName = data.user.displayName?.trim().split(' ').first;
     final greeting = firstName == null || firstName.isEmpty ? _greeting() : '${_greeting()}, $firstName';
     final theme = Theme.of(context);
-
     return RefreshIndicator(
       onRefresh: onRefresh,
-      child: ListView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(20, 22, 20, 32),
-        children: [
-          Text(greeting, style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700)),
-          const SizedBox(height: 4),
-          Text(_dateLabel(), style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
-          const SizedBox(height: 18),
-          PulseStreak(current: data.user.currentStreak, longest: data.user.longestStreak, state: data.user.currentStreak > 0 ? PulseStreakMotionState.active : PulseStreakMotionState.inactive),
-          const SizedBox(height: 20),
-          _QuickAdd(controller: quickAddController, adding: adding, onSubmit: onAdd),
-          const SizedBox(height: 28),
-          _Section(title: 'now', children: data.todayTasks.isEmpty ? [_EmptyToday()] : data.todayTasks.map((task) => _TaskTile(task: task, onComplete: () => onComplete(task))).toList()),
-          if (data.upcomingTasks.isNotEmpty) ...[
-            const SizedBox(height: 26),
-            _Section(title: 'upcoming', children: data.upcomingTasks.map((task) => _TaskTile(task: task, onComplete: () => onComplete(task))).toList()),
-          ],
-          if (data.completedTasks.isNotEmpty) ...[
-            const SizedBox(height: 26),
-            _Section(title: 'completed', children: data.completedTasks.take(8).map((task) => _TaskTile(task: task, onComplete: null)).toList()),
-          ],
-        ],
-      ),
+      child: ListView(physics: const AlwaysScrollableScrollPhysics(), padding: const EdgeInsets.fromLTRB(20, 22, 20, 32), children: [
+        Text(greeting, style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700)),
+        const SizedBox(height: 4),
+        Text(_dateLabel(), style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+        const SizedBox(height: 18),
+        PulseStreak(current: data.user.currentStreak, longest: data.user.longestStreak, state: data.user.currentStreak > 0 ? PulseStreakMotionState.active : PulseStreakMotionState.inactive),
+        const SizedBox(height: 20),
+        _QuickAdd(controller: quickAddController, adding: adding, onSubmit: onAdd),
+        const SizedBox(height: 28),
+        _Section(title: 'today', children: data.todayTasks.isEmpty ? [_EmptyToday()] : data.todayTasks.map((task) => _TaskTile(task: task, onComplete: () => onComplete(task))).toList()),
+        if (data.upcomingTasks.isNotEmpty) ...[const SizedBox(height: 26), _Section(title: 'upcoming', children: data.upcomingTasks.map((task) => _TaskTile(task: task, onComplete: () => onComplete(task))).toList())],
+        if (data.completedTasks.isNotEmpty) ...[const SizedBox(height: 26), _Section(title: 'completed', children: data.completedTasks.take(8).map((task) => _TaskTile(task: task, onComplete: null)).toList())],
+      ]),
     );
   }
 }
@@ -155,10 +125,5 @@ class _HomeError extends StatelessWidget {
   final Object error;
   final VoidCallback onRetry;
   @override
-  Widget build(BuildContext context) {
-    final unavailable = error is TrustedBackendException && (error as TrustedBackendException).code == TrustedBackendErrorCode.unavailable;
-    if (unavailable) return PulseOfflineState(onRetry: onRetry);
-    final message = error is TrustedBackendException ? (error as TrustedBackendException).message : 'we couldn’t load your tasks.';
-    return PulseErrorState(message: message, onRetry: onRetry);
-  }
+  Widget build(BuildContext context) { final unavailable = error is TrustedBackendException && (error as TrustedBackendException).code == TrustedBackendErrorCode.unavailable; if (unavailable) return PulseOfflineState(onRetry: onRetry); final message = error is TrustedBackendException ? (error as TrustedBackendException).message : 'we couldn’t load your tasks.'; return PulseErrorState(message: message, onRetry: onRetry); }
 }
