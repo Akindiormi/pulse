@@ -21,7 +21,7 @@ void main() {
     expect(find.text('5 days'), findsOneWidget);
     expect(find.text('9 days'), findsOneWidget);
     expect(find.text('3 categories explored'), findsOneWidget);
-    expect(find.text('1 unlocked'), findsOneWidget);
+    expect(find.text('0 unlocked'), findsOneWidget);
   });
 
   testWidgets('uses initials fallback when avatar is unavailable', (tester) async {
@@ -66,6 +66,7 @@ void main() {
     expect(data.user.longestStreak, 9);
     expect(data.user.totalActivities, 12);
     expect(data.user.unlockedAchievements, {'first_step'});
+    expect(data.unlockedAchievementCount, 0);
   });
 }
 
