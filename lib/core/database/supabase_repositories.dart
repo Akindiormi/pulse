@@ -29,7 +29,7 @@ class SupabaseUserRepository implements UserRepository {
   @override
   Future<void> updatePreferences({required String uid, required Map<String, dynamic> preferences}) async => await supabase.from('profiles').update({'notification_preferences': preferences}).eq('id', uid);
 
-  Map<String, dynamic> _profileToModelMap(Map<String, dynamic> row) => {'username': row['username'], 'displayName': row['display_name'], 'photoUrl': row['photo_url'], 'createdAt': row['created_at'], 'totalActivities': row['total_activities'], 'currentStreak': row['current_streak'], 'longestStreak': row['longest_streak'], 'xp': row['xp'], 'level': row['level'], 'lastActivityDate': row['last_activity_date'], 'completedCategories': row['completed_categories'], 'unlockedAchievements': row['unlocked_achievements']};
+  Map<String, dynamic> _profileToModelMap(Map<String, dynamic> row) => {'username': row['username'], 'displayName': row['display_name'], 'photoUrl': row['photo_url'], 'timezone': row['timezone'], 'createdAt': row['created_at'], 'totalActivities': row['total_activities'], 'currentStreak': row['current_streak'], 'longestStreak': row['longest_streak'], 'xp': row['xp'], 'level': row['level'], 'lastActivityDate': row['last_activity_date'], 'completedCategories': row['completed_categories'], 'unlockedAchievements': row['unlocked_achievements']};
 
   Map<String, dynamic> _toSnakeCase(Map<String, dynamic> fields) => {for (final entry in fields.entries) _snakeKey(entry.key): entry.value};
   String _snakeKey(String key) => switch (key) {'displayName' => 'display_name', 'photoUrl' => 'photo_url', 'timezone' => 'timezone', 'notificationPreferences' => 'notification_preferences', _ => key};
