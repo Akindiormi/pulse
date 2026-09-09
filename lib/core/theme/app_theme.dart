@@ -1,16 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+
 import 'app_colors.dart';
 import '../design/pulse_tokens.dart';
 
 class AppTypography {
-  static const display = TextStyle(fontSize: 36, height: 1.04, fontWeight: FontWeight.w800, letterSpacing: -1.4);
-  static const headline = TextStyle(fontSize: 28, height: 1.1, fontWeight: FontWeight.w700, letterSpacing: -0.8);
-  static const title = TextStyle(fontSize: 19, height: 1.25, fontWeight: FontWeight.w700, letterSpacing: -0.15);
-  static const body = TextStyle(fontSize: 16, height: 1.45, fontWeight: FontWeight.w400);
-  static const label = TextStyle(fontSize: 13, height: 1.25, fontWeight: FontWeight.w700, letterSpacing: 0.1);
-  static const metadata = TextStyle(fontSize: 12, height: 1.3, fontWeight: FontWeight.w500);
-  static const number = TextStyle(fontSize: 32, height: 1.0, fontWeight: FontWeight.w800, letterSpacing: -1.0, fontFeatures: [FontFeature.tabularFigures()]);
-  static const numberSmall = TextStyle(fontSize: 22, height: 1.0, fontWeight: FontWeight.w800, letterSpacing: -0.6, fontFeatures: [FontFeature.tabularFigures()]);
+  static const display = TextStyle(fontSize: 42, height: 1.02, fontWeight: FontWeight.w800, letterSpacing: -1.5);
+  static const headline = TextStyle(fontSize: 32, height: 1.08, fontWeight: FontWeight.w750, letterSpacing: -0.9);
+  static const title = TextStyle(fontSize: 21, height: 1.22, fontWeight: FontWeight.w700, letterSpacing: -0.2);
+  static const body = TextStyle(fontSize: 17, height: 1.5, fontWeight: FontWeight.w500);
+  static const bodySmall = TextStyle(fontSize: 15, height: 1.45, fontWeight: FontWeight.w500);
+  static const label = TextStyle(fontSize: 14, height: 1.25, fontWeight: FontWeight.w700, letterSpacing: 0);
+  static const metadata = TextStyle(fontSize: 13, height: 1.35, fontWeight: FontWeight.w500);
+  static const number = TextStyle(fontSize: 38, height: 1.0, fontWeight: FontWeight.w800, letterSpacing: -1.1, fontFeatures: [FontFeature.tabularFigures()]);
+  static const numberSmall = TextStyle(fontSize: 24, height: 1.0, fontWeight: FontWeight.w800, letterSpacing: -0.7, fontFeatures: [FontFeature.tabularFigures()]);
 }
 
 ThemeData buildAppTheme(Brightness brightness) {
@@ -32,22 +35,24 @@ ThemeData buildAppTheme(Brightness brightness) {
     error: PulseColors.error,
   );
 
-  final typography = TextTheme(
-    displayLarge: AppTypography.display,
-    displayMedium: AppTypography.headline,
-    displaySmall: AppTypography.headline,
-    headlineLarge: AppTypography.display,
-    headlineMedium: AppTypography.headline,
-    headlineSmall: AppTypography.title,
-    titleLarge: AppTypography.title,
-    titleMedium: AppTypography.title.copyWith(fontSize: 16, height: 1.3),
-    titleSmall: AppTypography.label,
-    bodyLarge: AppTypography.body,
-    bodyMedium: AppTypography.body.copyWith(fontSize: 14),
-    bodySmall: AppTypography.metadata,
-    labelLarge: AppTypography.label.copyWith(fontSize: 14),
-    labelMedium: AppTypography.label,
-    labelSmall: AppTypography.metadata,
+  final typography = GoogleFonts.manropeTextTheme(
+    TextTheme(
+      displayLarge: AppTypography.display,
+      displayMedium: AppTypography.headline,
+      displaySmall: AppTypography.headline,
+      headlineLarge: AppTypography.display,
+      headlineMedium: AppTypography.headline,
+      headlineSmall: AppTypography.title,
+      titleLarge: AppTypography.title,
+      titleMedium: AppTypography.title.copyWith(fontSize: 17),
+      titleSmall: AppTypography.label,
+      bodyLarge: AppTypography.body,
+      bodyMedium: AppTypography.bodySmall,
+      bodySmall: AppTypography.metadata,
+      labelLarge: AppTypography.label.copyWith(fontSize: 15),
+      labelMedium: AppTypography.label,
+      labelSmall: AppTypography.metadata,
+    ),
   ).apply(bodyColor: text, displayColor: text);
 
   return ThemeData(
@@ -55,7 +60,7 @@ ThemeData buildAppTheme(Brightness brightness) {
     brightness: brightness,
     scaffoldBackgroundColor: background,
     colorScheme: scheme,
-    fontFamily: 'Inter',
+    fontFamily: GoogleFonts.manrope().fontFamily,
     textTheme: typography,
     cardTheme: CardThemeData(
       margin: EdgeInsets.zero,
@@ -65,24 +70,26 @@ ThemeData buildAppTheme(Brightness brightness) {
     ),
     filledButtonTheme: FilledButtonThemeData(
       style: FilledButton.styleFrom(
-        minimumSize: const Size(48, 50),
+        minimumSize: const Size(48, 52),
         padding: const EdgeInsets.symmetric(horizontal: PulseSpace.xl),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(PulseRadius.medium)),
-        textStyle: AppTypography.label.copyWith(fontSize: 14),
+        textStyle: typography.labelLarge,
       ),
     ),
     outlinedButtonTheme: OutlinedButtonThemeData(
       style: OutlinedButton.styleFrom(
-        minimumSize: const Size(48, 50),
+        minimumSize: const Size(48, 52),
         padding: const EdgeInsets.symmetric(horizontal: PulseSpace.xl),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(PulseRadius.medium)),
-        textStyle: AppTypography.label.copyWith(fontSize: 14),
+        textStyle: typography.labelLarge,
       ),
     ),
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
       fillColor: elevated.withValues(alpha: dark ? 0.55 : 0.7),
-      contentPadding: const EdgeInsets.symmetric(horizontal: PulseSpace.lg, vertical: PulseSpace.md),
+      contentPadding: const EdgeInsets.symmetric(horizontal: PulseSpace.lg, vertical: PulseSpace.lg),
+      labelStyle: typography.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+      hintStyle: typography.bodyMedium?.copyWith(color: secondary),
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(PulseRadius.medium), borderSide: BorderSide.none),
       enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(PulseRadius.medium), borderSide: BorderSide.none),
       focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(PulseRadius.medium), borderSide: BorderSide(color: PulseColors.accent, width: 1.5)),
@@ -90,11 +97,11 @@ ThemeData buildAppTheme(Brightness brightness) {
       focusedErrorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(PulseRadius.medium), borderSide: BorderSide(color: PulseColors.error, width: 1.5)),
     ),
     navigationBarTheme: NavigationBarThemeData(
-      height: 72,
+      height: 76,
       elevation: 0,
       backgroundColor: surface,
       indicatorColor: PulseColors.accentTint,
-      labelTextStyle: WidgetStatePropertyAll(AppTypography.metadata.copyWith(color: secondary)),
+      labelTextStyle: WidgetStatePropertyAll(typography.labelMedium?.copyWith(color: secondary)),
     ),
     dividerTheme: DividerThemeData(color: dark ? const Color(0xFF2B2B2F) : const Color(0xFFE9E0D7)),
     iconTheme: IconThemeData(color: secondary),
