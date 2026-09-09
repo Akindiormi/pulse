@@ -9,6 +9,7 @@ import '../backend/trusted_account_backend.dart';
 import '../backend/trusted_challenge_backend.dart';
 import '../database/repositories.dart';
 import '../database/supabase_repositories.dart';
+import '../database/supabase_focus_repository.dart';
 import '../motion/pulse_event_dispatcher.dart';
 import '../notifications/firebase_notification_service.dart';
 import '../notifications/notification_service.dart';
@@ -36,6 +37,7 @@ final taskRepositoryProvider = Provider<TaskRepository>((ref) => SupabaseTaskRep
 final projectRepositoryProvider = Provider<ProjectRepository>((ref) => SupabaseProjectRepository(ref.watch(supabaseProvider)));
 final milestoneRepositoryProvider = Provider<MilestoneRepository>((ref) => SupabaseMilestoneRepository(ref.watch(supabaseProvider)));
 final calendarRepositoryProvider = Provider<CalendarRepository>((ref) => SupabaseCalendarRepository(ref.watch(supabaseProvider)));
+final focusRepositoryProvider = Provider<FocusRepository>((ref) => SupabaseFocusRepository(ref.watch(supabaseProvider)));
 final achievementRepositoryProvider = Provider<AchievementRepository>((ref) => SupabaseAchievementRepository(ref.watch(supabaseProvider)));
 final trustedChallengeBackendProvider = Provider<TrustedChallengeBackend>((ref) => SupabaseTrustedChallengeBackend(ref.watch(trustedCallableClientProvider), ref.watch(authServiceProvider)));
 final achievementServiceProvider = Provider<AchievementService>((ref) => const AchievementService());
