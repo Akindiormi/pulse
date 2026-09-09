@@ -77,17 +77,39 @@ class SupabaseChallengeRepository implements ChallengeRepository {
   @override
   Future<Map<String, dynamic>?> getDailyAssignment({required String uid, required String date}) async {
     final row = await supabase.from('daily_challenges').select().eq('user_id', uid).eq('date', date).maybeSingle();
-    return row;
+    if (row == null) return null;
+    return {
+      'challengeId': row['challenge_id'],
+      'date': row['date'],
+      'assignedAt': row['assigned_at'],
+      'completedAt': row['completed_at'],
+      'completed': row['completed'],
+    };
   }
 
   @override
-  Future<Map<String, dynamic>?> getChallenge(String challengeId) async => supabase.from('challenges').select().eq('id', challengeId).maybeSingle();
+  Future<Map<String, dynamic>?> getChallenge(String challengeId) async {
+    final row = await supabase.from('challenges').select().eq('id', challengeId).maybeSingle();
+    return row == null ? null : _challengeToModelMap(row);
+  }
 
   @override
   Future<List<Challenge>> getActiveChallenges() async {
     final rows = await supabase.from('challenges').select().eq('active', true).order('id');
-    return rows.map((row) => Challenge.fromMap(row['id'] as String, row)).toList(growable: false);
+    return rows.map((row) => Challenge.fromMap(row['id'] as String, _challengeToModelMap(row))).toList(growable: false);
   }
+
+  Map<String, dynamic> _challengeToModelMap(Map<String, dynamic> row) => {
+        'title': row['title'],
+        'description': row['description'],
+        'category': row['category'],
+        'difficulty': row['difficulty'],
+        'xpReward': row['xp_reward'],
+        'estimatedMinutes': row['estimated_minutes'],
+        'estimatedCost': row['estimated_cost'],
+        'active': row['active'],
+        'createdAt': row['created_at'],
+      };
 }
 
 class SupabaseActivityRepository implements ActivityRepository {
