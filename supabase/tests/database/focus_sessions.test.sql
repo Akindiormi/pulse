@@ -83,6 +83,7 @@ select is((
 ), 'n', 'deleting a task sets focus task_id to null rather than deleting the session');
 
 create temporary table focus_test_users (name text primary key, id uuid not null);
+grant select on focus_test_users to authenticated;
 
 insert into auth.users (id, aud, role, email, encrypted_password, email_confirmed_at, raw_app_meta_data, raw_user_meta_data, created_at, updated_at)
 values
@@ -96,6 +97,7 @@ insert into public.tasks (user_id, title) select id, 'Focus foundation test task
 insert into public.tasks (user_id, title) select id, 'Other owner task' from focus_test_users where name = 'other';
 
 create temporary table focus_test_rows (session_id uuid, task_id uuid not null);
+grant select, update on focus_test_rows to authenticated;
 insert into focus_test_rows(session_id, task_id)
 select null::uuid, id from public.tasks where title = 'Focus foundation test task' limit 1;
 
