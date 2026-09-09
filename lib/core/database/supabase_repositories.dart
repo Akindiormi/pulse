@@ -2,6 +2,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../models/activity_model.dart';
 import '../../models/achievement_model.dart';
+import '../../models/calendar_event_model.dart';
 import '../../models/challenge_model.dart';
 import '../../models/milestone_model.dart';
 import '../../models/project_model.dart';
@@ -62,6 +63,52 @@ class SupabaseMilestoneRepository implements MilestoneRepository {
   @override Future<Milestone> createMilestone({required String uid, required String projectId, required String name, String? description, DateTime? dueDate}) async { final row = await supabase.from('milestones').insert({'user_id': uid, 'project_id': projectId, 'name': name.trim(), if (description != null && description.trim().isNotEmpty) 'description': description.trim(), if (dueDate != null) 'due_date': dueDate.toIso8601String().split('T').first}).select().single(); return Milestone.fromMap(row['id'] as String, row); }
   @override Future<Milestone> updateMilestone({required String milestoneId, String? name, String? description, DateTime? dueDate, MilestoneStatus? status}) async { final values = <String, dynamic>{if (name != null) 'name': name.trim(), if (description != null) 'description': description.trim(), if (dueDate != null) 'due_date': dueDate.toIso8601String().split('T').first, if (status != null) 'status': status.value}; final row = await supabase.from('milestones').update(values).eq('id', milestoneId).select().single(); return Milestone.fromMap(row['id'] as String, row); }
   @override Future<void> deleteMilestone({required String milestoneId}) async => await supabase.from('milestones').delete().eq('id', milestoneId);
+}
+
+class SupabaseCalendarRepository implements CalendarRepository {
+  SupabaseCalendarRepository(this.supabase);
+  final SupabaseClient supabase;
+
+  @override
+  Future<List<CalendarEvent>> getEvents({required String uid, required DateTime rangeStart, required DateTime rangeEnd}) async {
+    if (!rangeEnd.isAfter(rangeStart)) throw ArgumentError('rangeEnd must be after rangeStart');
+    final rows = await supabase
+        .from('calendar_events')
+        .select('*, task_calendar_events(task_id)')
+        .eq('user_id', uid)
+        .lte('starts_at', rangeEnd.toUtc().toIso8601String())
+        .order('starts_at');
+    return rows.map((row) {
+      final links = (row['task_calendar_events'] as List<dynamic>? ?? const <dynamic>[])
+          .whereType<Map<String, dynamic>>()
+          .map((link) => link['task_id'])
+          .whereType<String>()
+          .toList(growable: false);
+      return CalendarEvent.fromMap(row['id'] as String, {...row, 'task_ids': links});
+    }).where((event) => event.isRecurring || event.endsAt.isAfter(rangeStart)).toList(growable: false);
+  }
+
+  @override
+  Future<CalendarEvent> createEvent({required String uid, required String title, String? description, required DateTime startsAt, required DateTime endsAt, bool allDay = false, required String timezone, String? recurrenceRule, String? taskId}) async {
+    if (!endsAt.isAfter(startsAt)) throw ArgumentError('endsAt must be after startsAt');
+    final row = await supabase.from('calendar_events').insert({'user_id': uid, 'title': title.trim(), if (description != null && description.trim().isNotEmpty) 'description': description.trim(), 'starts_at': startsAt.toUtc().toIso8601String(), 'ends_at': endsAt.toUtc().toIso8601String(), 'all_day': allDay, 'timezone': timezone, if (recurrenceRule != null && recurrenceRule.trim().isNotEmpty) 'recurrence_rule': recurrenceRule.trim()}).select().single();
+    final event = CalendarEvent.fromMap(row['id'] as String, row);
+    if (taskId != null) await linkTask(taskId: taskId, eventId: event.id);
+    return taskId == null ? event : event.copyWith(taskIds: <String>[taskId]);
+  }
+
+  @override
+  Future<CalendarEvent> updateEvent({required String eventId, String? title, String? description, DateTime? startsAt, DateTime? endsAt, bool? allDay, String? timezone, String? recurrenceRule}) async {
+    final values = <String, dynamic>{if (title != null) 'title': title.trim(), if (description != null) 'description': description.trim(), if (startsAt != null) 'starts_at': startsAt.toUtc().toIso8601String(), if (endsAt != null) 'ends_at': endsAt.toUtc().toIso8601String(), if (allDay != null) 'all_day': allDay, if (timezone != null) 'timezone': timezone, if (recurrenceRule != null) 'recurrence_rule': recurrenceRule.trim()};
+    if (startsAt != null && endsAt != null && !endsAt.isAfter(startsAt)) throw ArgumentError('endsAt must be after startsAt');
+    final row = values.isEmpty ? await supabase.from('calendar_events').select('*, task_calendar_events(task_id)').eq('id', eventId).single() : await supabase.from('calendar_events').update(values).eq('id', eventId).select('*, task_calendar_events(task_id)').single();
+    final links = (row['task_calendar_events'] as List<dynamic>? ?? const <dynamic>[]).whereType<Map<String, dynamic>>().map((link) => link['task_id']).whereType<String>().toList(growable: false);
+    return CalendarEvent.fromMap(row['id'] as String, {...row, 'task_ids': links});
+  }
+
+  @override Future<void> deleteEvent({required String eventId}) async => await supabase.from('calendar_events').delete().eq('id', eventId);
+  @override Future<void> linkTask({required String taskId, required String eventId}) async => await supabase.from('task_calendar_events').insert({'task_id': taskId, 'calendar_event_id': eventId});
+  @override Future<void> unlinkTask({required String taskId, required String eventId}) async => await supabase.from('task_calendar_events').delete().eq('task_id', taskId).eq('calendar_event_id', eventId);
 }
 
 class SupabaseAchievementRepository implements AchievementRepository {
