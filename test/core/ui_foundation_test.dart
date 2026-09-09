@@ -17,7 +17,7 @@ void main() {
   test('Pulse theme keeps the product color contract', () {
     expect(buildAppTheme(Brightness.light, useGoogleFonts: false).scaffoldBackgroundColor, PulseColors.lightBackground);
     expect(buildAppTheme(Brightness.dark, useGoogleFonts: false).scaffoldBackgroundColor, PulseColors.darkBackground);
-    expect(PulseColors.accent, const Color(0xFFFF6B4A));
+    expect(PulseColors.accent, const Color(0xFF2E8B57));
   });
 
   test('motion states expose the product interaction vocabulary', () {
