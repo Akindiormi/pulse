@@ -21,9 +21,13 @@ void main() {
     expect(find.text('5 days'), findsOneWidget);
     expect(find.text('9 days'), findsOneWidget);
     expect(find.text('3 categories explored'), findsOneWidget);
-    final unlocked = find.text('0 unlocked');
-    await tester.scrollUntilVisible(unlocked, 400, scrollable: find.byType(Scrollable).first);
+
+    // ListView children outside the initial viewport are lazily built, so the
+    // target must be brought into view before it can be located.
+    final list = find.byType(ListView);
+    await tester.drag(list, const Offset(0, -600));
     await tester.pumpAndSettle();
+    final unlocked = find.text('0 unlocked');
     expect(unlocked, findsOneWidget);
   });
 
