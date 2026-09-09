@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../models/activity_model.dart';
 import '../../models/achievement_model.dart';
 import '../../models/challenge_model.dart';
+import '../../models/project_model.dart';
 import '../../models/task_model.dart';
 import '../../models/user_model.dart';
 import 'repositories.dart';
@@ -95,6 +96,49 @@ class SupabaseTaskRepository implements TaskRepository {
   Future<TaskCompletionResult> completeTask({required String taskId}) async {
     final result = await supabase.rpc('complete_task', params: {'p_task_id': taskId});
     return TaskCompletionResult.fromMap(Map<String, dynamic>.from(result as Map));
+  }
+}
+
+class SupabaseProjectRepository implements ProjectRepository {
+  SupabaseProjectRepository(this.supabase);
+  final SupabaseClient supabase;
+
+  @override
+  Future<List<Project>> getProjects({required String uid}) async {
+    final rows = await supabase.from('projects').select().eq('user_id', uid).order('updated_at', ascending: false);
+    return rows.map((row) => Project.fromMap(row['id'] as String, row)).toList(growable: false);
+  }
+
+  @override
+  Future<Project?> getProject({required String uid, required String projectId}) async {
+    final row = await supabase.from('projects').select().eq('id', projectId).eq('user_id', uid).maybeSingle();
+    return row == null ? null : Project.fromMap(row['id'] as String, row);
+  }
+
+  @override
+  Future<Project> createProject({required String uid, required String name, String? description}) async {
+    final row = await supabase.from('projects').insert({'user_id': uid, 'name': name.trim(), if (description != null) 'description': description.trim()}).select().single();
+    return Project.fromMap(row['id'] as String, row);
+  }
+
+  @override
+  Future<Project> updateProject({required String projectId, String? name, String? description, ProjectStatus? status}) async {
+    final values = <String, dynamic>{
+      if (name != null) 'name': name.trim(),
+      if (description != null) 'description': description.trim(),
+      if (status != null) 'status': status.value,
+    };
+    if (values.isEmpty) {
+      final row = await supabase.from('projects').select().eq('id', projectId).single();
+      return Project.fromMap(row['id'] as String, row);
+    }
+    final row = await supabase.from('projects').update(values).eq('id', projectId).select().single();
+    return Project.fromMap(row['id'] as String, row);
+  }
+
+  @override
+  Future<void> deleteProject({required String projectId}) async {
+    await supabase.from('projects').delete().eq('id', projectId);
   }
 }
 
