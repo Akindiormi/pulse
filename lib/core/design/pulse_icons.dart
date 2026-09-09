@@ -68,5 +68,5 @@ class PulseIcons {
   static IconData success = PhosphorIcons.checkCircle(PulseIconWeight.active);
   static IconData error = PhosphorIcons.warningCircle(PulseIconWeight.active);
   static IconData info = PhosphorIcons.info(PulseIconWeight.inactive);
-  static IconData empty = PhosphorIcons.trayEmpty(PulseIconWeight.inactive);
+  static IconData empty = PhosphorIcons.tray(PulseIconWeight.inactive);
 }
