@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../design/pulse_tokens.dart';
 import 'pulse_motion_policy.dart';
 
 /// A short, deterministic celebration driven only by already-authoritative
@@ -79,7 +80,7 @@ class _BurstPainter extends CustomPainter {
       final distance = radius * (0.55 + (i.isEven ? .22 : .08));
       final point = center + Offset(math.cos(angle) * distance, math.sin(angle) * distance);
       final sizeFactor = i.isEven ? 3.0 : 2.2;
-      paint.color = Color.lerp(Colors.transparent, const Color(0xFFFF6B4A), opacity * .8)!;
+      paint.color = Color.lerp(Colors.transparent, PulseColors.accent, opacity * .8)!;
       canvas.drawCircle(point, sizeFactor, paint);
     }
   }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../design/pulse_tokens.dart';
+import '../theme/app_colors.dart';
 import 'pulse_interaction.dart';
 import '../theme/app_theme.dart';
 
@@ -39,9 +40,9 @@ class PulseButton extends StatelessWidget {
 
   ButtonStyle _style(BuildContext context) => FilledButton.styleFrom(
         backgroundColor: PulseColors.accent,
-        foregroundColor: const Color(0xFF1A100D),
+        foregroundColor: AppColors.textOnAccent,
         disabledBackgroundColor: PulseColors.accent.withValues(alpha: 0.35),
-        disabledForegroundColor: const Color(0xFF1A100D).withValues(alpha: 0.55),
+        disabledForegroundColor: AppColors.textOnAccent.withValues(alpha: 0.55),
         minimumSize: const Size(48, 50),
         padding: const EdgeInsets.symmetric(horizontal: PulseSpace.xl),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(PulseRadius.medium)),

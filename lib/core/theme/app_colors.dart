@@ -12,7 +12,8 @@ class AppColors {
   static const success = PulseColors.success;
   static const warning = PulseColors.warning;
   static const danger = PulseColors.error;
-  static const textOnAccent = Color(0xFF1A100D);
+  static const gold = PulseColors.gold;
+  static const textOnAccent = Color(0xFFFFFFFF);
   static const white = PulseColors.white;
   static const black = PulseColors.black;
 }
