@@ -1,38 +1,32 @@
 -- Slice 1B: streak hardening.
 --
 -- Day definition:
---   A Pulse day is the calendar date in the user's IANA timezone stored on profiles.timezone.
---   The timezone is initialized from the device and may be updated when the device timezone changes.
---   If no timezone is available, UTC is used as the deterministic fallback.
---   Streaks compare calendar dates, never elapsed hours, so DST 23/25-hour days do not change semantics.
+--   A Pulse streak day is the SERVER UTC calendar date.
+--   Device timezone and user timezone are never authoritative for streaks.
+--   Streak continuity compares calendar dates, never elapsed hours, so DST
+--   transitions cannot change the streak semantics.
 --
 -- Grace definition:
---   One grace day may cover exactly one missed calendar day.
---   Grace availability is a rolling 7-calendar-day window: if grace was used on date D,
---   another grace cannot be used until D + 7. Grace never creates an activity event.
---   A gap of more than one missed calendar day cannot be repaired by one grace day.
+--   One missed qualifying calendar day may be forgiven per rolling 7-calendar-day
+--   window. If grace was consumed on date D, another grace cannot be consumed
+--   until D + 7. Grace never creates an activity event, XP, or an independent
+--   activity date. A gap of 2+ missed calendar days resets the streak.
 --
--- Migration v1 remains prospective: existing streak state is preserved and the migration itself
--- does not create activity, reset a streak, or consume grace.
+-- Migration v1 remains prospective: existing streak state is preserved and the
+-- migration itself does not create activity, reset a streak, or consume grace.
 
 alter table public.profiles
   add column if not exists streak_grace_used_on date;
 
-comment on column public.profiles.timezone is
-  'IANA timezone used to define the user calendar day. Initialized from device and updated when the device timezone changes; UTC is the fallback.';
-
 comment on column public.profiles.streak_grace_used_on is
-  'Calendar date on which the most recent rolling-7-day streak grace was consumed.';
+  'SERVER UTC calendar date on which the most recent rolling-7-day streak grace was consumed.';
 
-create or replace function public.pulse_local_date(
-  p_at timestamptz,
-  p_timezone text
-)
+create or replace function public.pulse_server_utc_date(p_at timestamptz default now())
 returns date
 language sql
-immutable
+stable
 as $$
-  select (p_at at time zone coalesce(nullif(trim(p_timezone), ''), 'UTC'))::date;
+  select timezone('utc', p_at)::date;
 $$;
 
 create or replace function public.calculate_streak_v1(
@@ -63,9 +57,13 @@ begin
       and p_current_streak > 0
       and (p_grace_used_on is null or p_today - p_grace_used_on >= 7)
     then
+      -- One missed calendar day is forgiven. The forgiven day plus today
+      -- extend the streak by two, while no fake activity is recorded.
       v_use_grace := true;
       v_new_streak := p_current_streak + 2;
     else
+      -- Same-day duplicate, a two-plus-day break, or a still-cooling grace
+      -- window cannot extend the previous streak.
       v_new_streak := 1;
     end if;
   end if;
@@ -79,7 +77,7 @@ end;
 $$;
 
 comment on function public.calculate_streak_v1(date, integer, date, date) is
-  'Authoritative Slice 1B streak transition: calendar-date comparison plus one grace day per rolling 7 calendar days.';
+  'Authoritative Slice 1B streak transition: server UTC calendar-date comparison plus one grace day per rolling 7 calendar days.';
 
 create or replace function public.complete_task(p_task_id uuid)
 returns jsonb
@@ -105,6 +103,7 @@ begin
     raise exception 'UNAUTHENTICATED' using errcode = 'P0001';
   end if;
 
+  -- Row locks make concurrent retries serialize on the same task.
   select * into v_task
   from public.tasks
   where id = p_task_id and user_id = v_uid
@@ -127,6 +126,7 @@ begin
     raise exception 'TASK_CANCELLED' using errcode = 'P0001';
   end if;
 
+  -- Serialize profile changes as well, so streak/XP totals cannot race.
   select * into v_profile
   from public.profiles
   where id = v_uid
@@ -136,9 +136,7 @@ begin
     raise exception 'PROFILE_NOT_FOUND' using errcode = 'P0001';
   end if;
 
-  -- The server defines the calendar day from the user's IANA timezone.
-  -- Historical streak state is not recalculated during migration; it is simply used as-is.
-  v_today := public.pulse_local_date(now(), v_profile.timezone);
+  v_today := public.pulse_server_utc_date(now());
 
   update public.tasks
   set status = 'completed', completed_at = now(), updated_at = now()
@@ -202,8 +200,8 @@ begin
 end;
 $$;
 
-revoke all on function public.pulse_local_date(timestamptz, text) from public, anon;
-grant execute on function public.pulse_local_date(timestamptz, text) to authenticated, service_role;
+revoke all on function public.pulse_server_utc_date(timestamptz) from public, anon;
+grant execute on function public.pulse_server_utc_date(timestamptz) to authenticated, service_role;
 
 revoke all on function public.calculate_streak_v1(date, integer, date, date) from public, anon;
 grant execute on function public.calculate_streak_v1(date, integer, date, date) to authenticated, service_role;
