@@ -148,6 +148,8 @@ ProviderContainer containerFor(FakeFocusRepository repository) => ProviderContai
     );
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
   test('initialization with no active session reaches idle recovery state', () async {
     final repository = FakeFocusRepository();
     final container = containerFor(repository);
