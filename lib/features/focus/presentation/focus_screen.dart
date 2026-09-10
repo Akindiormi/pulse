@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../application/focus_controller.dart';
+import '../../../models/focus_session_model.dart';
 
 class FocusScreen extends ConsumerStatefulWidget {
-  const FocusScreen({super.key, this.taskId, this.plannedDurationSeconds});
+  const FocusScreen({super.key, this.taskId, this.calendarEventId, this.plannedDurationSeconds});
   final String? taskId;
+  final String? calendarEventId;
   final int? plannedDurationSeconds;
   @override
   ConsumerState<FocusScreen> createState() => _FocusScreenState();
@@ -19,6 +21,16 @@ class _FocusScreenState extends ConsumerState<FocusScreen> {
     final m = value.inMinutes.remainder(60).toString().padLeft(2, '0');
     final s = value.inSeconds.remainder(60).toString().padLeft(2, '0');
     return h > 0 ? '$h:$m:$s' : '${value.inMinutes.toString().padLeft(2, '0')}:$s';
+  }
+
+  void _start() {
+    final duration = widget.plannedDurationSeconds ?? _minutes * 60;
+    final intent = FocusIntent(
+      plannedDurationSeconds: duration,
+      taskId: widget.taskId,
+      calendarEventId: widget.calendarEventId,
+    );
+    ref.read(focusControllerProvider.notifier).start(intent: intent);
   }
 
   @override
@@ -47,10 +59,7 @@ class _FocusScreenState extends ConsumerState<FocusScreen> {
           state: state,
           minutes: _minutes,
           onMinutesChanged: (value) => setState(() => _minutes = value),
-          onStart: () => ref.read(focusControllerProvider.notifier).start(
-                taskId: widget.taskId,
-                plannedDurationSeconds: widget.plannedDurationSeconds ?? _minutes * 60,
-              ),
+          onStart: _start,
           onPause: () => ref.read(focusControllerProvider.notifier).pause(),
           onResume: () => ref.read(focusControllerProvider.notifier).resume(),
           onComplete: () => ref.read(focusControllerProvider.notifier).complete(),
