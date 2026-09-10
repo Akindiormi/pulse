@@ -114,52 +114,39 @@ class _TaskEditorSheetState extends State<TaskEditorSheet> {
     final title = _title.text.trim();
     final interval = int.tryParse(_interval.text.trim());
     final count = int.tryParse(_count.text.trim());
-    if (title.isEmpty) {
-      _error('Give the task a name.');
-      return;
-    }
+    if (title.isEmpty) return _error('Give the task a name.');
     if (_recurrence != null && (interval == null || interval < 1)) {
-      _error('The repeat interval must be at least 1.');
-      return;
+      return _error('The repeat interval must be at least 1.');
     }
     if (_hasCount && (count == null || count < 1)) {
-      _error('Enter a valid occurrence count.');
-      return;
+      return _error('Enter a valid occurrence count.');
     }
-    if (_hasEndDate && _until == null) {
-      _error('Choose an end date.');
-      return;
-    }
+    if (_hasEndDate && _until == null) return _error('Choose an end date.');
 
     final startsAt = _combineDateAndTime(_date, _time.text.trim());
-    Navigator.of(context).pop(
-      TaskEditorResult(
-        title: title,
-        dueDate: _date,
-        dueTime: _time.text.trim().isEmpty ? null : _time.text.trim(),
-        milestoneId: _milestoneId,
-        recurrenceType: _recurrence,
-        recurrenceInterval: interval ?? 1,
-        startsAt: startsAt,
-        untilAt: _hasEndDate ? _until : null,
-        occurrenceCount: _hasCount ? count : null,
-      ),
-    );
+    Navigator.of(context).pop(TaskEditorResult(
+      title: title,
+      dueDate: _date,
+      dueTime: _time.text.trim().isEmpty ? null : _time.text.trim(),
+      milestoneId: _milestoneId,
+      recurrenceType: _recurrence,
+      recurrenceInterval: interval ?? 1,
+      startsAt: startsAt,
+      untilAt: _hasEndDate ? _until : null,
+      occurrenceCount: _hasCount ? count : null,
+    ));
   }
 
   DateTime _combineDateAndTime(DateTime date, String time) {
     if (time.isEmpty) return DateTime(date.year, date.month, date.day, 9);
-    final match = RegExp(r'^(\d{1,2}):(\d{2})\$').firstMatch(time);
-    if (match == null) return DateTime(date.year, date.month, date.day, 9);
-    final hour = int.tryParse(match.group(1)!) ?? 9;
-    final minute = int.tryParse(match.group(2)!) ?? 0;
-    return DateTime(
-      date.year,
-      date.month,
-      date.day,
-      hour.clamp(0, 23).toInt(),
-      minute.clamp(0, 59).toInt(),
-    );
+    final parts = time.split(':');
+    if (parts.length != 2) return DateTime(date.year, date.month, date.day, 9);
+    final hour = int.tryParse(parts[0]);
+    final minute = int.tryParse(parts[1]);
+    if (hour == null || minute == null || hour < 0 || hour > 23 || minute < 0 || minute > 59) {
+      return DateTime(date.year, date.month, date.day, 9);
+    }
+    return DateTime(date.year, date.month, date.day, hour, minute);
   }
 
   void _error(String message) {
@@ -184,106 +171,57 @@ class _TaskEditorSheetState extends State<TaskEditorSheet> {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      _editing ? 'Edit task' : 'New task',
-                      style: Theme.of(context)
-                          .textTheme
-                          .headlineSmall
-                          ?.copyWith(fontWeight: FontWeight.w800),
-                    ),
-                  ),
-                  IconButton(
-                    onPressed: () => Navigator.pop(context),
-                    icon: const Icon(Icons.close_rounded),
-                  ),
-                ],
-              ),
+              Row(children: [
+                Expanded(child: Text(
+                  _editing ? 'Edit task' : 'New task',
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800),
+                )),
+                IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close_rounded)),
+              ]),
               const SizedBox(height: PulseSpace.md),
               TextField(
                 controller: _title,
                 autofocus: !_editing,
                 textCapitalization: TextCapitalization.sentences,
-                decoration: const InputDecoration(
-                  labelText: 'Task',
-                  hintText: 'What needs to get done?',
-                ),
+                decoration: const InputDecoration(labelText: 'Task', hintText: 'What needs to get done?'),
               ),
               const SizedBox(height: PulseSpace.md),
               DropdownButtonFormField<String?>(
                 value: _milestoneId,
                 decoration: const InputDecoration(labelText: 'Milestone'),
                 items: [
-                  const DropdownMenuItem<String?>(
-                    value: null,
-                    child: Text('No milestone'),
-                  ),
-                  ...widget.milestones.map(
-                    (milestone) => DropdownMenuItem<String?>(
-                      value: milestone.id,
-                      child: Text(milestone.name),
-                    ),
-                  ),
+                  const DropdownMenuItem<String?>(value: null, child: Text('No milestone')),
+                  ...widget.milestones.map((milestone) => DropdownMenuItem<String?>(value: milestone.id, child: Text(milestone.name))),
                 ],
                 onChanged: (value) => setState(() => _milestoneId = value),
               ),
               const SizedBox(height: PulseSpace.md),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: _pickDate,
-                      icon: const Icon(Icons.calendar_today_rounded),
-                      label: Text(_dateLabel(_date)),
-                    ),
-                  ),
-                  const SizedBox(width: PulseSpace.sm),
-                  Expanded(
-                    child: TextField(
-                      controller: _time,
-                      keyboardType: TextInputType.datetime,
-                      decoration: const InputDecoration(
-                        labelText: 'Time',
-                        hintText: '09:00',
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+              Row(children: [
+                Expanded(child: OutlinedButton.icon(
+                  onPressed: _pickDate,
+                  icon: const Icon(Icons.calendar_today_rounded),
+                  label: Text(_dateLabel(_date)),
+                )),
+                const SizedBox(width: PulseSpace.sm),
+                Expanded(child: TextField(
+                  controller: _time,
+                  keyboardType: TextInputType.datetime,
+                  decoration: const InputDecoration(labelText: 'Time', hintText: '09:00'),
+                )),
+              ]),
               if (recurringEnabled) ...[
                 const SizedBox(height: PulseSpace.xl),
-                Text(
-                  'Repeat',
-                  style: Theme.of(context)
-                      .textTheme
-                      .titleMedium
-                      ?.copyWith(fontWeight: FontWeight.w700),
-                ),
+                Text('Repeat', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
                 const SizedBox(height: PulseSpace.sm),
                 SegmentedButton<TaskRecurrenceType?>(
                   segments: const [
-                    ButtonSegment<TaskRecurrenceType?>(
-                      value: null,
-                      label: Text('Never'),
-                    ),
-                    ButtonSegment<TaskRecurrenceType?>(
-                      value: TaskRecurrenceType.daily,
-                      label: Text('Daily'),
-                    ),
-                    ButtonSegment<TaskRecurrenceType?>(
-                      value: TaskRecurrenceType.weekly,
-                      label: Text('Weekly'),
-                    ),
-                    ButtonSegment<TaskRecurrenceType?>(
-                      value: TaskRecurrenceType.interval,
-                      label: Text('Interval'),
-                    ),
+                    ButtonSegment<TaskRecurrenceType?>(value: null, label: Text('Never')),
+                    ButtonSegment<TaskRecurrenceType?>(value: TaskRecurrenceType.daily, label: Text('Daily')),
+                    ButtonSegment<TaskRecurrenceType?>(value: TaskRecurrenceType.weekly, label: Text('Weekly')),
+                    ButtonSegment<TaskRecurrenceType?>(value: TaskRecurrenceType.interval, label: Text('Interval')),
                   ],
                   selected: {_recurrence},
-                  onSelectionChanged: (selection) =>
-                      setState(() => _recurrence = selection.first),
+                  onSelectionChanged: (selection) => setState(() => _recurrence = selection.first),
                   multiSelectionEnabled: false,
                 ),
                 if (_recurrence != null) ...[
@@ -291,66 +229,43 @@ class _TaskEditorSheetState extends State<TaskEditorSheet> {
                   TextField(
                     controller: _interval,
                     keyboardType: TextInputType.number,
-                    decoration: InputDecoration(
-                      labelText: _recurrence == TaskRecurrenceType.weekly
-                          ? 'Every how many weeks?'
-                          : 'Every how many days?',
-                    ),
+                    decoration: InputDecoration(labelText: _recurrence == TaskRecurrenceType.weekly ? 'Every how many weeks?' : 'Every how many days?'),
                   ),
                   const SizedBox(height: PulseSpace.md),
-                  Text(
-                    'Starts ${_dateLabel(_date)} · ${widget.timezone}',
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
+                  Text('Starts ${_dateLabel(_date)} · ${widget.timezone}', style: Theme.of(context).textTheme.bodySmall),
                   const SizedBox(height: PulseSpace.md),
                   CheckboxListTile(
                     contentPadding: EdgeInsets.zero,
                     value: _hasEndDate,
                     title: const Text('End on a date'),
-                    onChanged: (value) =>
-                        setState(() => _hasEndDate = value ?? false),
+                    onChanged: (value) => setState(() => _hasEndDate = value ?? false),
                   ),
-                  if (_hasEndDate)
-                    OutlinedButton.icon(
-                      onPressed: _pickUntil,
-                      icon: const Icon(Icons.event_rounded),
-                      label: Text(
-                        _until == null
-                            ? 'Choose end date'
-                            : 'Ends ${_dateLabel(_until!)}',
-                      ),
-                    ),
+                  if (_hasEndDate) OutlinedButton.icon(
+                    onPressed: _pickUntil,
+                    icon: const Icon(Icons.event_rounded),
+                    label: Text(_until == null ? 'Choose end date' : 'Ends ${_dateLabel(_until!)}'),
+                  ),
                   CheckboxListTile(
                     contentPadding: EdgeInsets.zero,
                     value: _hasCount,
                     title: const Text('End after a number of occurrences'),
-                    onChanged: (value) =>
-                        setState(() => _hasCount = value ?? false),
+                    onChanged: (value) => setState(() => _hasCount = value ?? false),
                   ),
-                  if (_hasCount)
-                    TextField(
-                      controller: _count,
-                      keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(
-                        labelText: 'Number of occurrences',
-                      ),
-                    ),
+                  if (_hasCount) TextField(
+                    controller: _count,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(labelText: 'Number of occurrences'),
+                  ),
                   if (_recurrence == TaskRecurrenceType.weekly) ...[
                     const SizedBox(height: PulseSpace.xs),
-                    Text(
-                      'Weekly repeats on ${_weekday(_date)}.',
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
+                    Text('Weekly repeats on ${_weekday(_date)}.', style: Theme.of(context).textTheme.bodySmall),
                   ],
                 ],
               ],
               const SizedBox(height: PulseSpace.xl),
               SizedBox(
                 width: double.infinity,
-                child: FilledButton(
-                  onPressed: _save,
-                  child: Text(_editing ? 'Save changes' : 'Create task'),
-                ),
+                child: FilledButton(onPressed: _save, child: Text(_editing ? 'Save changes' : 'Create task')),
               ),
             ],
           ),
@@ -360,12 +275,9 @@ class _TaskEditorSheetState extends State<TaskEditorSheet> {
   }
 
   String _weekday(DateTime value) => const [
-        'Monday',
-        'Tuesday',
-        'Wednesday',
-        'Thursday',
-        'Friday',
-        'Saturday',
-        'Sunday',
-      ][value.weekday - 1];
+    'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday',
+  ][value.weekday - 1];
 }
+'''
+print(editor.count('
+'))
