@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/design/pulse_tokens.dart';
 import '../../../core/widgets/pulse_card.dart';
+import '../../../models/project_model.dart';
 import '../application/progress_controller.dart';
 
 class ProgressScreen extends ConsumerWidget {
