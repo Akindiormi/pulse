@@ -19,7 +19,7 @@ class HomeViewData {
   final List<FocusSession> focusSessions;
 
   List<Task> get todayTasks => tasks.where((task) => task.isOpen && _isTodayOrOverdue(task.dueDate)).toList(growable: false);
-  List<Task> get upcomingTasks => tasks.where((task) => task.isOpen && task.dueDate != null && task.dueDate!.isAfter(_today())).toList(growable: false);
+  List<Task> get upcomingTasks => tasks.where((task) => task.isOpen && task.dueDate != null && task.dueDate!.isAfter(_endOfToday())).toList(growable: false);
   List<Task> get completedTasks => tasks.where((task) => task.isCompleted).toList(growable: false);
   List<Task> get completedToday => completedTasks.where((task) => task.completedAt != null && _isSameDay(task.completedAt!, DateTime.now())).toList(growable: false);
   List<FocusSession> get todayFocusSessions => focusSessions.where((session) => _isSameDay(session.startedAt, DateTime.now())).toList(growable: false);
@@ -41,8 +41,23 @@ class HomeViewData {
   int projectOpenTaskCount(String projectId) => tasks.where((task) => task.projectId == projectId && task.isOpen).length;
   int projectCompletedTaskCount(String projectId) => tasks.where((task) => task.projectId == projectId && task.isCompleted).length;
 
-  static DateTime _today() { final now = DateTime.now(); return DateTime(now.year, now.month, now.day); }
-  static bool _isTodayOrOverdue(DateTime? date) => date == null || !date.isAfter(_today());
+  static DateTime _today() {
+    final now = DateTime.now();
+    return DateTime(now.year, now.month, now.day);
+  }
+
+  static DateTime _endOfToday() {
+    final today = _today();
+    return today.add(const Duration(days: 1));
+  }
+
+  static bool _isTodayOrOverdue(DateTime? date) {
+    if (date == null) return true;
+    final today = _today();
+    final endOfToday = today.add(const Duration(days: 1));
+    return date.isBefore(endOfToday);
+  }
+
   static bool _isSameDay(DateTime a, DateTime b) => a.year == b.year && a.month == b.month && a.day == b.day;
 }
 
