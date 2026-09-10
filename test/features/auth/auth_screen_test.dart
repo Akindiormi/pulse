@@ -28,8 +28,14 @@ void main() {
     await tester.tap(find.byType(PulseButton).first);
     await tester.pump();
     await tester.enterText(find.byKey(const Key('auth-email-field')), 'not-an-email');
-    await tester.tap(find.byType(PulseButton).first);
+    await tester.enterText(find.byKey(const Key('auth-password-field')), 'secret123');
+
+    final passwordField = tester.widget<TextField>(
+      find.byKey(const Key('auth-password-field')),
+    );
+    passwordField.onSubmitted?.call('secret123');
     await tester.pump();
+
     expect(find.text('Enter a valid email address.'), findsOneWidget);
   });
 
