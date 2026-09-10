@@ -30,7 +30,6 @@ class SplashScreen extends ConsumerWidget {
           context.go(_route(destination));
         }
       }),
-      fireImmediately: true,
     );
 
     return Scaffold(
