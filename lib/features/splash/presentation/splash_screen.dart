@@ -7,12 +7,10 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/motion/pulse_motion_attachment.dart';
 import '../../../core/motion/pulse_motion_policy.dart';
 import '../../../core/motion/pulse_motion_state.dart';
-import '../../../core/theme/app_theme.dart';
 import '../application/splash_controller.dart';
 
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
-
   @override
   ConsumerState<SplashScreen> createState() => _SplashScreenState();
 }
@@ -23,7 +21,8 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
         StartupDestination.auth => '/auth',
         StartupDestination.home => '/home',
         StartupDestination.profileSetup => '/profile-setup',
-        StartupDestination.verifyEmail => '/verify-email',
+        StartupDestination.firstFocus => '/first-focus',
+        StartupDestination.firstWin => '/first-win',
       };
 
   void _navigate(StartupDestination destination) {
@@ -34,11 +33,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    ref.listenManual<AsyncValue<StartupDestination>>(
-      startupControllerProvider,
-      (_, next) => next.whenData(_navigate),
-      fireImmediately: true,
-    );
+    ref.listenManual<AsyncValue<StartupDestination>>(startupControllerProvider, (_, next) => next.whenData(_navigate), fireImmediately: true);
   }
 
   @override
@@ -52,10 +47,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
             child: state.when(
               loading: () => const _SplashMark(),
               data: (_) => const _SplashMark(),
-              error: (error, _) => _StartupError(
-                message: ErrorMessageMapper.from(error, kind: AppErrorKind.network).message,
-                onRetry: () => ref.read(startupControllerProvider.notifier).refresh(),
-              ),
+              error: (error, _) => _StartupError(message: ErrorMessageMapper.from(error, kind: AppErrorKind.network).message, onRetry: () => ref.read(startupControllerProvider.notifier).refresh()),
             ),
           ),
         ),
@@ -69,16 +61,7 @@ class _StartupError extends StatelessWidget {
   final String message;
   final VoidCallback onRetry;
   @override
-  Widget build(BuildContext context) => Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const _SplashMark(),
-          const SizedBox(height: PulseSpace.xxl),
-          Semantics(liveRegion: true, child: Text(message, textAlign: TextAlign.center, style: AppTypography.body)),
-          const SizedBox(height: PulseSpace.lg),
-          FilledButton(onPressed: onRetry, child: const Text('try again')),
-        ],
-      );
+  Widget build(BuildContext context) => Column(mainAxisSize: MainAxisSize.min, children: [const _SplashMark(), const SizedBox(height: PulseSpace.xxl), Semantics(liveRegion: true, child: Text(message, textAlign: TextAlign.center)), const SizedBox(height: PulseSpace.lg), FilledButton(onPressed: onRetry, child: const Text('try again'))]);
 }
 
 class _SplashMark extends StatelessWidget {
@@ -87,25 +70,12 @@ class _SplashMark extends StatelessWidget {
   Widget build(BuildContext context) => AnimatedOpacity(
         duration: PulseMotionPolicy.duration(context, const Duration(milliseconds: 180)),
         opacity: 1,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            PulseMotionAttachment(
-              intent: PulseMotionIntent.splashBrand,
-              state: PulseMotionState.entering,
-              child: Container(
-                width: 72,
-                height: 72,
-                decoration: BoxDecoration(color: PulseColors.accent, borderRadius: BorderRadius.circular(PulseRadius.large)),
-                alignment: Alignment.center,
-                child: const Text('P', style: TextStyle(fontSize: 38, fontWeight: FontWeight.w900, color: AppColors.textOnAccent)),
-              ),
-            ),
-            const SizedBox(height: PulseSpace.xl),
-            Text('PULSE', style: Theme.of(context).textTheme.displayLarge?.copyWith(letterSpacing: -1.8)),
-            const SizedBox(height: PulseSpace.sm),
-            Text('small actions. real momentum.', textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant)),
-          ],
-        ),
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          PulseMotionAttachment(intent: PulseMotionIntent.splashBrand, state: PulseMotionState.entering, child: Container(width: 72, height: 72, decoration: BoxDecoration(color: PulseColors.accent, borderRadius: BorderRadius.circular(PulseRadius.large)), alignment: Alignment.center, child: const Text('P', style: TextStyle(fontSize: 38, fontWeight: FontWeight.w900, color: AppColors.textOnAccent))),
+          const SizedBox(height: PulseSpace.xl),
+          Text('PULSE', style: Theme.of(context).textTheme.displayLarge?.copyWith(letterSpacing: -1.8)),
+          const SizedBox(height: PulseSpace.sm),
+          Text('plan. focus. progress.', textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant)),
+        ]),
       );
 }
