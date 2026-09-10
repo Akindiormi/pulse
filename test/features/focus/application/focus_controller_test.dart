@@ -132,9 +132,10 @@ class FakeFocusRepository implements FocusRepository {
   }
 }
 
-FocusSession runningSession({int activeSeconds = 1500}) {
+FocusSession runningSession({int activeSeconds = 1500, DateTime? updatedAt}) {
   final now = DateTime.now().toUtc();
-  final startedAt = now.subtract(Duration(seconds: activeSeconds));
+  final persistedAt = updatedAt ?? now;
+  final startedAt = updatedAt ?? now.subtract(Duration(seconds: activeSeconds));
   return FocusSession(
     id: 'session-1',
     userId: 'user-1',
@@ -142,7 +143,7 @@ FocusSession runningSession({int activeSeconds = 1500}) {
     plannedDurationSeconds: 3600,
     startedAt: startedAt,
     activeDurationSeconds: activeSeconds,
-    updatedAt: startedAt,
+    updatedAt: persistedAt,
   );
 }
 
@@ -248,7 +249,7 @@ void main() {
   });
 
   test('ticker projection never mutates persisted active duration', () async {
-    final persisted = runningSession();
+    final persisted = runningSession(activeSeconds: 0, updatedAt: DateTime.utc(2026, 9, 10, 10));
     final repository = FakeFocusRepository(activeSession: persisted);
     final container = containerFor(repository);
     addTearDown(container.dispose);
@@ -259,7 +260,7 @@ void main() {
 
     final state = container.read(focusControllerProvider).requireValue;
     expect(state.elapsedDuration, const Duration(minutes: 35));
-    expect(repository.activeSession!.activeDurationSeconds, 1500);
+    expect(repository.activeSession!.activeDurationSeconds, 0);
   });
 
   test('duplicate starts are guarded while the first request is in flight', () async {
