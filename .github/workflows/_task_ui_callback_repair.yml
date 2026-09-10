@@ -32,3 +32,4 @@ jobs:
           git add lib/features/projects/presentation/projects_screen.dart
           git commit -m "fix(tasks): repair UI callback"
           git push
+# trigger after workflow creation
