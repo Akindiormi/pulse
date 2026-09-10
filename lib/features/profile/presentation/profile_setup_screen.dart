@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/design/pulse_tokens.dart';
+import '../../../core/di/providers.dart';
 import '../../../core/widgets/pulse_button.dart';
 import '../../onboarding/application/new_user_activation_controller.dart';
 
@@ -45,16 +46,12 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     final value = name.text.trim();
     if (value.length < 2) return setState(() => error = 'Enter a name with at least 2 characters.');
     if (area == null) return setState(() => error = 'Choose what matters most right now.');
-    await _run(() async {
-      await ref.read(newUserActivationProvider.notifier).savePersonal(displayName: value, area: area!);
-    });
+    await _run(() => ref.read(newUserActivationProvider.notifier).savePersonal(displayName: value, area: area!));
   }
 
   Future<void> nextPriority() async {
     if (priority.text.trim().isEmpty) return setState(() => error = 'Tell Pulse what matters right now.');
-    await _run(() async {
-      await ref.read(newUserActivationProvider.notifier).savePriority(priority.text);
-    });
+    await _run(() => ref.read(newUserActivationProvider.notifier).savePriority(priority.text));
   }
 
   Future<void> createWork() async {
