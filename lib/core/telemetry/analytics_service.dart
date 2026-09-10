@@ -13,8 +13,6 @@ abstract interface class AnalyticsService {
   Future<void> logGoogleSignInCompleted();
   Future<void> logAppleSignInStarted();
   Future<void> logAppleSignInCompleted();
-  Future<void> logEmailVerificationSent();
-  Future<void> logEmailVerificationCompleted();
   Future<void> logProfileSetupStarted();
   Future<void> logProfileSetupCompleted();
   Future<void> logChallengeViewed(String challengeId);
