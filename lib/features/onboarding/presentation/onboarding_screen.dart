@@ -48,7 +48,12 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         child: Padding(
           padding: const EdgeInsets.fromLTRB(PulseSpace.xl, PulseSpace.xl, PulseSpace.xl, PulseSpace.lg),
           child: Column(children: [
-            Row(children: [Text('PULSE', style: AppTypography.title.copyWith(fontWeight: FontWeight.w900)), const Spacer(), if (page < pages.length - 1) PulseButton(variant: PulseButtonVariant.tertiary, label: 'skip', onPressed: null)]),
+            Row(children: [
+              Text('PULSE', style: AppTypography.title.copyWith(fontWeight: FontWeight.w900)),
+              const Spacer(),
+              if (page < pages.length - 1)
+                PulseButton(variant: PulseButtonVariant.tertiary, label: 'skip', onPressed: () => finish(skipped: true)),
+            ]),
             Expanded(
               child: AnimatedSwitcher(
                 duration: transition,
