@@ -1,0 +1,35 @@
+name: Task UI callback PR repair
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    if: ${{ github.event.pull_request.head.repo.full_name == github.repository && !contains(github.event.pull_request.head.ref, 'repaired') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
+      - name: Repair callback signature
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('lib/features/projects/presentation/projects_screen.dart')
+          s = p.read_text()
+          old = 'Future<void> _openTaskEditor({Task? task, String? milestoneId}) async {'
+          new = 'Future<void> _openTaskEditor([Task? task, String? milestoneId]) async {'
+          if old not in s:
+              raise SystemExit('expected callback signature not found')
+          p.write_text(s.replace(old, new, 1))
+          PY
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add lib/features/projects/presentation/projects_screen.dart
+          git commit -m "fix(tasks): repair UI callback"
+          git push origin HEAD:${{ github.event.pull_request.head.ref }}
