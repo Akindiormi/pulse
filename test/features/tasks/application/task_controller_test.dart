@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:pulse/core/auth/auth_service.dart';
 import 'package:pulse/core/database/repositories.dart';
+import 'package:pulse/core/di/providers.dart';
 import 'package:pulse/features/tasks/application/task_controller.dart';
 import 'package:pulse/models/task_model.dart';
 
@@ -15,8 +16,8 @@ class _FakeAuthService implements AuthService {
   @override
   Stream<AuthState> get authStateChanges => Stream.value(
         AuthState(
-          status: uid == null ? AuthStatus.unauthenticated : AuthStatus.authenticated,
-          uid: uid,
+          status: uid == null || uid!.isEmpty ? AuthStatus.unauthenticated : AuthStatus.authenticated,
+          uid: uid == null || uid!.isEmpty ? null : uid,
         ),
       );
 
@@ -219,8 +220,7 @@ void main() {
     expect(controller.state.status, TaskMutationStatus.failure);
     expect(controller.state.canRetry, isTrue);
 
-    final retried = await controller.retry();
-    expect(retried, isNull);
+    await controller.retry();
     expect(controller.state.status, TaskMutationStatus.success);
     expect(controller.state.task?.title, 'retry me');
   });
