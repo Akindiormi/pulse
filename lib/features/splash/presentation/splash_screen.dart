@@ -4,9 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/design/pulse_tokens.dart';
 import '../../../core/errors/app_error.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../../core/motion/pulse_motion_attachment.dart';
 import '../../../core/motion/pulse_motion_policy.dart';
-import '../../../core/motion/pulse_motion_state.dart';
 import '../application/splash_controller.dart';
 
 class SplashScreen extends ConsumerStatefulWidget {
@@ -26,8 +24,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
       };
 
   void _navigate(StartupDestination destination) {
-    if (!mounted) return;
-    context.go(_route(destination));
+    if (mounted) context.go(_route(destination));
   }
 
   @override
@@ -61,21 +58,17 @@ class _StartupError extends StatelessWidget {
   final String message;
   final VoidCallback onRetry;
   @override
-  Widget build(BuildContext context) => Column(mainAxisSize: MainAxisSize.min, children: [const _SplashMark(), const SizedBox(height: PulseSpace.xxl), Semantics(liveRegion: true, child: Text(message, textAlign: TextAlign.center)), const SizedBox(height: PulseSpace.lg), FilledButton(onPressed: onRetry, child: const Text('try again'))]);
+  Widget build(BuildContext context) => Column(mainAxisSize: MainAxisSize.min, children: [const _SplashMark(), const SizedBox(height: PulseSpace.xxl), Text(message, textAlign: TextAlign.center), const SizedBox(height: PulseSpace.lg), FilledButton(onPressed: onRetry, child: const Text('try again'))]);
 }
 
 class _SplashMark extends StatelessWidget {
   const _SplashMark();
   @override
-  Widget build(BuildContext context) => AnimatedOpacity(
-        duration: PulseMotionPolicy.duration(context, const Duration(milliseconds: 180)),
-        opacity: 1,
-        child: Column(mainAxisSize: MainAxisSize.min, children: [
-          PulseMotionAttachment(intent: PulseMotionIntent.splashBrand, state: PulseMotionState.entering, child: Container(width: 72, height: 72, decoration: BoxDecoration(color: PulseColors.accent, borderRadius: BorderRadius.circular(PulseRadius.large)), alignment: Alignment.center, child: const Text('P', style: TextStyle(fontSize: 38, fontWeight: FontWeight.w900, color: AppColors.textOnAccent))),
-          const SizedBox(height: PulseSpace.xl),
-          Text('PULSE', style: Theme.of(context).textTheme.displayLarge?.copyWith(letterSpacing: -1.8)),
-          const SizedBox(height: PulseSpace.sm),
-          Text('plan. focus. progress.', textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant)),
-        ]),
-      );
+  Widget build(BuildContext context) => Column(mainAxisSize: MainAxisSize.min, children: [
+        AnimatedScale(scale: 1, duration: PulseMotionPolicy.duration(context, const Duration(milliseconds: 220)), child: Container(width: 72, height: 72, decoration: BoxDecoration(color: Theme.of(context).colorScheme.primary, borderRadius: BorderRadius.circular(PulseRadius.large)), alignment: Alignment.center, child: const Text('P', style: TextStyle(fontSize: 38, fontWeight: FontWeight.w900, color: AppColors.textOnAccent))),
+        const SizedBox(height: PulseSpace.xl),
+        Text('PULSE', style: Theme.of(context).textTheme.displayLarge?.copyWith(letterSpacing: -1.8)),
+        const SizedBox(height: PulseSpace.sm),
+        Text('plan. focus. progress.', textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant)),
+      ]);
 }
