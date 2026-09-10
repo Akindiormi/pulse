@@ -19,7 +19,7 @@ class PulseBottomNavigation extends StatelessWidget {
     _PulseDestination('/home', 'today', Icons.today_rounded),
     _PulseDestination('/projects', 'projects', Icons.folder_copy_rounded),
     _PulseDestination('/calendar', 'calendar', Icons.calendar_month_rounded),
-    _PulseDestination('/achievements', 'progress', Icons.insights_rounded),
+    _PulseDestination('/progress', 'progress', Icons.insights_rounded),
     _PulseDestination('/profile', 'profile', Icons.person_rounded),
   ];
   @override Widget build(BuildContext context) {
