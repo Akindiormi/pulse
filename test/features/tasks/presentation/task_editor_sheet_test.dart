@@ -35,6 +35,7 @@ void main() {
     await tester.tap(find.text('open'));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField).first, 'Gym');
+    await tester.ensureVisible(find.text('Create task'));
     await tester.tap(find.text('Create task'));
     await tester.pumpAndSettle();
 
@@ -83,6 +84,7 @@ void main() {
     await tester.tap(find.text('End after a number of occurrences'));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField).last, '10');
+    await tester.ensureVisible(find.text('Create task'));
     await tester.tap(find.text('Create task'));
     await tester.pumpAndSettle();
 
