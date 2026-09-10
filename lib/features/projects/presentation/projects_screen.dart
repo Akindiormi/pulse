@@ -358,7 +358,7 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
                         .toList(),
                     onRefresh: () => setState(_reload),
                     ref: ref,
-                    onEdit: _openTaskEditor,
+                    onEdit: (task) => _openTaskEditor(task),
                   ),
                 ),
                 const SizedBox(height: PulseSpace.xxl),
@@ -377,7 +377,7 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
                         task: task,
                         onRefresh: () => setState(_reload),
                         ref: ref,
-                        onEdit: _openTaskEditor,
+                        onEdit: (task) => _openTaskEditor(task),
                       ),
                     ),
                 if (data.tasks
@@ -395,7 +395,7 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
         total: tasks.length,
       );
 
-  Future<void> _openTaskEditor({Task? task, String? milestoneId}) async {
+  Future<void> _openTaskEditor([Task? task, String? milestoneId]) async {
     final data = await _data;
     if (!mounted) return;
 
