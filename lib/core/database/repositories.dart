@@ -19,15 +19,7 @@ class UserProfileUpdate {
 }
 
 abstract interface class UserRepository {
-  Future<void> createOrUpdateUser({
-    required String uid,
-    String? displayName,
-    String? photoUrl,
-    String? firstName,
-    String? lastName,
-    DateTime? dateOfBirth,
-    String? phoneNumber,
-  });
+  Future<void> createOrUpdateUser({required String uid, String? displayName, String? photoUrl, String? firstName, String? lastName, DateTime? dateOfBirth, String? phoneNumber});
   Future<void> updateProfileFields({required String uid, required Map<String, dynamic> fields});
   Future<Map<String, dynamic>?> getUser(String uid);
   Future<UserModel?> getUserModel(String uid) async { final data = await getUser(uid); return data == null ? null : UserModel.fromMap(uid, data); }
@@ -53,6 +45,10 @@ abstract interface class TaskRepository {
   Future<Task> updateTask({required String taskId, String? title, DateTime? dueDate, String? dueTime, String? projectId, String? milestoneId, int? priority});
   Future<void> deleteTask({required String taskId});
   Future<TaskCompletionResult> completeTask({required String taskId});
+  Future<TaskReopenResult> reopenTask({required String taskId});
+  Future<TaskSeries> createTaskSeries({required String uid, required String title, String? description, String? projectId, String? milestoneId, int priority = 0, required TaskRecurrenceType recurrenceType, int recurrenceInterval = 1, String timezone = 'UTC', required DateTime startsAt, DateTime? untilAt, int? occurrenceCount});
+  Future<TaskSeries> updateTaskSeries({required String seriesId, String? title, String? description, String? projectId, String? milestoneId, int? priority, TaskRecurrenceType? recurrenceType, int? recurrenceInterval, String? timezone, DateTime? startsAt, DateTime? untilAt, int? occurrenceCount, bool? isActive});
+  Future<Task> ensureTaskOccurrence({required String seriesId, required DateTime occurrenceKey});
 }
 
 abstract interface class ProjectRepository {
