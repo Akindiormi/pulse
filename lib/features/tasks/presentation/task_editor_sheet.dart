@@ -278,6 +278,3 @@ class _TaskEditorSheetState extends State<TaskEditorSheet> {
     'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday',
   ][value.weekday - 1];
 }
-'''
-print(editor.count('
-'))
