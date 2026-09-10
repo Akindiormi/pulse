@@ -54,6 +54,11 @@ class _FakeTaskRepository implements TaskRepository {
 
   @override
   Future<Task> createTask({required String uid, required String title, DateTime? dueDate, String? dueTime, String? projectId, String? milestoneId, int priority = 0}) async {
+    if (nextError != null) {
+      final error = nextError!;
+      nextError = null;
+      throw error;
+    }
     final task = Task(id: 'task-${++_taskNumber}', userId: uid, title: title.trim(), dueDate: dueDate, dueTime: dueTime, projectId: projectId, milestoneId: milestoneId, priority: priority);
     tasks.add(task);
     return task;
