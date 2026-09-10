@@ -1,20 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
 import '../../../core/design/pulse_tokens.dart';
 import '../../../core/errors/app_error.dart';
-import '../../../core/motion/pulse_motion_policy.dart';
 import '../../../core/theme/app_colors.dart';
 import '../application/splash_controller.dart';
 
-class SplashScreen extends ConsumerStatefulWidget {
+class SplashScreen extends ConsumerWidget {
   const SplashScreen({super.key});
 
-  @override
-  ConsumerState<SplashScreen> createState() => _SplashScreenState();
-}
-
-class _SplashScreenState extends ConsumerState<SplashScreen> {
   String _route(StartupDestination destination) => switch (destination) {
         StartupDestination.onboarding => '/onboarding',
         StartupDestination.auth => '/auth',
@@ -24,23 +19,20 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
         StartupDestination.firstWin => '/first-win',
       };
 
-  void _navigate(StartupDestination destination) {
-    if (mounted) context.go(_route(destination));
-  }
-
   @override
-  void initState() {
-    super.initState();
-    ref.listenManual<AsyncValue<StartupDestination>>(
+  Widget build(BuildContext context, WidgetRef ref) {
+    final state = ref.watch(startupControllerProvider);
+
+    ref.listen<AsyncValue<StartupDestination>>(
       startupControllerProvider,
-      (_, next) => next.whenData(_navigate),
+      (_, next) => next.whenData((destination) {
+        if (context.mounted) {
+          context.go(_route(destination));
+        }
+      }),
       fireImmediately: true,
     );
-  }
 
-  @override
-  Widget build(BuildContext context) {
-    final state = ref.watch(startupControllerProvider);
     return Scaffold(
       body: SafeArea(
         child: Center(
@@ -73,65 +65,63 @@ class _StartupError extends StatelessWidget {
   final VoidCallback onRetry;
 
   @override
-  Widget build(BuildContext context) => Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const _SplashMark(),
-          const SizedBox(height: PulseSpace.xxl),
-          Text(message, textAlign: TextAlign.center),
-          const SizedBox(height: PulseSpace.lg),
-          FilledButton(onPressed: onRetry, child: const Text('try again')),
-        ],
-      );
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const _SplashMark(),
+        const SizedBox(height: PulseSpace.xxl),
+        Text(message, textAlign: TextAlign.center),
+        const SizedBox(height: PulseSpace.lg),
+        FilledButton(
+          onPressed: onRetry,
+          child: const Text('try again'),
+        ),
+      ],
+    );
+  }
 }
 
 class _SplashMark extends StatelessWidget {
   const _SplashMark();
 
   @override
-  Widget build(BuildContext context) => Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          AnimatedScale(
-            scale: 1,
-            duration: PulseMotionPolicy.duration(
-              context,
-              const Duration(milliseconds: 220),
-            ),
-            child: Container(
-              width: 72,
-              height: 72,
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primary,
-                borderRadius: BorderRadius.circular(PulseRadius.large),
-              ),
-              alignment: Alignment.center,
-              child: const Text(
-                'P',
-                style: TextStyle(
-                  fontSize: 38,
-                  fontWeight: FontWeight.w900,
-                  color: AppColors.textOnAccent,
-                ),
-              ),
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 72,
+          height: 72,
+          decoration: BoxDecoration(
+            color: theme.colorScheme.primary,
+            borderRadius: BorderRadius.circular(PulseRadius.large),
+          ),
+          alignment: Alignment.center,
+          child: const Text(
+            'P',
+            style: TextStyle(
+              fontSize: 38,
+              fontWeight: FontWeight.w900,
+              color: AppColors.textOnAccent,
             ),
           ),
-          const SizedBox(height: PulseSpace.xl),
-          Text(
-            'PULSE',
-            style: Theme.of(context)
-                .textTheme
-                .displayLarge
-                ?.copyWith(letterSpacing: -1.8),
+        ),
+        const SizedBox(height: PulseSpace.xl),
+        Text(
+          'PULSE',
+          style: theme.textTheme.displayLarge?.copyWith(letterSpacing: -1.8),
+        ),
+        const SizedBox(height: PulseSpace.sm),
+        Text(
+          'plan. focus. progress.',
+          textAlign: TextAlign.center,
+          style: theme.textTheme.bodyLarge?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
           ),
-          const SizedBox(height: PulseSpace.sm),
-          Text(
-            'plan. focus. progress.',
-            textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-          ),
-        ],
-      );
+        ),
+      ],
+    );
+  }
 }
