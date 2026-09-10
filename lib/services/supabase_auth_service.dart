@@ -11,15 +11,24 @@ class SupabaseAuthService implements AuthService {
   final TrustedAccountBackend _accountBackend;
 
   @override
-  Stream<AuthState> get authStateChanges => _supabase.auth.onAuthStateChange.map((event) => _mapUser(event.session?.user ?? _supabase.auth.currentUser));
+  Stream<AuthState> get authStateChanges => _supabase.auth.onAuthStateChange
+      .map((event) => _mapUser(event.session?.user, session: event.session));
 
   @override
   String? get pendingEmail => _supabase.auth.currentUser?.email;
 
-  AuthState _mapUser(supabase.User? user) {
+  AuthState _mapUser(supabase.User? user, {supabase.Session? session}) {
     if (user == null) return const AuthState(status: AuthStatus.unauthenticated);
-    final verified = user.emailConfirmedAt != null;
-    return AuthState(status: verified ? AuthStatus.authenticated : AuthStatus.authenticatedUnverified, uid: user.id);
+
+    // Supabase returns a live session immediately when email confirmation is
+    // disabled. emailConfirmedAt may still be null in that response, so a
+    // valid session is the authoritative signal that the app can continue.
+    // When confirmation is enabled, signUp returns the user without a session
+    // and we deliberately preserve the unverified state for the OTP flow.
+    if (session != null) {
+      return AuthState(status: AuthStatus.authenticated, uid: user.id);
+    }
+    return AuthState(status: AuthStatus.authenticatedUnverified, uid: user.id);
   }
 
   Future<T> _guard<T>(Future<T> Function() action) async {
@@ -55,13 +64,13 @@ class SupabaseAuthService implements AuthService {
   @override
   Future<AuthState> signInWithEmail({required String email, required String password}) async => _guard(() async {
     final response = await _supabase.auth.signInWithPassword(email: email, password: password);
-    return _mapUser(response.user);
+    return _mapUser(response.user, session: response.session);
   });
 
   @override
   Future<AuthState> registerWithEmail({required String email, required String password}) async => _guard(() async {
     final response = await _supabase.auth.signUp(email: email, password: password);
-    return _mapUser(response.user);
+    return _mapUser(response.user, session: response.session);
   });
 
   @override
@@ -74,7 +83,7 @@ class SupabaseAuthService implements AuthService {
   @override
   Future<AuthState> verifySignUpCode({required String email, required String code}) => _guard(() async {
     final response = await _supabase.auth.verifyOTP(type: supabase.OtpType.signup, email: email, token: code.trim());
-    return _mapUser(response.user);
+    return _mapUser(response.user, session: response.session);
   });
 
   @override
