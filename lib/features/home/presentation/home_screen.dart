@@ -38,9 +38,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     } catch (error) { if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error.toString()))); }
   }
 
-  void _focusTask(Task task) {
-    context.push('/focus?taskId=${Uri.encodeQueryComponent(task.id)}');
-  }
+  void _focusTask(Task task) => context.push('/focus?taskId=${Uri.encodeQueryComponent(task.id)}');
 
   @override
   Widget build(BuildContext context) {
@@ -65,12 +63,15 @@ class _HomeLoaded extends StatelessWidget {
 
   String _greeting() { final hour = DateTime.now().hour; if (hour < 12) return 'good morning'; if (hour < 17) return 'good afternoon'; return 'good evening'; }
   String _dateLabel() { final now = DateTime.now(); const months = ['january','february','march','april','may','june','july','august','september','october','november','december']; const days = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday']; return '${days[now.weekday - 1]}, ${months[now.month - 1]} ${now.day}'; }
+  String _focusLabel(int seconds) { final minutes = seconds ~/ 60; if (minutes < 1) return '${seconds}s focused'; return '${minutes}m focused'; }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final firstName = data.user.displayName?.trim().split(' ').first;
     final greeting = firstName == null || firstName.isEmpty ? _greeting() : '${_greeting()}, $firstName';
-    final theme = Theme.of(context);
+    final next = data.nextTask;
+    final activeFocus = data.activeFocusSession;
     return RefreshIndicator(
       onRefresh: onRefresh,
       child: ListView(physics: const AlwaysScrollableScrollPhysics(), padding: const EdgeInsets.fromLTRB(20, 22, 20, 32), children: [
@@ -80,14 +81,55 @@ class _HomeLoaded extends StatelessWidget {
         const SizedBox(height: 18),
         PulseStreak(current: data.user.currentStreak, longest: data.user.longestStreak, state: data.user.currentStreak > 0 ? PulseStreakMotionState.active : PulseStreakMotionState.inactive),
         const SizedBox(height: 20),
+        if (activeFocus != null) ...[
+          _FocusResumeCard(session: activeFocus, onResume: () => activeFocus.taskId == null ? context.push('/focus') : context.push('/focus?taskId=${Uri.encodeQueryComponent(activeFocus.taskId!)}')),
+          const SizedBox(height: 20),
+        ] else if (next != null) ...[
+          _NextActionCard(task: next, onFocus: () => onFocus(next)),
+          const SizedBox(height: 20),
+        ],
+        _TodaySummary(data: data, focusLabel: _focusLabel(data.focusTodaySeconds)),
+        const SizedBox(height: 20),
         _QuickAdd(controller: quickAddController, adding: adding, onSubmit: onAdd),
         const SizedBox(height: 28),
         _Section(title: 'today', children: data.todayTasks.isEmpty ? [_EmptyToday()] : data.todayTasks.map((task) => _TaskTile(task: task, onComplete: () => onComplete(task), onFocus: () => onFocus(task))).toList()),
         if (data.upcomingTasks.isNotEmpty) ...[const SizedBox(height: 26), _Section(title: 'upcoming', children: data.upcomingTasks.map((task) => _TaskTile(task: task, onComplete: () => onComplete(task), onFocus: () => onFocus(task))).toList())],
-        if (data.completedTasks.isNotEmpty) ...[const SizedBox(height: 26), _Section(title: 'completed', children: data.completedTasks.take(8).map((task) => _TaskTile(task: task, onComplete: null, onFocus: null)).toList())],
+        if (data.completedToday.isNotEmpty) ...[const SizedBox(height: 26), _Section(title: 'done today', children: data.completedToday.take(8).map((task) => _TaskTile(task: task, onComplete: null, onFocus: null)).toList())],
       ]),
     );
   }
+}
+
+class _NextActionCard extends StatelessWidget {
+  const _NextActionCard({required this.task, required this.onFocus});
+  final Task task;
+  final VoidCallback onFocus;
+  @override
+  Widget build(BuildContext context) => PulseCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text('what’s next', style: Theme.of(context).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700)), const SizedBox(height: 8), Text(task.title, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)), const SizedBox(height: 14), FilledButton.icon(onPressed: onFocus, icon: const Icon(Icons.center_focus_strong_rounded), label: const Text('start focus'))]));
+}
+
+class _FocusResumeCard extends StatelessWidget {
+  const _FocusResumeCard({required this.session, required this.onResume});
+  final dynamic session;
+  final VoidCallback onResume;
+  @override
+  Widget build(BuildContext context) => PulseCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text('focus in progress', style: Theme.of(context).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700)), const SizedBox(height: 6), Text(session.isPaused ? 'paused — ready when you are' : 'you have an active session', style: Theme.of(context).textTheme.bodyMedium), const SizedBox(height: 12), FilledButton.icon(onPressed: onResume, icon: const Icon(Icons.play_arrow_rounded), label: Text(session.isPaused ? 'resume focus' : 'continue focus'))]));
+}
+
+class _TodaySummary extends StatelessWidget {
+  const _TodaySummary({required this.data, required this.focusLabel});
+  final HomeViewData data;
+  final String focusLabel;
+  @override
+  Widget build(BuildContext context) => PulseCard(child: Row(children: [Expanded(child: _Metric(label: 'focus today', value: focusLabel)), Expanded(child: _Metric(label: 'done today', value: '${data.completedToday.length}'))]));
+}
+
+class _Metric extends StatelessWidget {
+  const _Metric({required this.label, required this.value});
+  final String label;
+  final String value;
+  @override
+  Widget build(BuildContext context) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(value, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)), const SizedBox(height: 2), Text(label, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant))]);
 }
 
 class _QuickAdd extends StatelessWidget {
@@ -112,45 +154,16 @@ class _TaskTile extends StatelessWidget {
   final Task task;
   final VoidCallback? onComplete;
   final VoidCallback? onFocus;
-
   @override
   Widget build(BuildContext context) {
     final textColor = task.isCompleted ? Theme.of(context).colorScheme.onSurfaceVariant : null;
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: PulseCard(
-        child: Row(
-          children: [
-            Checkbox(
-              value: task.isCompleted,
-              onChanged: task.isCompleted || onComplete == null ? null : (_) => onComplete!(),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                task.title,
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  decoration: task.isCompleted ? TextDecoration.lineThrough : null,
-                  color: textColor,
-                ),
-              ),
-            ),
-            if (onFocus != null)
-              IconButton(
-                tooltip: 'focus on task',
-                onPressed: onFocus,
-                icon: const Icon(Icons.center_focus_strong_rounded),
-              ),
-          ],
-        ),
-      ),
-    );
+    return Padding(padding: const EdgeInsets.only(bottom: 8), child: PulseCard(child: Row(children: [Checkbox(value: task.isCompleted, onChanged: task.isCompleted || onComplete == null ? null : (_) => onComplete!()), const SizedBox(width: 8), Expanded(child: Text(task.title, style: Theme.of(context).textTheme.bodyLarge?.copyWith(decoration: task.isCompleted ? TextDecoration.lineThrough : null, color: textColor))), if (onFocus != null) IconButton(tooltip: 'focus on task', onPressed: onFocus, icon: const Icon(Icons.center_focus_strong_rounded))])));
   }
 }
 
 class _EmptyToday extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => PulseCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Icon(Icons.check_circle_outline_rounded, color: Theme.of(context).colorScheme.primary), const SizedBox(height: 12), Text('what’s one thing worth getting done today?', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)), const SizedBox(height: 4), Text('add it above and let Pulse keep it in view.', style: Theme.of(context).textTheme.bodyMedium)]));
+  Widget build(BuildContext context) => PulseCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Icon(Icons.check_circle_outline_rounded, color: Theme.of(context).colorScheme.primary), const SizedBox(height: 12), Text('nothing scheduled for today', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)), const SizedBox(height: 4), Text('add a task above when you know what needs to get done.', style: Theme.of(context).textTheme.bodyMedium)]));
 }
 
 class _HomeLoading extends StatelessWidget {
@@ -164,5 +177,5 @@ class _HomeError extends StatelessWidget {
   final Object error;
   final VoidCallback onRetry;
   @override
-  Widget build(BuildContext context) { final unavailable = error is TrustedBackendException && (error as TrustedBackendException).code == TrustedBackendErrorCode.unavailable; if (unavailable) return PulseOfflineState(onRetry: onRetry); final message = error is TrustedBackendException ? (error as TrustedBackendException).message : 'we couldn’t load your tasks.'; return PulseErrorState(message: message, onRetry: onRetry); }
+  Widget build(BuildContext context) { final unavailable = error is TrustedBackendException && (error as TrustedBackendException).code == TrustedBackendErrorCode.unavailable; if (unavailable) return PulseOfflineState(onRetry: onRetry); final message = error is TrustedBackendException ? (error as TrustedBackendException).message : 'we couldn’t load your Pulse.'; return PulseErrorState(message: message, onRetry: onRetry); }
 }
