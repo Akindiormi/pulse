@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/backend/trusted_challenge_backend.dart';
 import '../../../core/motion/pulse_motion_state.dart';
@@ -37,24 +38,29 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     } catch (error) { if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error.toString()))); }
   }
 
+  void _focusTask(Task task) {
+    context.push('/focus?taskId=${Uri.encodeQueryComponent(task.id)}');
+  }
+
   @override
   Widget build(BuildContext context) {
     final home = ref.watch(homeControllerProvider);
     return home.when(
       loading: () => const _HomeLoading(),
       error: (error, _) => _HomeError(error: error, onRetry: () => ref.read(homeControllerProvider.notifier).retry()),
-      data: (data) => _HomeLoaded(data: data, quickAddController: _quickAddController, adding: _adding, onAdd: _addTask, onComplete: _complete, onRefresh: () => ref.read(homeControllerProvider.notifier).retry()),
+      data: (data) => _HomeLoaded(data: data, quickAddController: _quickAddController, adding: _adding, onAdd: _addTask, onComplete: _complete, onFocus: _focusTask, onRefresh: () => ref.read(homeControllerProvider.notifier).retry()),
     );
   }
 }
 
 class _HomeLoaded extends StatelessWidget {
-  const _HomeLoaded({required this.data, required this.quickAddController, required this.adding, required this.onAdd, required this.onComplete, required this.onRefresh});
+  const _HomeLoaded({required this.data, required this.quickAddController, required this.adding, required this.onAdd, required this.onComplete, required this.onFocus, required this.onRefresh});
   final HomeViewData data;
   final TextEditingController quickAddController;
   final bool adding;
   final VoidCallback onAdd;
   final Future<void> Function(Task) onComplete;
+  final ValueChanged<Task> onFocus;
   final Future<void> Function() onRefresh;
 
   String _greeting() { final hour = DateTime.now().hour; if (hour < 12) return 'good morning'; if (hour < 17) return 'good afternoon'; return 'good evening'; }
@@ -76,9 +82,9 @@ class _HomeLoaded extends StatelessWidget {
         const SizedBox(height: 20),
         _QuickAdd(controller: quickAddController, adding: adding, onSubmit: onAdd),
         const SizedBox(height: 28),
-        _Section(title: 'today', children: data.todayTasks.isEmpty ? [_EmptyToday()] : data.todayTasks.map((task) => _TaskTile(task: task, onComplete: () => onComplete(task))).toList()),
-        if (data.upcomingTasks.isNotEmpty) ...[const SizedBox(height: 26), _Section(title: 'upcoming', children: data.upcomingTasks.map((task) => _TaskTile(task: task, onComplete: () => onComplete(task))).toList())],
-        if (data.completedTasks.isNotEmpty) ...[const SizedBox(height: 26), _Section(title: 'completed', children: data.completedTasks.take(8).map((task) => _TaskTile(task: task, onComplete: null)).toList())],
+        _Section(title: 'today', children: data.todayTasks.isEmpty ? [_EmptyToday()] : data.todayTasks.map((task) => _TaskTile(task: task, onComplete: () => onComplete(task), onFocus: () => onFocus(task))).toList()),
+        if (data.upcomingTasks.isNotEmpty) ...[const SizedBox(height: 26), _Section(title: 'upcoming', children: data.upcomingTasks.map((task) => _TaskTile(task: task, onComplete: () => onComplete(task), onFocus: () => onFocus(task))).toList())],
+        if (data.completedTasks.isNotEmpty) ...[const SizedBox(height: 26), _Section(title: 'completed', children: data.completedTasks.take(8).map((task) => _TaskTile(task: task, onComplete: null, onFocus: null)).toList())],
       ]),
     );
   }
@@ -102,11 +108,12 @@ class _Section extends StatelessWidget {
 }
 
 class _TaskTile extends StatelessWidget {
-  const _TaskTile({required this.task, required this.onComplete});
+  const _TaskTile({required this.task, required this.onComplete, required this.onFocus});
   final Task task;
   final VoidCallback? onComplete;
+  final VoidCallback? onFocus;
   @override
-  Widget build(BuildContext context) => Padding(padding: const EdgeInsets.only(bottom: 8), child: PulseCard(child: Row(children: [Checkbox(value: task.isCompleted, onChanged: task.isCompleted || onComplete == null ? null : (_) => onComplete!()), const SizedBox(width: 8), Expanded(child: Text(task.title, style: Theme.of(context).textTheme.bodyLarge?.copyWith(decoration: task.isCompleted ? TextDecoration.lineThrough : null, color: task.isCompleted ? Theme.of(context).colorScheme.onSurfaceVariant : null)))])));
+  Widget build(BuildContext context) => Padding(padding: const EdgeInsets.only(bottom: 8), child: PulseCard(child: Row(children: [Checkbox(value: task.isCompleted, onChanged: task.isCompleted || onComplete == null ? null : (_) => onComplete!()), const SizedBox(width: 8), Expanded(child: Text(task.title, style: Theme.of(context).textTheme.bodyLarge?.copyWith(decoration: task.isCompleted ? TextDecoration.lineThrough : null, color: task.isCompleted ? Theme.of(context).colorScheme.onSurfaceVariant : null))), if (onFocus != null) IconButton(tooltip: 'focus on task', onPressed: onFocus, icon: const Icon(Icons.center_focus_strong_rounded))]));
 }
 
 class _EmptyToday extends StatelessWidget {
