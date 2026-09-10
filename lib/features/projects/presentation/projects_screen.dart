@@ -196,5 +196,17 @@ class _TaskTile extends StatelessWidget {
   final Task task;
   final VoidCallback onRefresh;
   final WidgetRef ref;
-  @override Widget build(BuildContext context) => ListTile(contentPadding: EdgeInsets.zero, leading: Checkbox(value: task.isCompleted, onChanged: task.isCompleted ? null : (_) async { await ref.read(taskRepositoryProvider).completeTask(taskId: task.id); onRefresh(); }), title: Text(task.title, style: TextStyle(decoration: task.isCompleted ? TextDecoration.lineThrough : null, fontWeight: FontWeight.w600)), trailing: IconButton(onPressed: () async { await ref.read(taskRepositoryProvider).deleteTask(taskId: task.id); onRefresh(); }, icon: const Icon(Icons.delete_outline_rounded, size: 20)));
+  @override Widget build(BuildContext context) => ListTile(
+    contentPadding: EdgeInsets.zero,
+    leading: Checkbox(value: task.isCompleted, onChanged: task.isCompleted ? null : (_) async { await ref.read(taskRepositoryProvider).completeTask(taskId: task.id); onRefresh(); }),
+    title: Text(task.title, style: TextStyle(decoration: task.isCompleted ? TextDecoration.lineThrough : null, fontWeight: FontWeight.w600)),
+    trailing: Row(mainAxisSize: MainAxisSize.min, children: [
+      IconButton(
+        tooltip: 'Focus on task',
+        onPressed: () => context.push('/focus?taskId=${Uri.encodeComponent(task.id)}'),
+        icon: const Icon(Icons.play_circle_outline_rounded),
+      ),
+      IconButton(onPressed: () async { await ref.read(taskRepositoryProvider).deleteTask(taskId: task.id); onRefresh(); }, icon: const Icon(Icons.delete_outline_rounded, size: 20)),
+    ]),
+  );
 }
