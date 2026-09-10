@@ -187,6 +187,7 @@ class _ProjectMovement extends StatelessWidget {
                 ? 'no tasks yet'
                 : '$completed of $total tasks done';
         return Padding(
+          key: ValueKey('home-project-${project.id}'),
           padding: const EdgeInsets.only(bottom: 8),
           child: PulseCard(
             child: Row(
