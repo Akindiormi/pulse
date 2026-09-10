@@ -14,24 +14,7 @@ class SupabaseUserRepository implements UserRepository {
   SupabaseUserRepository(this.supabase);
   final SupabaseClient supabase;
   @override
-  Future<void> createOrUpdateUser({
-    required String uid,
-    String? displayName,
-    String? photoUrl,
-    String? firstName,
-    String? lastName,
-    DateTime? dateOfBirth,
-    String? phoneNumber,
-  }) async =>
-      await supabase.from('profiles').upsert({
-        'id': uid,
-        if (displayName != null) 'display_name': displayName,
-        if (photoUrl != null) 'photo_url': photoUrl,
-        if (firstName != null) 'first_name': firstName,
-        if (lastName != null) 'last_name': lastName,
-        if (dateOfBirth != null) 'date_of_birth': dateOfBirth.toIso8601String().split('T').first,
-        if (phoneNumber != null) 'phone_number': phoneNumber,
-      });
+  Future<void> createOrUpdateUser({required String uid, String? displayName, String? photoUrl, String? firstName, String? lastName, DateTime? dateOfBirth, String? phoneNumber}) async => await supabase.from('profiles').upsert({'id': uid, if (displayName != null) 'display_name': displayName, if (photoUrl != null) 'photo_url': photoUrl, if (firstName != null) 'first_name': firstName, if (lastName != null) 'last_name': lastName, if (dateOfBirth != null) 'date_of_birth': dateOfBirth.toIso8601String().split('T').first, if (phoneNumber != null) 'phone_number': phoneNumber});
   @override Future<void> updateProfileFields({required String uid, required Map<String, dynamic> fields}) async => await supabase.from('profiles').update(_toSnakeCase(UserProfileUpdate(fields).toFirestore())).eq('id', uid);
   @override Future<Map<String, dynamic>?> getUser(String uid) async { final row = await supabase.from('profiles').select().eq('id', uid).maybeSingle(); return row == null ? null : _profileToModelMap(row); }
   @override Future<UserModel?> getUserModel(String uid) async { final data = await getUser(uid); return data == null ? null : UserModel.fromMap(uid, data); }
@@ -64,6 +47,17 @@ class SupabaseTaskRepository implements TaskRepository {
   @override Future<Task> updateTask({required String taskId, String? title, DateTime? dueDate, String? dueTime, String? projectId, String? milestoneId, int? priority}) async { final values = <String, dynamic>{if (title != null) 'title': title.trim(), if (dueDate != null) 'due_date': dueDate.toIso8601String().split('T').first, if (dueTime != null) 'due_time': dueTime, if (projectId != null) 'project_id': projectId, if (milestoneId != null) 'milestone_id': milestoneId, if (priority != null) 'priority': priority}; final row = await supabase.from('tasks').update(values).eq('id', taskId).select().single(); return Task.fromMap(row['id'] as String, row); }
   @override Future<void> deleteTask({required String taskId}) async => await supabase.from('tasks').delete().eq('id', taskId);
   @override Future<TaskCompletionResult> completeTask({required String taskId}) async { final result = await supabase.rpc('complete_task', params: {'p_task_id': taskId}); return TaskCompletionResult.fromMap(Map<String, dynamic>.from(result as Map)); }
+  @override Future<TaskReopenResult> reopenTask({required String taskId}) async { final result = await supabase.rpc('reopen_task', params: {'p_task_id': taskId}); return TaskReopenResult.fromMap(Map<String, dynamic>.from(result as Map)); }
+  @override Future<TaskSeries> createTaskSeries({required String uid, required String title, String? description, String? projectId, String? milestoneId, int priority = 0, required TaskRecurrenceType recurrenceType, int recurrenceInterval = 1, String timezone = 'UTC', required DateTime startsAt, DateTime? untilAt, int? occurrenceCount}) async {
+    final row = await supabase.from('task_series').insert({'user_id': uid, 'title': title.trim(), if (description != null && description.trim().isNotEmpty) 'description': description.trim(), if (projectId != null) 'project_id': projectId, if (milestoneId != null) 'milestone_id': milestoneId, 'priority': priority, 'recurrence_type': recurrenceType.value, 'recurrence_interval': recurrenceInterval, 'timezone': timezone, 'starts_at': startsAt.toUtc().toIso8601String(), if (untilAt != null) 'until_at': untilAt.toUtc().toIso8601String(), if (occurrenceCount != null) 'occurrence_count': occurrenceCount}).select().single();
+    return TaskSeries.fromMap(row['id'] as String, row);
+  }
+  @override Future<TaskSeries> updateTaskSeries({required String seriesId, String? title, String? description, String? projectId, String? milestoneId, int? priority, TaskRecurrenceType? recurrenceType, int? recurrenceInterval, String? timezone, DateTime? startsAt, DateTime? untilAt, int? occurrenceCount, bool? isActive}) async {
+    final values = <String, dynamic>{if (title != null) 'title': title.trim(), if (description != null) 'description': description.trim(), if (projectId != null) 'project_id': projectId, if (milestoneId != null) 'milestone_id': milestoneId, if (priority != null) 'priority': priority, if (recurrenceType != null) 'recurrence_type': recurrenceType.value, if (recurrenceInterval != null) 'recurrence_interval': recurrenceInterval, if (timezone != null) 'timezone': timezone, if (startsAt != null) 'starts_at': startsAt.toUtc().toIso8601String(), if (untilAt != null) 'until_at': untilAt.toUtc().toIso8601String(), if (occurrenceCount != null) 'occurrence_count': occurrenceCount, if (isActive != null) 'is_active': isActive};
+    final row = values.isEmpty ? await supabase.from('task_series').select().eq('id', seriesId).single() : await supabase.from('task_series').update(values).eq('id', seriesId).select().single();
+    return TaskSeries.fromMap(row['id'] as String, row);
+  }
+  @override Future<Task> ensureTaskOccurrence({required String seriesId, required DateTime occurrenceKey}) async { final result = await supabase.rpc('ensure_task_occurrence', params: {'p_series_id': seriesId, 'p_occurrence_key': occurrenceKey.toUtc().toIso8601String()}); final row = Map<String, dynamic>.from(result as Map); return Task.fromMap(row['id'] as String, row); }
 }
 
 class SupabaseProjectRepository implements ProjectRepository {
@@ -86,44 +80,9 @@ class SupabaseMilestoneRepository implements MilestoneRepository {
 class SupabaseCalendarRepository implements CalendarRepository {
   SupabaseCalendarRepository(this.supabase);
   final SupabaseClient supabase;
-
-  @override
-  Future<List<CalendarEvent>> getEvents({required String uid, required DateTime rangeStart, required DateTime rangeEnd}) async {
-    if (!rangeEnd.isAfter(rangeStart)) throw ArgumentError('rangeEnd must be after rangeStart');
-    final rows = await supabase
-        .from('calendar_events')
-        .select('*, task_calendar_events(task_id)')
-        .eq('user_id', uid)
-        .lte('starts_at', rangeEnd.toUtc().toIso8601String())
-        .order('starts_at');
-    return rows.map((row) {
-      final links = (row['task_calendar_events'] as List<dynamic>? ?? const <dynamic>[])
-          .whereType<Map<String, dynamic>>()
-          .map((link) => link['task_id'])
-          .whereType<String>()
-          .toList(growable: false);
-      return CalendarEvent.fromMap(row['id'] as String, {...row, 'task_ids': links});
-    }).where((event) => event.isRecurring || event.endsAt.isAfter(rangeStart)).toList(growable: false);
-  }
-
-  @override
-  Future<CalendarEvent> createEvent({required String uid, required String title, String? description, required DateTime startsAt, required DateTime endsAt, bool allDay = false, required String timezone, String? recurrenceRule, String? taskId}) async {
-    if (!endsAt.isAfter(startsAt)) throw ArgumentError('endsAt must be after startsAt');
-    final row = await supabase.from('calendar_events').insert({'user_id': uid, 'title': title.trim(), if (description != null && description.trim().isNotEmpty) 'description': description.trim(), 'starts_at': startsAt.toUtc().toIso8601String(), 'ends_at': endsAt.toUtc().toIso8601String(), 'all_day': allDay, 'timezone': timezone, if (recurrenceRule != null && recurrenceRule.trim().isNotEmpty) 'recurrence_rule': recurrenceRule.trim()}).select().single();
-    final event = CalendarEvent.fromMap(row['id'] as String, row);
-    if (taskId != null) await linkTask(taskId: taskId, eventId: event.id);
-    return taskId == null ? event : event.copyWith(taskIds: <String>[taskId]);
-  }
-
-  @override
-  Future<CalendarEvent> updateEvent({required String eventId, String? title, String? description, DateTime? startsAt, DateTime? endsAt, bool? allDay, String? timezone, String? recurrenceRule}) async {
-    final values = <String, dynamic>{if (title != null) 'title': title.trim(), if (description != null) 'description': description.trim(), if (startsAt != null) 'starts_at': startsAt.toUtc().toIso8601String(), if (endsAt != null) 'ends_at': endsAt.toUtc().toIso8601String(), if (allDay != null) 'all_day': allDay, if (timezone != null) 'timezone': timezone, if (recurrenceRule != null) 'recurrence_rule': recurrenceRule.trim()};
-    if (startsAt != null && endsAt != null && !endsAt.isAfter(startsAt)) throw ArgumentError('endsAt must be after startsAt');
-    final row = values.isEmpty ? await supabase.from('calendar_events').select('*, task_calendar_events(task_id)').eq('id', eventId).single() : await supabase.from('calendar_events').update(values).eq('id', eventId).select('*, task_calendar_events(task_id)').single();
-    final links = (row['task_calendar_events'] as List<dynamic>? ?? const <dynamic>[]).whereType<Map<String, dynamic>>().map((link) => link['task_id']).whereType<String>().toList(growable: false);
-    return CalendarEvent.fromMap(row['id'] as String, {...row, 'task_ids': links});
-  }
-
+  @override Future<List<CalendarEvent>> getEvents({required String uid, required DateTime rangeStart, required DateTime rangeEnd}) async { if (!rangeEnd.isAfter(rangeStart)) throw ArgumentError('rangeEnd must be after rangeStart'); final rows = await supabase.from('calendar_events').select('*, task_calendar_events(task_id)').eq('user_id', uid).lte('starts_at', rangeEnd.toUtc().toIso8601String()).order('starts_at'); return rows.map((row) { final links = (row['task_calendar_events'] as List<dynamic>? ?? const <dynamic>[]).whereType<Map<String, dynamic>>().map((link) => link['task_id']).whereType<String>().toList(growable: false); return CalendarEvent.fromMap(row['id'] as String, {...row, 'task_ids': links}); }).where((event) => event.isRecurring || event.endsAt.isAfter(rangeStart)).toList(growable: false); }
+  @override Future<CalendarEvent> createEvent({required String uid, required String title, String? description, required DateTime startsAt, required DateTime endsAt, bool allDay = false, required String timezone, String? recurrenceRule, String? taskId}) async { if (!endsAt.isAfter(startsAt)) throw ArgumentError('endsAt must be after startsAt'); final row = await supabase.from('calendar_events').insert({'user_id': uid, 'title': title.trim(), if (description != null && description.trim().isNotEmpty) 'description': description.trim(), 'starts_at': startsAt.toUtc().toIso8601String(), 'ends_at': endsAt.toUtc().toIso8601String(), 'all_day': allDay, 'timezone': timezone, if (recurrenceRule != null && recurrenceRule.trim().isNotEmpty) 'recurrence_rule': recurrenceRule.trim()}).select().single(); final event = CalendarEvent.fromMap(row['id'] as String, row); if (taskId != null) await linkTask(taskId: taskId, eventId: event.id); return taskId == null ? event : event.copyWith(taskIds: <String>[taskId]); }
+  @override Future<CalendarEvent> updateEvent({required String eventId, String? title, String? description, DateTime? startsAt, DateTime? endsAt, bool? allDay, String? timezone, String? recurrenceRule}) async { final values = <String, dynamic>{if (title != null) 'title': title.trim(), if (description != null) 'description': description.trim(), if (startsAt != null) 'starts_at': startsAt.toUtc().toIso8601String(), if (endsAt != null) 'ends_at': endsAt.toUtc().toIso8601String(), if (allDay != null) 'all_day': allDay, if (timezone != null) 'timezone': timezone, if (recurrenceRule != null) 'recurrence_rule': recurrenceRule.trim()}; if (startsAt != null && endsAt != null && !endsAt.isAfter(startsAt)) throw ArgumentError('endsAt must be after startsAt'); final row = values.isEmpty ? await supabase.from('calendar_events').select('*, task_calendar_events(task_id)').eq('id', eventId).single() : await supabase.from('calendar_events').update(values).eq('id', eventId).select('*, task_calendar_events(task_id)').single(); final links = (row['task_calendar_events'] as List<dynamic>? ?? const <dynamic>[]).whereType<Map<String, dynamic>>().map((link) => link['task_id']).whereType<String>().toList(growable: false); return CalendarEvent.fromMap(row['id'] as String, {...row, 'task_ids': links}); }
   @override Future<void> deleteEvent({required String eventId}) async => await supabase.from('calendar_events').delete().eq('id', eventId);
   @override Future<void> linkTask({required String taskId, required String eventId}) async => await supabase.from('task_calendar_events').insert({'task_id': taskId, 'calendar_event_id': eventId});
   @override Future<void> unlinkTask({required String taskId, required String eventId}) async => await supabase.from('task_calendar_events').delete().eq('task_id', taskId).eq('calendar_event_id', eventId);
