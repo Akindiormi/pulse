@@ -15,7 +15,9 @@ class _FakeAnalyticsService implements AnalyticsService {
 
 class _FakeAuthService implements AuthService {
   @override
-  Stream<AuthState> get authStateChanges => Stream.value(const AuthState(status: AuthStatus.unauthenticated));
+  Stream<AuthState> get authStateChanges => Stream.value(
+        const AuthState(status: AuthStatus.authenticated, uid: 'test-user'),
+      );
 
   @override
   dynamic noSuchMethod(Invocation invocation) => Future<void>.value();
