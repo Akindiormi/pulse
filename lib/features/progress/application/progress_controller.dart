@@ -7,12 +7,7 @@ import '../../../models/task_model.dart';
 import '../../../models/user_model.dart';
 
 class ProgressSnapshot {
-  const ProgressSnapshot({
-    required this.user,
-    required this.tasks,
-    required this.projects,
-    required this.focusSessions,
-  });
+  const ProgressSnapshot({required this.user, required this.tasks, required this.projects, required this.focusSessions});
 
   final UserModel user;
   final List<Task> tasks;
@@ -30,8 +25,7 @@ final progressControllerProvider = AsyncNotifierProvider<ProgressController, Pro
 class ProgressController extends AsyncNotifier<ProgressSnapshot> {
   @override
   Future<ProgressSnapshot> build() async {
-    final auth = ref.read(authServiceProvider);
-    final user = auth.currentUser;
+    final user = ref.read(supabaseProvider).auth.currentUser;
     if (user == null) throw StateError('You must be signed in to view progress.');
 
     final results = await Future.wait<dynamic>([
@@ -53,6 +47,6 @@ class ProgressController extends AsyncNotifier<ProgressSnapshot> {
   }
 
   Future<void> refresh() async {
-    state = await AsyncValue.guard(build);
+    state = await AsyncValue.guard(() => build());
   }
 }
