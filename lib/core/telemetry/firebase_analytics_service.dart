@@ -21,8 +21,6 @@ class FirebaseAnalyticsService implements AnalyticsService {
   @override Future<void> logGoogleSignInCompleted() => _event('google_sign_in_completed');
   @override Future<void> logAppleSignInStarted() => _event('apple_sign_in_started');
   @override Future<void> logAppleSignInCompleted() => _event('apple_sign_in_completed');
-  @override Future<void> logEmailVerificationSent() => _event('email_verification_sent');
-  @override Future<void> logEmailVerificationCompleted() => _event('email_verification_completed');
   @override Future<void> logProfileSetupStarted() => _event('profile_setup_started');
   @override Future<void> logProfileSetupCompleted() => _event('profile_setup_completed');
   @override Future<void> logChallengeViewed(String challengeId) => _event('challenge_viewed', {'challenge_id': challengeId});
