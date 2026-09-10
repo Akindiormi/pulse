@@ -112,8 +112,40 @@ class _TaskTile extends StatelessWidget {
   final Task task;
   final VoidCallback? onComplete;
   final VoidCallback? onFocus;
+
   @override
-  Widget build(BuildContext context) => Padding(padding: const EdgeInsets.only(bottom: 8), child: PulseCard(child: Row(children: [Checkbox(value: task.isCompleted, onChanged: task.isCompleted || onComplete == null ? null : (_) => onComplete!()), const SizedBox(width: 8), Expanded(child: Text(task.title, style: Theme.of(context).textTheme.bodyLarge?.copyWith(decoration: task.isCompleted ? TextDecoration.lineThrough : null, color: task.isCompleted ? Theme.of(context).colorScheme.onSurfaceVariant : null))), if (onFocus != null) IconButton(tooltip: 'focus on task', onPressed: onFocus, icon: const Icon(Icons.center_focus_strong_rounded))]));
+  Widget build(BuildContext context) {
+    final textColor = task.isCompleted ? Theme.of(context).colorScheme.onSurfaceVariant : null;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: PulseCard(
+        child: Row(
+          children: [
+            Checkbox(
+              value: task.isCompleted,
+              onChanged: task.isCompleted || onComplete == null ? null : (_) => onComplete!(),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                task.title,
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                  decoration: task.isCompleted ? TextDecoration.lineThrough : null,
+                  color: textColor,
+                ),
+              ),
+            ),
+            if (onFocus != null)
+              IconButton(
+                tooltip: 'focus on task',
+                onPressed: onFocus,
+                icon: const Icon(Icons.center_focus_strong_rounded),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 class _EmptyToday extends StatelessWidget {
