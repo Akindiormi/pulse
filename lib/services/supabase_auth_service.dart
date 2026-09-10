@@ -13,6 +13,9 @@ class SupabaseAuthService implements AuthService {
   @override
   Stream<AuthState> get authStateChanges => _supabase.auth.onAuthStateChange.map((event) => _mapUser(event.session?.user ?? _supabase.auth.currentUser));
 
+  @override
+  String? get pendingEmail => _supabase.auth.currentUser?.email;
+
   AuthState _mapUser(supabase.User? user) {
     if (user == null) return const AuthState(status: AuthStatus.unauthenticated);
     final verified = user.emailConfirmedAt != null;
@@ -37,6 +40,7 @@ class SupabaseAuthService implements AuthService {
     if (message.contains('invalid login') || message.contains('invalid credentials')) return 'invalid-credential';
     if (message.contains('email not confirmed')) return 'email-not-verified';
     if (message.contains('invalid email')) return 'invalid-email';
+    if (message.contains('token') && (message.contains('expired') || message.contains('invalid'))) return 'invalid-otp';
     if (message.contains('password')) return 'weak-password';
     if (message.contains('rate limit')) return 'too-many-requests';
     return 'auth-error';
@@ -65,6 +69,12 @@ class SupabaseAuthService implements AuthService {
     final user = _supabase.auth.currentUser;
     if (user == null || user.email == null) throw const AuthFailure('session-expired');
     await _supabase.auth.resend(type: supabase.OtpType.signup, email: user.email!);
+  });
+
+  @override
+  Future<AuthState> verifySignUpCode({required String email, required String code}) => _guard(() async {
+    final response = await _supabase.auth.verifyOTP(type: supabase.OtpType.signup, email: email, token: code.trim());
+    return _mapUser(response.user);
   });
 
   @override

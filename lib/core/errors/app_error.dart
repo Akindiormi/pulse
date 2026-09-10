@@ -8,6 +8,7 @@ class ErrorMessageMapper {
     if (code == 'too-many-requests') return const AppError(kind: AppErrorKind.auth, message: 'too many attempts. wait a little and try again.', retryable: true);
     if (code == 'invalid-credential' || code == 'wrong-password' || code == 'user-not-found') return const AppError(kind: AppErrorKind.auth, message: 'those details don’t look right. check your email and password and try again.');
     if (code == 'email-already-in-use') return const AppError(kind: AppErrorKind.auth, message: 'those details can’t be used to create this account. try signing in instead.');
+    if (code == 'invalid-otp') return const AppError(kind: AppErrorKind.verification, message: 'that code is wrong or has expired. request a new one and try again.', retryable: true);
     if (code == 'weak-password') return const AppError(kind: AppErrorKind.validation, message: 'that password is too weak. try using a stronger password.');
     if (code == 'invalid-email') return const AppError(kind: AppErrorKind.validation, message: 'enter a valid email address.');
     if (code == 'user-disabled') return const AppError(kind: AppErrorKind.auth, message: 'this account is currently unavailable.');

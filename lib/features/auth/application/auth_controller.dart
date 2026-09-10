@@ -32,6 +32,13 @@ class AuthController extends Notifier<AuthControllerState> {
     try { await ref.read(authServiceProvider).sendPasswordResetEmail(email: email.trim()); state = state.copyWith(status: AuthFlowStatus.success); return null; }
     catch (e, s) { final error = ErrorMessageMapper.from(e, kind: AppErrorKind.auth); state = state.copyWith(status: error.cancelled ? AuthFlowStatus.cancelled : AuthFlowStatus.error, error: error); await _reportAuthFailure('password_reset', e, s); return error; }
   }
+  Future<AuthState?> verifyCode(String code) async {
+    if (state.loading) return null; state = state.copyWith(status: AuthFlowStatus.loading, error: null);
+    final email = ref.read(authServiceProvider).pendingEmail;
+    if (email == null) { state = state.copyWith(status: AuthFlowStatus.error, error: const AppError(kind: AppErrorKind.verification, message: 'your session has expired. sign in again.')); return null; }
+    try { final result = await ref.read(authServiceProvider).verifySignUpCode(email: email, code: code); state = state.copyWith(status: AuthFlowStatus.success); return result; }
+    catch (e, s) { final error = ErrorMessageMapper.from(e, kind: AppErrorKind.verification); state = state.copyWith(status: error.cancelled ? AuthFlowStatus.cancelled : AuthFlowStatus.error, error: error); await _reportAuthFailure('email_verify_code', e, s); return null; }
+  }
   void clearError() => state = state.copyWith(error: null, status: AuthFlowStatus.idle);
 }
 class AuthControllerState {

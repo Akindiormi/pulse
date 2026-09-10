@@ -6,7 +6,7 @@ import 'package:pulse/features/auth/presentation/email_verification_screen.dart'
 void main() {
   testWidgets('verification screen exposes check and resend recovery actions', (tester) async {
     await tester.pumpWidget(const ProviderScope(child: MaterialApp(home: EmailVerificationScreen())));
-    expect(find.text('i’ve verified'), findsOneWidget);
-    expect(find.text('resend email'), findsOneWidget);
+    expect(find.text('verify'), findsOneWidget);
+    expect(find.text('resend code'), findsOneWidget);
   });
 }

@@ -15,6 +15,8 @@ class FakeAuthService implements AuthService {
   Stream<AuthState> get authStateChanges => Stream.value(
         const AuthState(status: AuthStatus.authenticated, uid: 'user-1'),
       );
+  @override
+  String? get pendingEmail => null;
 
   @override
   Future<AuthState> signInWithGoogle() => throw UnimplementedError();
@@ -26,6 +28,8 @@ class FakeAuthService implements AuthService {
   Future<AuthState> registerWithEmail({required String email, required String password}) => throw UnimplementedError();
   @override
   Future<void> sendEmailVerification() => throw UnimplementedError();
+  @override
+  Future<AuthState> verifySignUpCode({required String email, required String code}) => throw UnimplementedError();
   @override
   Future<bool> reloadVerificationState() => throw UnimplementedError();
   @override
