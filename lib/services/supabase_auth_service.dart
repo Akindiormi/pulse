@@ -14,21 +14,11 @@ class SupabaseAuthService implements AuthService {
   Stream<AuthState> get authStateChanges => _supabase.auth.onAuthStateChange
       .map((event) => _mapUser(event.session?.user, session: event.session));
 
-  @override
-  String? get pendingEmail => _supabase.auth.currentUser?.email;
-
   AuthState _mapUser(supabase.User? user, {supabase.Session? session}) {
-    if (user == null) return const AuthState(status: AuthStatus.unauthenticated);
-
-    // Supabase returns a live session immediately when email confirmation is
-    // disabled. emailConfirmedAt may still be null in that response, so a
-    // valid session is the authoritative signal that the app can continue.
-    // When confirmation is enabled, signUp returns the user without a session
-    // and we deliberately preserve the unverified state for the OTP flow.
-    if (session != null) {
-      return AuthState(status: AuthStatus.authenticated, uid: user.id);
+    if (user == null || session == null) {
+      return const AuthState(status: AuthStatus.unauthenticated);
     }
-    return AuthState(status: AuthStatus.authenticatedUnverified, uid: user.id);
+    return AuthState(status: AuthStatus.authenticated, uid: user.id);
   }
 
   Future<T> _guard<T>(Future<T> Function() action) async {
@@ -47,9 +37,7 @@ class SupabaseAuthService implements AuthService {
     final message = error.message.toLowerCase();
     if (message.contains('already registered')) return 'email-already-in-use';
     if (message.contains('invalid login') || message.contains('invalid credentials')) return 'invalid-credential';
-    if (message.contains('email not confirmed')) return 'email-not-verified';
     if (message.contains('invalid email')) return 'invalid-email';
-    if (message.contains('token') && (message.contains('expired') || message.contains('invalid'))) return 'invalid-otp';
     if (message.contains('password')) return 'weak-password';
     if (message.contains('rate limit')) return 'too-many-requests';
     return 'auth-error';
@@ -70,26 +58,10 @@ class SupabaseAuthService implements AuthService {
   @override
   Future<AuthState> registerWithEmail({required String email, required String password}) async => _guard(() async {
     final response = await _supabase.auth.signUp(email: email, password: password);
+    if (response.session == null || response.user == null) {
+      throw const AuthFailure('signup-session-unavailable', debugMessage: 'Supabase signup returned no authenticated session. Confirm email must be disabled for the Pulse signup flow.');
+    }
     return _mapUser(response.user, session: response.session);
-  });
-
-  @override
-  Future<void> sendEmailVerification() => _guard(() async {
-    final user = _supabase.auth.currentUser;
-    if (user == null || user.email == null) throw const AuthFailure('session-expired');
-    await _supabase.auth.resend(type: supabase.OtpType.signup, email: user.email!);
-  });
-
-  @override
-  Future<AuthState> verifySignUpCode({required String email, required String code}) => _guard(() async {
-    final response = await _supabase.auth.verifyOTP(type: supabase.OtpType.signup, email: email, token: code.trim());
-    return _mapUser(response.user, session: response.session);
-  });
-
-  @override
-  Future<bool> reloadVerificationState() => _guard(() async {
-    final response = await _supabase.auth.getUser();
-    return response.user?.emailConfirmedAt != null;
   });
 
   @override
