@@ -485,61 +485,6 @@ class _ProjectDetailScreenState extends ConsumerState<ProjectDetailScreen> {
     }
   }
 
-  Future<void> _toggleTask(Task task) async {
-    final controller = ref.read(taskControllerProvider.notifier);
-    try {
-      if (task.isCompleted) {
-        await controller.reopenTask(taskId: task.id);
-      } else {
-        final result = await controller.completeTask(taskId: task.id);
-        if (mounted && result != null && result.xpAwarded > 0) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('+${result.xpAwarded} XP')),
-          );
-        }
-      }
-      if (mounted) setState(_reload);
-    } catch (error) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Could not update task: $error')),
-        );
-      }
-    }
-  }
-
-  Future<void> _deleteTask(Task task) async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (dialog) => AlertDialog(
-        title: const Text('Delete task?'),
-        content: Text('Delete “${task.title}”? This cannot be undone.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialog, false),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(dialog, true),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
-    );
-    if (confirm != true || !mounted) return;
-
-    try {
-      await ref.read(taskControllerProvider.notifier).deleteTask(taskId: task.id);
-      if (mounted) setState(_reload);
-    } catch (error) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Could not delete task: $error')),
-        );
-      }
-    }
-  }
-
   Future<void> _addMilestone() async {
     final name = TextEditingController();
     final result = await showDialog<bool>(
