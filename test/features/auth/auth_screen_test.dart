@@ -5,9 +5,6 @@ import 'package:pulse/core/di/providers.dart';
 import 'package:pulse/core/telemetry/analytics_service.dart';
 import 'package:pulse/features/auth/presentation/auth_screen.dart';
 
-/// Test-only stand-in for [AnalyticsService]. AuthScreen fires analytics
-/// events from initState; without this override the real FirebaseAnalytics
-/// singleton would be reached in a plain `flutter test` run.
 class _FakeAnalyticsService implements AnalyticsService {
   @override
   dynamic noSuchMethod(Invocation invocation) => Future<void>.value();
@@ -30,6 +27,7 @@ void main() {
     await tester.tap(find.text('Create Account'));
     await tester.pump();
     await tester.enterText(find.byKey(const Key('auth-email-field')), 'not-an-email');
+    await tester.tap(find.text('Create Account'));
     await tester.pump();
     expect(find.text('Enter a valid email address.'), findsOneWidget);
   });
