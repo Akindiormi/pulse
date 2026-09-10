@@ -8,7 +8,7 @@ abstract interface class AnalyticsService {
   Future<void> logSignUp();
   Future<void> logSignInStarted();
   Future<void> logLogin();
-  Future<void> logAuthFailed(String method);
+  Future<void> logAuthFailed(String method, {String? code});
   Future<void> logGoogleSignInStarted();
   Future<void> logGoogleSignInCompleted();
   Future<void> logAppleSignInStarted();

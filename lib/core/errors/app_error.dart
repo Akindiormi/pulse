@@ -18,6 +18,12 @@ class ErrorMessageMapper {
     return AppError(kind: kind, message: 'something went wrong. try again.', retryable: true);
   }
 }
-class AuthFailure implements Exception { const AuthFailure(this.code); final String code; }
+class AuthFailure implements Exception {
+  const AuthFailure(this.code, {this.debugMessage});
+  final String code;
+  final String? debugMessage;
+  @override
+  String toString() => debugMessage == null ? 'AuthFailure($code)' : 'AuthFailure($code): $debugMessage';
+}
 class AuthCancelled implements Exception { const AuthCancelled(); }
 class TimeoutExceptionMarker implements Exception { const TimeoutExceptionMarker(); }

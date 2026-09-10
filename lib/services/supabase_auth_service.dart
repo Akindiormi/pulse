@@ -23,11 +23,11 @@ class SupabaseAuthService implements AuthService {
     try {
       return await action();
     } on supabase.AuthException catch (e) {
-      throw AuthFailure(_mapErrorCode(e));
+      throw AuthFailure(_mapErrorCode(e), debugMessage: 'AuthException(status: ${e.statusCode}): ${e.message}');
     } on supabase.PostgrestException catch (e) {
-      throw AuthFailure(e.code ?? 'service-unavailable');
-    } catch (_) {
-      throw const AuthFailure('service-unavailable');
+      throw AuthFailure(e.code ?? 'service-unavailable', debugMessage: 'PostgrestException(code: ${e.code}): ${e.message} | details: ${e.details}');
+    } catch (e) {
+      throw AuthFailure('auth-error', debugMessage: e.toString());
     }
   }
 
