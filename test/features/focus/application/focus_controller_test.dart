@@ -133,15 +133,16 @@ class FakeFocusRepository implements FocusRepository {
 }
 
 FocusSession runningSession({int activeSeconds = 1500}) {
-  final updatedAt = DateTime.utc(2026, 9, 10, 10, 25);
+  final now = DateTime.now().toUtc();
+  final startedAt = now.subtract(Duration(seconds: activeSeconds));
   return FocusSession(
     id: 'session-1',
     userId: 'user-1',
     status: FocusSessionStatus.running,
     plannedDurationSeconds: 3600,
-    startedAt: DateTime.utc(2026, 9, 10, 10),
+    startedAt: startedAt,
     activeDurationSeconds: activeSeconds,
-    updatedAt: updatedAt,
+    updatedAt: startedAt,
   );
 }
 
