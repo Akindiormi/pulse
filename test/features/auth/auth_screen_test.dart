@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pulse/core/di/providers.dart';
 import 'package:pulse/core/telemetry/analytics_service.dart';
+import 'package:pulse/core/widgets/pulse_button.dart';
 import 'package:pulse/features/auth/presentation/auth_screen.dart';
 
 class _FakeAnalyticsService implements AnalyticsService {
@@ -24,17 +25,17 @@ void main() {
 
   testWidgets('sign up validates email before submitting', (tester) async {
     await tester.pumpWidget(app());
-    await tester.tap(find.text('Create Account'));
+    await tester.tap(find.byType(PulseButton).first);
     await tester.pump();
     await tester.enterText(find.byKey(const Key('auth-email-field')), 'not-an-email');
-    await tester.tap(find.text('Create Account'));
+    await tester.tap(find.byType(PulseButton).first);
     await tester.pump();
     expect(find.text('Enter a valid email address.'), findsOneWidget);
   });
 
   testWidgets('sign up collects first name, last name, date of birth, and phone', (tester) async {
     await tester.pumpWidget(app());
-    await tester.tap(find.text('Create Account'));
+    await tester.tap(find.byType(PulseButton).first);
     await tester.pump();
     expect(find.widgetWithText(TextField, 'First name'), findsOneWidget);
     expect(find.widgetWithText(TextField, 'Last name'), findsOneWidget);
@@ -44,14 +45,14 @@ void main() {
 
   testWidgets('sign in exposes forgot password recovery', (tester) async {
     await tester.pumpWidget(app());
-    await tester.tap(find.text('Sign In'));
+    await tester.tap(find.byType(PulseButton).last);
     await tester.pump();
     expect(find.text('Forgot password?'), findsOneWidget);
   });
 
   testWidgets('password can be revealed without changing its value', (tester) async {
     await tester.pumpWidget(app());
-    await tester.tap(find.text('Sign In'));
+    await tester.tap(find.byType(PulseButton).last);
     await tester.pump();
     await tester.enterText(find.byKey(const Key('auth-password-field')), 'secret123');
     await tester.tap(find.byTooltip('Show password'));
