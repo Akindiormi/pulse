@@ -27,12 +27,16 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
   _AuthMode mode = _AuthMode.entry;
   final email = TextEditingController();
   final password = TextEditingController();
-  final confirm = TextEditingController();
+  final firstName = TextEditingController();
+  final lastName = TextEditingController();
+  final phone = TextEditingController();
+  DateTime? dateOfBirth;
   final emailFocus = FocusNode();
   final passwordFocus = FocusNode();
   bool obscure = true;
   bool emailTouched = false;
   bool passwordTouched = false;
+  bool identityTouched = false;
   bool submittedSuccessfully = false;
 
   @override
@@ -65,7 +69,9 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     passwordFocus.removeListener(_onFocusChange);
     email.dispose();
     password.dispose();
-    confirm.dispose();
+    firstName.dispose();
+    lastName.dispose();
+    phone.dispose();
     emailFocus.dispose();
     passwordFocus.dispose();
     super.dispose();
@@ -84,13 +90,54 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     return null;
   }
 
+  String? validateFirstName() {
+    final value = firstName.text.trim();
+    if (value.isEmpty) return 'Enter your first name.';
+    if (value.length < 2) return 'First name is too short.';
+    return null;
+  }
+
+  String? validateLastName() {
+    final value = lastName.text.trim();
+    if (value.isEmpty) return 'Enter your last name.';
+    if (value.length < 2) return 'Last name is too short.';
+    return null;
+  }
+
+  String? validateDateOfBirth() {
+    if (dateOfBirth == null) return 'Enter your date of birth.';
+    final now = DateTime.now();
+    if (dateOfBirth!.isAfter(now)) return 'That date is in the future.';
+    if (now.difference(dateOfBirth!).inDays > 365 * 120) return 'Enter a valid date of birth.';
+    return null;
+  }
+
+  String? validatePhone() {
+    final digits = phone.text.replaceAll(RegExp(r'[^0-9+]'), '');
+    if (digits.isEmpty) return 'Enter your phone number.';
+    if (digits.replaceAll('+', '').length < 7) return 'Enter a valid phone number.';
+    return null;
+  }
+
+  Future<void> _pickDateOfBirth() async {
+    final now = DateTime.now();
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: dateOfBirth ?? DateTime(now.year - 18, now.month, now.day),
+      firstDate: DateTime(now.year - 120),
+      lastDate: now,
+    );
+    if (picked != null && mounted) setState(() => dateOfBirth = picked);
+  }
+
   Future<void> submit() async {
     FocusScope.of(context).unfocus();
     final emailError = validateEmail();
     final passwordError = mode == _AuthMode.reset ? null : validatePassword();
-    final mismatch = mode == _AuthMode.signUp && password.text != confirm.text;
-    if (emailError != null || passwordError != null || mismatch) {
-      setState(() {});
+    final signUp = mode == _AuthMode.signUp;
+    final identityError = signUp && (validateFirstName() != null || validateLastName() != null || validateDateOfBirth() != null || validatePhone() != null);
+    if (emailError != null || passwordError != null || identityError) {
+      setState(() => identityTouched = true);
       return;
     }
 
@@ -107,7 +154,6 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
       return;
     }
 
-    final signUp = mode == _AuthMode.signUp;
     if (signUp) {
       await analytics.logSignUpStarted();
     } else {
@@ -133,6 +179,26 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
 
     if (result.status == AuthStatus.authenticated) {
       if (signUp) {
+        // Identity fields live on profiles, not auth.users -- write them now
+        // that we have an authenticated session (RLS requires id = auth.uid()).
+        // display_name is set from firstName so the existing greeting/profile
+        // reads keep working unchanged.
+        if (result.uid != null) {
+          try {
+            await ref.read(userRepositoryProvider).createOrUpdateUser(
+                  uid: result.uid!,
+                  displayName: firstName.text.trim(),
+                  firstName: firstName.text.trim(),
+                  lastName: lastName.text.trim(),
+                  dateOfBirth: dateOfBirth,
+                  phoneNumber: phone.text.trim(),
+                );
+          } catch (_) {
+            // Account creation already succeeded; a failed profile write here
+            // shouldn't strand the user on the signup screen. Profile setup
+            // can still complete this from /home if needed.
+          }
+        }
         await analytics.logSignUp();
       } else {
         await analytics.logLogin();
@@ -211,7 +277,54 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
               ),
               const SizedBox(height: PulseSpace.xxl),
+              if (mode == _AuthMode.signUp) ...[
+                Row(children: [
+                  Expanded(
+                    child: TextField(
+                      controller: firstName,
+                      textCapitalization: TextCapitalization.words,
+                      textInputAction: TextInputAction.next,
+                      autofillHints: const [AutofillHints.givenName],
+                      decoration: InputDecoration(labelText: 'First name', errorText: identityTouched ? validateFirstName() : null),
+                      onChanged: (_) => setState(() {}),
+                    ),
+                  ),
+                  const SizedBox(width: PulseSpace.md),
+                  Expanded(
+                    child: TextField(
+                      controller: lastName,
+                      textCapitalization: TextCapitalization.words,
+                      textInputAction: TextInputAction.next,
+                      autofillHints: const [AutofillHints.familyName],
+                      decoration: InputDecoration(labelText: 'Last name', errorText: identityTouched ? validateLastName() : null),
+                      onChanged: (_) => setState(() {}),
+                    ),
+                  ),
+                ]),
+                const SizedBox(height: PulseSpace.md),
+                InkWell(
+                  onTap: _pickDateOfBirth,
+                  child: InputDecorator(
+                    decoration: InputDecoration(labelText: 'Date of birth', errorText: identityTouched ? validateDateOfBirth() : null),
+                    child: Text(
+                      dateOfBirth == null ? 'Select date of birth' : '${dateOfBirth!.year}-${dateOfBirth!.month.toString().padLeft(2, '0')}-${dateOfBirth!.day.toString().padLeft(2, '0')}',
+                      style: Theme.of(context).textTheme.bodyLarge,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: PulseSpace.md),
+                TextField(
+                  controller: phone,
+                  keyboardType: TextInputType.phone,
+                  textInputAction: TextInputAction.next,
+                  autofillHints: const [AutofillHints.telephoneNumber],
+                  decoration: InputDecoration(labelText: 'Phone number', errorText: identityTouched ? validatePhone() : null),
+                  onChanged: (_) => setState(() {}),
+                ),
+                const SizedBox(height: PulseSpace.md),
+              ],
               TextField(
+                key: const Key('auth-email-field'),
                 controller: email,
                 focusNode: emailFocus,
                 keyboardType: TextInputType.emailAddress,
@@ -224,6 +337,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
               if (mode != _AuthMode.reset) ...[
                 const SizedBox(height: PulseSpace.md),
                 TextField(
+                  key: const Key('auth-password-field'),
                   controller: password,
                   focusNode: passwordFocus,
                   obscureText: obscure,
@@ -239,22 +353,8 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                     ),
                   ),
                   onChanged: (_) => setState(() {}),
-                  onSubmitted: (_) => mode == _AuthMode.signIn ? submit() : FocusScope.of(context).nextFocus(),
+                  onSubmitted: (_) => mode == _AuthMode.signIn ? submit() : submit(),
                 ),
-                if (mode == _AuthMode.signUp) ...[
-                  const SizedBox(height: PulseSpace.md),
-                  TextField(
-                    controller: confirm,
-                    obscureText: obscure,
-                    textInputAction: TextInputAction.done,
-                    decoration: InputDecoration(
-                      labelText: 'Confirm password',
-                      errorText: confirm.text.isNotEmpty && confirm.text != password.text ? 'Passwords don’t match.' : null,
-                    ),
-                    onChanged: (_) => setState(() {}),
-                    onSubmitted: (_) => submit(),
-                  ),
-                ],
               ],
               const SizedBox(height: PulseSpace.lg),
               PulseMotionBoundaryV2(

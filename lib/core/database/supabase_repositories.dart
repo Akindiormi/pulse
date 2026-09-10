@@ -13,7 +13,25 @@ import 'repositories.dart';
 class SupabaseUserRepository implements UserRepository {
   SupabaseUserRepository(this.supabase);
   final SupabaseClient supabase;
-  @override Future<void> createOrUpdateUser({required String uid, String? displayName, String? photoUrl}) async => await supabase.from('profiles').upsert({'id': uid, if (displayName != null) 'display_name': displayName, if (photoUrl != null) 'photo_url': photoUrl});
+  @override
+  Future<void> createOrUpdateUser({
+    required String uid,
+    String? displayName,
+    String? photoUrl,
+    String? firstName,
+    String? lastName,
+    DateTime? dateOfBirth,
+    String? phoneNumber,
+  }) async =>
+      await supabase.from('profiles').upsert({
+        'id': uid,
+        if (displayName != null) 'display_name': displayName,
+        if (photoUrl != null) 'photo_url': photoUrl,
+        if (firstName != null) 'first_name': firstName,
+        if (lastName != null) 'last_name': lastName,
+        if (dateOfBirth != null) 'date_of_birth': dateOfBirth.toIso8601String().split('T').first,
+        if (phoneNumber != null) 'phone_number': phoneNumber,
+      });
   @override Future<void> updateProfileFields({required String uid, required Map<String, dynamic> fields}) async => await supabase.from('profiles').update(_toSnakeCase(UserProfileUpdate(fields).toFirestore())).eq('id', uid);
   @override Future<Map<String, dynamic>?> getUser(String uid) async { final row = await supabase.from('profiles').select().eq('id', uid).maybeSingle(); return row == null ? null : _profileToModelMap(row); }
   @override Future<UserModel?> getUserModel(String uid) async { final data = await getUser(uid); return data == null ? null : UserModel.fromMap(uid, data); }

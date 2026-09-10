@@ -19,7 +19,15 @@ class UserProfileUpdate {
 }
 
 abstract interface class UserRepository {
-  Future<void> createOrUpdateUser({required String uid, String? displayName, String? photoUrl});
+  Future<void> createOrUpdateUser({
+    required String uid,
+    String? displayName,
+    String? photoUrl,
+    String? firstName,
+    String? lastName,
+    DateTime? dateOfBirth,
+    String? phoneNumber,
+  });
   Future<void> updateProfileFields({required String uid, required Map<String, dynamic> fields});
   Future<Map<String, dynamic>?> getUser(String uid);
   Future<UserModel?> getUserModel(String uid) async { final data = await getUser(uid); return data == null ? null : UserModel.fromMap(uid, data); }

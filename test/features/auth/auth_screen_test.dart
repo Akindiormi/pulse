@@ -29,9 +29,19 @@ void main() {
     await tester.pumpWidget(app());
     await tester.tap(find.text('Create Account'));
     await tester.pump();
-    await tester.enterText(find.byType(TextField).first, 'not-an-email');
+    await tester.enterText(find.byKey(const Key('auth-email-field')), 'not-an-email');
     await tester.pump();
     expect(find.text('Enter a valid email address.'), findsOneWidget);
+  });
+
+  testWidgets('sign up collects first name, last name, date of birth, and phone', (tester) async {
+    await tester.pumpWidget(app());
+    await tester.tap(find.text('Create Account'));
+    await tester.pump();
+    expect(find.widgetWithText(TextField, 'First name'), findsOneWidget);
+    expect(find.widgetWithText(TextField, 'Last name'), findsOneWidget);
+    expect(find.text('Select date of birth'), findsOneWidget);
+    expect(find.widgetWithText(TextField, 'Phone number'), findsOneWidget);
   });
 
   testWidgets('sign in exposes forgot password recovery', (tester) async {
@@ -45,7 +55,7 @@ void main() {
     await tester.pumpWidget(app());
     await tester.tap(find.text('Sign In'));
     await tester.pump();
-    await tester.enterText(find.byType(TextField).at(1), 'secret123');
+    await tester.enterText(find.byKey(const Key('auth-password-field')), 'secret123');
     await tester.tap(find.byTooltip('Show password'));
     await tester.pump();
     expect(find.byType(TextField), findsNWidgets(2));
