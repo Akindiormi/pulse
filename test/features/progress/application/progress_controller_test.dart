@@ -1,10 +1,10 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import '../../../../lib/features/progress/application/progress_controller.dart';
-import '../../../../lib/models/focus_session_model.dart';
-import '../../../../lib/models/project_model.dart';
-import '../../../../lib/models/task_model.dart';
-import '../../../../lib/models/user_model.dart';
+import 'package:pulse/features/progress/application/progress_controller.dart';
+import 'package:pulse/models/focus_session_model.dart';
+import 'package:pulse/models/project_model.dart';
+import 'package:pulse/models/task_model.dart';
+import 'package:pulse/models/user_model.dart';
 
 void main() {
   final now = DateTime.utc(2026, 9, 10, 1);

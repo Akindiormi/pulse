@@ -23,7 +23,7 @@ class HomeViewData {
   List<Task> get completedTasks => tasks.where((task) => task.isCompleted).toList(growable: false);
   List<Task> get completedToday => completedTasks.where((task) => task.completedAt != null && _isSameDay(task.completedAt!, DateTime.now())).toList(growable: false);
   List<FocusSession> get todayFocusSessions => focusSessions.where((session) => _isSameDay(session.startedAt, DateTime.now())).toList(growable: false);
-  FocusSession? get activeFocusSession => focusSessions.where((session) => session.isActive).firstOrNull;
+  FocusSession? get activeFocusSession => focusSessions.where((session) => session.status.isActive).firstOrNull;
   int get focusTodaySeconds => todayFocusSessions.fold<int>(0, (sum, session) => sum + session.activeDurationSeconds);
   Task? get nextTask {
     final open = todayTasks;
