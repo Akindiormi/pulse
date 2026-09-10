@@ -12,6 +12,14 @@ class FocusHistoryScreen extends ConsumerWidget {
     return hours > 0 ? '${hours}h ${minutes}m' : '${minutes}m';
   }
 
+  int _weekTotal(List<FocusSession> sessions) {
+    final now = DateTime.now().toUtc();
+    final start = DateTime.utc(now.year, now.month, now.day).subtract(const Duration(days: 6));
+    return sessions
+        .where((session) => !session.startedAt.toUtc().isBefore(start))
+        .fold<int>(0, (sum, session) => sum + session.activeDurationSeconds);
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final history = ref.watch(focusHistoryControllerProvider);
@@ -32,19 +40,38 @@ class FocusHistoryScreen extends ConsumerWidget {
         data: (sessions) {
           if (sessions.isEmpty) return const Center(child: Text('no Focus sessions yet.'));
           final total = sessions.fold<int>(0, (sum, session) => sum + session.activeDurationSeconds);
+          final weekTotal = _weekTotal(sessions);
           return RefreshIndicator(
             onRefresh: () => ref.read(focusHistoryControllerProvider.notifier).refresh(),
             child: ListView(
               padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
               children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: _SummaryCard(
+                        value: _duration(weekTotal),
+                        label: 'last 7 days',
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _SummaryCard(
+                        value: _duration(total),
+                        label: 'all loaded time',
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
                 Card(
                   child: Padding(
                     padding: const EdgeInsets.all(20),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(_duration(total), style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w800)), const SizedBox(height: 4), const Text('total focused time')]),
-                        Text('${sessions.length} sessions'),
+                        const Text('sessions', style: TextStyle(fontWeight: FontWeight.w700)),
+                        Text('${sessions.length}'),
                       ],
                     ),
                   ),
@@ -58,6 +85,23 @@ class FocusHistoryScreen extends ConsumerWidget {
       ),
     );
   }
+}
+
+class _SummaryCard extends StatelessWidget {
+  const _SummaryCard({required this.value, required this.label});
+  final String value;
+  final String label;
+  @override
+  Widget build(BuildContext context) => Card(
+        child: Padding(
+          padding: const EdgeInsets.all(18),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(value, style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800)),
+            const SizedBox(height: 4),
+            Text(label, style: Theme.of(context).textTheme.bodySmall),
+          ]),
+        ),
+      );
 }
 
 class _SessionTile extends StatelessWidget {
