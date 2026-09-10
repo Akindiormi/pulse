@@ -3,7 +3,6 @@ import 'package:go_router/go_router.dart';
 import '../core/motion/pulse_motion_policy.dart';
 import '../features/achievements/presentation/achievements_screen.dart';
 import '../features/auth/presentation/auth_screen.dart';
-import '../features/auth/presentation/email_verification_screen.dart';
 import '../features/calendar/presentation/calendar_screen.dart';
 import '../features/challenges/presentation/challenge_detail_screen.dart';
 import '../features/focus/presentation/focus_history_screen.dart';
@@ -17,6 +16,7 @@ import '../features/progress/presentation/progress_screen.dart';
 import '../features/settings/presentation/settings_screen.dart';
 import '../features/splash/presentation/splash_screen.dart';
 import '../features/shell/presentation/pulse_shell.dart';
+import '../features/onboarding/presentation/first_win_screen.dart';
 
 CustomTransitionPage<void> _motionPage({required BuildContext context, required Widget child, required LocalKey key, Offset begin = const Offset(0, .04), bool scale = false}) {
   final duration = PulseMotionPolicy.transitionDuration(context);
@@ -33,8 +33,9 @@ final appRouter = GoRouter(initialLocation: '/splash', routes: [
   GoRoute(path: '/splash', builder: (_, __) => const SplashScreen()),
   GoRoute(path: '/onboarding', builder: (_, __) => const OnboardingScreen()),
   GoRoute(path: '/auth', builder: (_, __) => const AuthScreen()),
-  GoRoute(path: '/verify-email', builder: (_, __) => const EmailVerificationScreen()),
   GoRoute(path: '/profile-setup', builder: (_, __) => const ProfileSetupScreen()),
+  GoRoute(path: '/first-focus', pageBuilder: (context, state) => _motionPage(context: context, key: state.pageKey, child: FocusScreen(taskId: state.uri.queryParameters['taskId'], plannedDurationSeconds: 25 * 60, activation: true), begin: const Offset(0, .04), scale: true)),
+  GoRoute(path: '/first-win', pageBuilder: (context, state) => _motionPage(context: context, key: state.pageKey, child: const FirstWinScreen(), begin: const Offset(0, .04), scale: true)),
   ShellRoute(builder: (_, state, child) => PulseShell(currentPath: state.uri.path, child: child), routes: [
     GoRoute(path: '/home', builder: (_, __) => const HomeScreen()),
     GoRoute(path: '/projects', pageBuilder: (context, state) => _motionPage(context: context, key: state.pageKey, child: const ProjectsScreen(), begin: const Offset(.03, 0), scale: true)),
@@ -44,17 +45,7 @@ final appRouter = GoRouter(initialLocation: '/splash', routes: [
     GoRoute(path: '/achievements', pageBuilder: (context, state) => _motionPage(context: context, key: state.pageKey, child: const AchievementsScreen(), begin: const Offset(.03, 0), scale: true)),
     GoRoute(path: '/profile', pageBuilder: (context, state) => _motionPage(context: context, key: state.pageKey, child: const ProfileScreen(), begin: const Offset(.02, 0))),
   ]),
-  GoRoute(path: '/focus', pageBuilder: (context, state) => _motionPage(
-    context: context,
-    key: state.pageKey,
-    child: FocusScreen(
-      taskId: state.uri.queryParameters['taskId'],
-      calendarEventId: state.uri.queryParameters['calendarEventId'],
-      plannedDurationSeconds: int.tryParse(state.uri.queryParameters['duration'] ?? ''),
-    ),
-    begin: const Offset(0, .04),
-    scale: true,
-  )),
+  GoRoute(path: '/focus', pageBuilder: (context, state) => _motionPage(context: context, key: state.pageKey, child: FocusScreen(taskId: state.uri.queryParameters['taskId'], calendarEventId: state.uri.queryParameters['calendarEventId'], plannedDurationSeconds: int.tryParse(state.uri.queryParameters['duration'] ?? ''), activation: false), begin: const Offset(0, .04), scale: true)),
   GoRoute(path: '/focus/history', pageBuilder: (context, state) => _motionPage(context: context, key: state.pageKey, child: const FocusHistoryScreen(), begin: const Offset(.04, 0))),
   GoRoute(path: '/challenge/:id', pageBuilder: (context, state) => _motionPage(context: context, key: state.pageKey, child: ChallengeDetailScreen(challengeId: state.pathParameters['id']!), begin: const Offset(0, .08), scale: true)),
   GoRoute(path: '/settings', pageBuilder: (context, state) => _motionPage(context: context, key: state.pageKey, child: const SettingsScreen(), begin: const Offset(.05, 0))),
