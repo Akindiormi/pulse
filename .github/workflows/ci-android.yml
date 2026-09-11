@@ -34,8 +34,29 @@ jobs:
           flutter test --reporter expanded 2>&1 | tee /tmp/flutter_test.log
           status=${PIPESTATUS[0]}
           if [ "$status" -ne 0 ]; then
-            LINE=$(grep -n 'completed tasks are visibly completed' /tmp/flutter_test.log | head -1 | cut -d: -f1)
-            EXCERPT=$(sed -n "$((LINE>80?LINE-80:1)),${LINE}p" /tmp/flutter_test.log | head -c 4000 | sed 's/%/%25/g; s/\r/%0D/g' | sed ':a;N;$!ba;s/\n/%0A/g')
+            EXCERPT=$(python3 - <<'PYEOF'
+lines = open('/tmp/flutter_test.log', encoding='utf-8', errors='replace').readlines()
+target = None
+for i, l in enumerate(lines):
+    if 'completed tasks are visibly completed' in l:
+        target = i
+if target is None:
+    print('TARGET LINE NOT FOUND')
+else:
+    start = max(0, target - 600)
+    keywords = ('Exception', 'Error', 'Expected:', 'Actual:', 'thrown', 'FAILED', 'Bad state')
+    first_hit = None
+    for i in range(start, target + 1):
+        if any(k in lines[i] for k in keywords):
+            first_hit = i
+            break
+    if first_hit is None:
+        first_hit = start
+    chunk = ''.join(lines[first_hit:target + 1])
+    print(chunk[:6000])
+PYEOF
+)
+            EXCERPT=$(printf '%s' "$EXCERPT" | sed 's/%/%25/g; s/\r/%0D/g' | sed ':a;N;$!ba;s/\n/%0A/g')
             echo "::error::DIAGNOSTIC: $EXCERPT"
           fi
           exit "$status"
