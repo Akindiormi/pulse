@@ -34,7 +34,8 @@ jobs:
           flutter test --reporter expanded 2>&1 | tee /tmp/flutter_test.log
           status=${PIPESTATUS[0]}
           if [ "$status" -ne 0 ]; then
-            EXCERPT=$(grep -n -A40 '\[E\]' /tmp/flutter_test.log | head -c 1500 | sed 's/%/%25/g; s/\r/%0D/g' | sed ':a;N;$!ba;s/\n/%0A/g')
+            LINE=$(grep -n 'completed tasks are visibly completed' /tmp/flutter_test.log | head -1 | cut -d: -f1)
+            EXCERPT=$(sed -n "$((LINE>80?LINE-80:1)),${LINE}p" /tmp/flutter_test.log | head -c 4000 | sed 's/%/%25/g; s/\r/%0D/g' | sed ':a;N;$!ba;s/\n/%0A/g')
             echo "::error::DIAGNOSTIC: $EXCERPT"
           fi
           exit "$status"
