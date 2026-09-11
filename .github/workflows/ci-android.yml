@@ -34,28 +34,7 @@ jobs:
           flutter test --reporter expanded 2>&1 | tee /tmp/flutter_test.log
           status=${PIPESTATUS[0]}
           if [ "$status" -ne 0 ]; then
-            EXCERPT=$(python3 - <<'PYEOF'
-lines = open('/tmp/flutter_test.log', encoding='utf-8', errors='replace').readlines()
-target = None
-for i, l in enumerate(lines):
-    if 'completed tasks are visibly completed' in l:
-        target = i
-if target is None:
-    print('TARGET LINE NOT FOUND')
-else:
-    start = max(0, target - 600)
-    keywords = ('Exception', 'Error', 'Expected:', 'Actual:', 'thrown', 'FAILED', 'Bad state')
-    first_hit = None
-    for i in range(start, target + 1):
-        if any(k in lines[i] for k in keywords):
-            first_hit = i
-            break
-    if first_hit is None:
-        first_hit = start
-    chunk = ''.join(lines[first_hit:target + 1])
-    print(chunk[:6000])
-PYEOF
-)
+            EXCERPT=$(echo "bGluZXMgPSBvcGVuKCcvdG1wL2ZsdXR0ZXJfdGVzdC5sb2cnLCBlbmNvZGluZz0ndXRmLTgnLCBlcnJvcnM9J3JlcGxhY2UnKS5yZWFkbGluZXMoKQp0YXJnZXQgPSBOb25lCmZvciBpLCBsIGluIGVudW1lcmF0ZShsaW5lcyk6CiAgICBpZiAnY29tcGxldGVkIHRhc2tzIGFyZSB2aXNpYmx5IGNvbXBsZXRlZCcgaW4gbDoKICAgICAgICB0YXJnZXQgPSBpCmlmIHRhcmdldCBpcyBOb25lOgogICAgcHJpbnQoJ1RBUkdFVCBMSU5FIE5PVCBGT1VORCcpCmVsc2U6CiAgICBzdGFydCA9IG1heCgwLCB0YXJnZXQgLSA2MDApCiAgICBrZXl3b3JkcyA9ICgnRXhjZXB0aW9uJywgJ0Vycm9yJywgJ0V4cGVjdGVkOicsICdBY3R1YWw6JywgJ3Rocm93bicsICdGQUlMRUQnLCAnQmFkIHN0YXRlJykKICAgIGZpcnN0X2hpdCA9IE5vbmUKICAgIGZvciBpIGluIHJhbmdlKHN0YXJ0LCB0YXJnZXQgKyAxKToKICAgICAgICBpZiBhbnkoayBpbiBsaW5lc1tpXSBmb3IgayBpbiBrZXl3b3Jkcyk6CiAgICAgICAgICAgIGZpcnN0X2hpdCA9IGkKICAgICAgICAgICAgYnJlYWsKICAgIGlmIGZpcnN0X2hpdCBpcyBOb25lOgogICAgICAgIGZpcnN0X2hpdCA9IHN0YXJ0CiAgICBjaHVuayA9ICcnLmpvaW4obGluZXNbZmlyc3RfaGl0OnRhcmdldCArIDFdKQogICAgcHJpbnQoY2h1bmtbOjYwMDBdKQo=" | base64 -d | python3)
             EXCERPT=$(printf '%s' "$EXCERPT" | sed 's/%/%25/g; s/\r/%0D/g' | sed ':a;N;$!ba;s/\n/%0A/g')
             echo "::error::DIAGNOSTIC: $EXCERPT"
           fi
