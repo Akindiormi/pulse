@@ -1,4 +1,4 @@
-enum AuthStatus { unauthenticated, authenticating, authenticated, authenticatedUnverified, error }
+enum AuthStatus { unauthenticated, authenticating, authenticated, error }
 
 class AuthState {
   const AuthState({required this.status, this.uid, this.message});
@@ -13,8 +13,6 @@ abstract interface class AuthService {
   Future<AuthState> signInWithApple();
   Future<AuthState> signInWithEmail({required String email, required String password});
   Future<AuthState> registerWithEmail({required String email, required String password});
-  Future<void> sendEmailVerification();
-  Future<bool> reloadVerificationState();
   Future<void> sendPasswordResetEmail({required String email});
   Future<void> signOut();
   Future<void> deleteAccount();

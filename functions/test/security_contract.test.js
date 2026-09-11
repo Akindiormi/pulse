@@ -5,10 +5,22 @@ const path = require('node:path');
 
 const rules = fs.readFileSync(path.join(__dirname, '../../firestore.rules'), 'utf8');
 const source = fs.readFileSync(path.join(__dirname, '../index.js'), 'utf8');
-const flutterRepositories = fs.readFileSync(path.join(__dirname, '../../lib/core/database/firestore_repositories.dart'), 'utf8');
+
+function collectDartFiles(directory) {
+  return fs.readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
+    const entryPath = path.join(directory, entry.name);
+    if (entry.isDirectory()) return collectDartFiles(entryPath);
+    return entry.isFile() && entry.name.endsWith('.dart') ? [entryPath] : [];
+  });
+}
+
+const databaseDirectory = path.join(__dirname, '../../lib/core/database');
+const flutterRepositories = collectDartFiles(databaseDirectory)
+  .map((filePath) => fs.readFileSync(filePath, 'utf8'))
+  .join('\n');
 const flutterCompletion = fs.readFileSync(path.join(__dirname, '../../lib/features/challenges/application/complete_challenge.dart'), 'utf8');
 
- test('Firestore rules deny all client assignment writes', () => {
+test('Firestore rules deny all client assignment writes', () => {
   assert.match(rules, /match \/dailyChallenges\/\{date\}/);
   assert.match(rules, /allow create: if false;/);
   assert.match(rules, /allow update: if false;/);

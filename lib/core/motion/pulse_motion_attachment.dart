@@ -29,7 +29,7 @@ class PulseMotionAttachmentData {
   final Duration duration;
 }
 
-enum PulseMotionIntent { splashBrand, onboardingIllustration, onboardingTransition, onboardingCta, homeEntrance, streakReveal, streakChange, xpReveal, xpChange, challengeReveal, challengeInteraction, challengeCompletion, challengeReward, achievementReveal, achievementUnlock, levelUp, profileEntrance, profileSave, settingsChange, navigationTransition, retry, errorRecovery }
+enum PulseMotionIntent { splashBrand, onboardingIllustration, onboardingTransition, onboardingCta, authAvatar, homeEntrance, streakReveal, streakChange, xpReveal, xpChange, challengeReveal, challengeInteraction, challengeCompletion, challengeReward, achievementReveal, achievementUnlock, levelUp, profileEntrance, profileSave, settingsChange, navigationTransition, retry, errorRecovery }
 
 class PulseMotionPresentation extends StatefulWidget {
   const PulseMotionPresentation({super.key, required this.state, required this.child});

@@ -15,7 +15,7 @@ UserModel _user({int xp = 165, int level = 2, int streak = 3, int longest = 7, i
 
 AchievementsViewData _data({UserModel? user, Set<String> newly = const {}}) {
   final model = user ?? _user();
-  final unlocked = model.unlockedAchievements;
+  final unlocked = {...model.unlockedAchievements, ...newly};
   final items = achievementDefinitions.map((definition) => AchievementItem(definition: definition, unlocked: unlocked.contains(definition.id), progress: AchievementProgress(current: definition.type == AchievementType.streak ? model.currentStreak : definition.type == AchievementType.activityCount ? model.totalActivities : model.completedCategories.length, target: definition.threshold))).toList();
   return AchievementsViewData(user: model, items: items, newlyUnlockedIds: newly);
 }
@@ -32,34 +32,51 @@ void main() {
     expect(find.text('7 days'), findsOneWidget);
     expect(find.text('42'), findsOneWidget);
     expect(find.text('First Step'), findsOneWidget);
-    expect(find.text('unlocked'), findsOneWidget);
+    expect(find.text('unlocked'), findsNWidgets(2));
+    await tester.drag(find.ancestor(of: find.byType(GridView).first, matching: find.byType(Scrollable),).first, const Offset(0, -500));
+    await tester.pumpAndSettle();
     expect(find.text('Week Warrior'), findsOneWidget);
   });
 
   testWidgets('newly unlocked state is presented without inventing rewards', (tester) async {
-    await tester.pumpWidget(_app(_data(newly: const {'WEEK_WARRIOR'})));
-    await tester.pump();
-    expect(find.bySemanticsLabel('newlyUnlocked'), findsOneWidget);
-    await tester.tap(find.text('Week Warrior'));
-    await tester.pumpAndSettle();
-    expect(find.text('newly unlocked'), findsOneWidget);
-    expect(find.text('+100 XP'), findsOneWidget);
+    final semantics = tester.ensureSemantics();
+    try {
+      await tester.pumpWidget(_app(_data(newly: const {'WEEK_WARRIOR'})));
+      await tester.pump();
+      await tester.drag(find.ancestor(of: find.byType(GridView).first, matching: find.byType(Scrollable),).first, const Offset(0, -500));
+      await tester.pumpAndSettle();
+      expect(find.bySemanticsLabel(RegExp(r'^newlyUnlocked')), findsOneWidget);
+      await tester.tap(find.text('Week Warrior'));
+      await tester.pumpAndSettle();
+      expect(find.text('newly unlocked'), findsOneWidget);
+      expect(find.text('+100 XP'), findsOneWidget);
+    } finally {
+      semantics.dispose();
+    }
   });
 
   testWidgets('locked detail shows reliable progress', (tester) async {
     await tester.pumpWidget(_app(_data(user: _user(unlocked: const {'FIRST_STEP'}, streak: 3))));
     await tester.pump();
+    await tester.drag(find.ancestor(of: find.byType(GridView).first, matching: find.byType(Scrollable),).first, const Offset(0, -500));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Week Warrior'));
     await tester.pumpAndSettle();
-    expect(find.text('3 / 7'), findsOneWidget);
+    expect(find.descendant(of: find.byType(BottomSheet), matching: find.text('3 / 7')), findsOneWidget);
     expect(find.text('Reach a 7-day streak'), findsOneWidget);
   });
 
-  test('achievement unlock event maps to presentation state without unlocking locally', () {
-    final controller = _FakeAchievementsController(_data());
+  test('achievement unlock event maps to presentation state without unlocking locally', () async {
+    final container = ProviderContainer(
+      overrides: [achievementsControllerProvider.overrideWith(() => _FakeAchievementsController(_data()))],
+    );
+    addTearDown(container.dispose);
+    await container.read(achievementsControllerProvider.future);
+    final controller = container.read(achievementsControllerProvider.notifier);
     controller.applyAchievementUnlocked(const AchievementUnlockedEvent('WEEK_WARRIOR'));
-    expect(controller.state.valueOrNull!.newlyUnlockedIds, contains('WEEK_WARRIOR'));
-    expect(controller.state.valueOrNull!.user.unlockedAchievements, isNot(contains('WEEK_WARRIOR')));
+    final result = container.read(achievementsControllerProvider).valueOrNull!;
+    expect(result.newlyUnlockedIds, contains('WEEK_WARRIOR'));
+    expect(result.user.unlockedAchievements, isNot(contains('WEEK_WARRIOR')));
   });
 
   test('motion vocabulary contains achievement and progression states', () {
@@ -70,7 +87,7 @@ void main() {
 }
 
 class _FakeAchievementsController extends AchievementsController {
-  _FakeAchievementsController(this.initial) { state = AsyncData(initial); }
+  _FakeAchievementsController(this.initial);
   final AchievementsViewData initial;
   @override Future<AchievementsViewData> build() async => initial;
 }

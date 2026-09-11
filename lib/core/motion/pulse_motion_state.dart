@@ -34,6 +34,14 @@ enum PulseProfileMotionState {
   error,
 }
 
+enum PulseAuthAvatarState {
+  idle,
+  emailFocused,
+  passwordFocused,
+  error,
+  success,
+}
+
 enum PulseSettingsMotionState {
   entering,
   idle,

@@ -5,6 +5,9 @@
 .pub/
 build/
 
+# Node
+node_modules/
+
 # IDE
 .idea/
 *.iml

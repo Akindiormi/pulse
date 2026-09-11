@@ -40,7 +40,7 @@ void main() {
     await tester.pump();
     await tester.tap(find.text('appearance'));
     await tester.pumpAndSettle();
-    expect(find.text('system'), findsOneWidget);
+    expect(find.text('system'), findsNWidgets(2));
     expect(find.text('light'), findsOneWidget);
     expect(find.text('dark'), findsOneWidget);
   });
@@ -49,7 +49,10 @@ void main() {
     final controller = FakeSettingsController(initial);
     await tester.pumpWidget(_app(controller));
     await tester.pump();
-    await tester.tap(find.text('sign out'));
+    final signOut = find.text('sign out');
+    await tester.ensureVisible(signOut);
+    await tester.pump();
+    await tester.tap(signOut);
     await tester.pumpAndSettle();
     expect(find.text('sign out?'), findsOneWidget);
     expect(controller.signOutCalls, 0);

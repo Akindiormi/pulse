@@ -123,7 +123,7 @@ class _AchievementTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final motion = newlyUnlocked ? PulseAchievementMotionState.newlyUnlocked : item.unlocked ? PulseAchievementMotionState.unlocked : PulseAchievementMotionState.locked;
-    return Semantics(button: true, label: '${item.definition.name}, ${item.unlocked ? 'unlocked' : 'locked'}: ${item.definition.description}', child: PulseMotionBoundaryV2(
+    final tile = Semantics(button: true, label: '${item.definition.name}, ${item.unlocked ? 'unlocked' : 'locked'}: ${item.definition.description}', child: PulseMotionBoundaryV2(
       intent: newlyUnlocked ? PulseMotionIntent.achievementUnlock : PulseMotionIntent.achievementReveal,
       state: motion,
       child: InkWell(
@@ -135,6 +135,7 @@ class _AchievementTile extends StatelessWidget {
         ])),
       ),
     ));
+    return newlyUnlocked ? Semantics(container: true, label: 'newlyUnlocked', child: tile) : tile;
   }
 }
 

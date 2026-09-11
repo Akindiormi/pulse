@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-
 import '../../../core/design/pulse_tokens.dart';
 import '../../../core/motion/pulse_motion_policy.dart';
 import '../../../core/theme/app_theme.dart';
@@ -9,41 +8,24 @@ class PulseShell extends StatelessWidget {
   const PulseShell({super.key, required this.child, required this.currentPath});
   final Widget child;
   final String currentPath;
-
   @override
-  Widget build(BuildContext context) => Scaffold(
-        body: SafeArea(child: child),
-        bottomNavigationBar: PulseBottomNavigation(currentPath: currentPath),
-      );
+  Widget build(BuildContext context) => Scaffold(body: SafeArea(child: child), floatingActionButton: FloatingActionButton(onPressed: () => context.push('/focus'), tooltip: 'Focus', child: const Icon(Icons.play_arrow_rounded)), bottomNavigationBar: PulseBottomNavigation(currentPath: currentPath));
 }
 
 class PulseBottomNavigation extends StatelessWidget {
   const PulseBottomNavigation({super.key, required this.currentPath});
   final String currentPath;
-
   static const destinations = <_PulseDestination>[
-    _PulseDestination('/home', 'home', Icons.home_rounded),
-    _PulseDestination('/challenges', 'challenges', Icons.bolt_rounded),
-    _PulseDestination('/achievements', 'achievements', Icons.workspace_premium_rounded),
+    _PulseDestination('/home', 'today', Icons.today_rounded),
+    _PulseDestination('/projects', 'projects', Icons.folder_copy_rounded),
+    _PulseDestination('/calendar', 'calendar', Icons.calendar_month_rounded),
+    _PulseDestination('/progress', 'progress', Icons.insights_rounded),
     _PulseDestination('/profile', 'profile', Icons.person_rounded),
   ];
-
-  @override
-  Widget build(BuildContext context) {
+  @override Widget build(BuildContext context) {
     final selected = destinations.indexWhere((item) => currentPath == item.path || currentPath.startsWith('${item.path}/'));
     final selectedIndex = selected < 0 ? 0 : selected;
-    return SafeArea(
-      top: false,
-      child: Material(
-        color: Theme.of(context).colorScheme.surface,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(PulseSpace.sm, PulseSpace.sm, PulseSpace.sm, PulseSpace.sm),
-          child: Row(
-            children: [for (var i = 0; i < destinations.length; i++) Expanded(child: _DestinationTile(destination: destinations[i], selected: i == selectedIndex, onTap: () => context.go(destinations[i].path)))],
-          ),
-        ),
-      ),
-    );
+    return SafeArea(top: false, child: Material(color: Theme.of(context).colorScheme.surface, child: Padding(padding: const EdgeInsets.fromLTRB(PulseSpace.sm, PulseSpace.sm, PulseSpace.sm, PulseSpace.sm), child: Row(children: [for (var i = 0; i < destinations.length; i++) Expanded(child: _DestinationTile(destination: destinations[i], selected: i == selectedIndex, onTap: () => context.go(destinations[i].path)))]))));
   }
 }
 
@@ -52,31 +34,9 @@ class _DestinationTile extends StatelessWidget {
   final _PulseDestination destination;
   final bool selected;
   final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
+  @override Widget build(BuildContext context) {
     final duration = PulseMotionPolicy.duration(context, const Duration(milliseconds: 180));
-    return Semantics(
-      button: true,
-      selected: selected,
-      label: destination.label,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(PulseRadius.medium),
-        child: AnimatedContainer(
-          duration: duration,
-          curve: Curves.easeOutCubic,
-          margin: const EdgeInsets.symmetric(horizontal: PulseSpace.xs),
-          padding: const EdgeInsets.symmetric(vertical: PulseSpace.sm),
-          decoration: BoxDecoration(color: selected ? PulseColors.accentTint : Colors.transparent, borderRadius: BorderRadius.circular(PulseRadius.medium)),
-          child: Column(mainAxisSize: MainAxisSize.min, children: [
-            AnimatedScale(scale: selected ? 1.06 : 1, duration: duration, child: Icon(destination.icon, size: 22, color: selected ? PulseColors.accent : Theme.of(context).colorScheme.onSurfaceVariant)),
-            const SizedBox(height: PulseSpace.xs),
-            Text(destination.label, style: AppTypography.metadata.copyWith(color: selected ? PulseColors.accent : Theme.of(context).colorScheme.onSurfaceVariant, fontWeight: selected ? FontWeight.w700 : FontWeight.w500)),
-          ]),
-        ),
-      ),
-    );
+    return Semantics(button: true, selected: selected, label: destination.label, child: InkWell(borderRadius: BorderRadius.circular(PulseRadius.medium), onTap: onTap, child: AnimatedContainer(duration: duration, curve: Curves.easeOutCubic, margin: const EdgeInsets.symmetric(horizontal: PulseSpace.xs), padding: const EdgeInsets.symmetric(vertical: PulseSpace.sm), decoration: BoxDecoration(color: selected ? PulseColors.accentTint : Colors.transparent, borderRadius: BorderRadius.circular(PulseRadius.medium), boxShadow: selected ? const [BoxShadow(color: PulseColors.shadow, blurRadius: 10, offset: Offset(0, -2))] : null), child: Column(mainAxisSize: MainAxisSize.min, children: [AnimatedScale(scale: selected ? 1.06 : 1, duration: duration, child: Icon(destination.icon, size: 22, color: selected ? PulseColors.accent : Theme.of(context).colorScheme.onSurfaceVariant)), const SizedBox(height: PulseSpace.xs), Text(destination.label, style: AppTypography.metadata.copyWith(color: selected ? PulseColors.accent : Theme.of(context).colorScheme.onSurfaceVariant, fontWeight: selected ? FontWeight.w700 : FontWeight.w500))]))));
   }
 }
 

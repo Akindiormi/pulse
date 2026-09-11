@@ -4,6 +4,7 @@ class UserModel {
     this.username,
     this.displayName,
     this.photoUrl,
+    this.timezone,
     this.createdAt,
     this.totalActivities = 0,
     this.currentStreak = 0,
@@ -16,7 +17,7 @@ class UserModel {
   });
 
   final String uid;
-  final String? username, displayName, photoUrl;
+  final String? username, displayName, photoUrl, timezone;
   final DateTime? createdAt, lastActivityDate;
   final int totalActivities, currentStreak, longestStreak, xp, level;
   final Set<String> completedCategories, unlockedAchievements;
@@ -25,6 +26,7 @@ class UserModel {
     String? username,
     String? displayName,
     String? photoUrl,
+    String? timezone,
     DateTime? createdAt,
     int? totalActivities,
     int? currentStreak,
@@ -39,6 +41,7 @@ class UserModel {
         username: username ?? this.username,
         displayName: displayName ?? this.displayName,
         photoUrl: photoUrl ?? this.photoUrl,
+        timezone: timezone ?? this.timezone,
         createdAt: createdAt ?? this.createdAt,
         totalActivities: totalActivities ?? this.totalActivities,
         currentStreak: currentStreak ?? this.currentStreak,
@@ -54,6 +57,7 @@ class UserModel {
         'username': username,
         'displayName': displayName,
         'photoUrl': photoUrl,
+        'timezone': timezone,
         'createdAt': createdAt,
         'totalActivities': totalActivities,
         'currentStreak': currentStreak,
@@ -70,6 +74,7 @@ class UserModel {
         username: map['username'] as String?,
         displayName: map['displayName'] as String?,
         photoUrl: map['photoUrl'] as String?,
+        timezone: map['timezone'] as String?,
         createdAt: _date(map['createdAt']),
         totalActivities: (map['totalActivities'] as num?)?.toInt() ?? 0,
         currentStreak: (map['currentStreak'] as num?)?.toInt() ?? 0,

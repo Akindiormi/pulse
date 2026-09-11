@@ -9,7 +9,7 @@ import 'routing/app_router.dart';
 class PulseApp extends ConsumerWidget {
   const PulseApp({super.key});
 
-  bool _publicPath(String path) => path == '/splash' || path == '/onboarding' || path == '/auth' || path == '/verify-email' || path == '/profile-setup';
+  bool _publicPath(String path) => path == '/splash' || path == '/onboarding' || path == '/auth' || path == '/profile-setup' || path == '/first-focus' || path == '/first-win';
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -22,8 +22,6 @@ class PulseApp extends ConsumerWidget {
         appRouter.go('/auth');
       } else if (state.status == AuthStatus.authenticated && (path == '/auth' || path == '/onboarding')) {
         appRouter.go('/splash');
-      } else if (state.status == AuthStatus.authenticatedUnverified && path != '/verify-email' && path != '/splash') {
-        appRouter.go('/verify-email');
       }
     });
     return MaterialApp.router(

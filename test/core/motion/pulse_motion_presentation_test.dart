@@ -32,7 +32,17 @@ void main() {
   testWidgets('celebration renders no decorative particles with reduced motion', (tester) async {
     PulseMotionPolicy.userReducedMotion = true;
     addTearDown(() => PulseMotionPolicy.userReducedMotion = false);
-    await tester.pumpWidget(const MaterialApp(home: SizedBox(width: 200, height: 200, child: PulseCompletionCelebration(hasAchievement: true, leveledUp: true))));
-    expect(find.byType(CustomPaint), findsNothing);
+    await tester.pumpWidget(const MaterialApp(
+      home: SizedBox(
+        width: 200,
+        height: 200,
+        child: PulseCompletionCelebration(hasAchievement: true, leveledUp: true),
+      ),
+    ));
+    final celebration = find.byType(PulseCompletionCelebration);
+    expect(
+      find.descendant(of: celebration, matching: find.byType(CustomPaint)),
+      findsNothing,
+    );
   });
 }

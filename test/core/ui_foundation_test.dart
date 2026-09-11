@@ -15,9 +15,9 @@ import 'package:pulse/models/challenge_model.dart';
 
 void main() {
   test('Pulse theme keeps the product color contract', () {
-    expect(buildAppTheme(Brightness.light).scaffoldBackgroundColor, PulseColors.lightBackground);
-    expect(buildAppTheme(Brightness.dark).scaffoldBackgroundColor, PulseColors.darkBackground);
-    expect(PulseColors.accent, const Color(0xFFFF6B4A));
+    expect(buildAppTheme(Brightness.light, useGoogleFonts: false).scaffoldBackgroundColor, PulseColors.lightBackground);
+    expect(buildAppTheme(Brightness.dark, useGoogleFonts: false).scaffoldBackgroundColor, PulseColors.darkBackground);
+    expect(PulseColors.accent, const Color(0xFF2E8B57));
   });
 
   test('motion states expose the product interaction vocabulary', () {
@@ -31,7 +31,7 @@ void main() {
     final challenge = Challenge(id: 'c1', title: 'Take a different route home', description: 'Change one small thing today.', category: ChallengeCategory.random, difficulty: Difficulty.easy, xpReward: 20, estimatedMinutes: 10, active: true);
 
     await tester.pumpWidget(MaterialApp(
-      theme: buildAppTheme(Brightness.light),
+      theme: buildAppTheme(Brightness.light, useGoogleFonts: false),
       home: Scaffold(
         body: SingleChildScrollView(
           child: Column(children: [
@@ -59,10 +59,10 @@ void main() {
   });
 
   testWidgets('bottom navigation exposes four product destinations', (tester) async {
-    await tester.pumpWidget(MaterialApp(theme: buildAppTheme(Brightness.light), home: const Scaffold(body: SizedBox(), bottomNavigationBar: PulseBottomNavigation(currentPath: '/home'))));
-    expect(find.text('home'), findsOneWidget);
-    expect(find.text('challenges'), findsOneWidget);
-    expect(find.text('achievements'), findsOneWidget);
+    await tester.pumpWidget(MaterialApp(theme: buildAppTheme(Brightness.light, useGoogleFonts: false), home: const Scaffold(body: SizedBox(), bottomNavigationBar: PulseBottomNavigation(currentPath: '/home'))));
+    expect(find.text('today'), findsOneWidget);
+    expect(find.text('projects'), findsOneWidget);
+    expect(find.text('progress'), findsOneWidget);
     expect(find.text('profile'), findsOneWidget);
   });
 }

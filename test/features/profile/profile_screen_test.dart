@@ -13,7 +13,7 @@ void main() {
   testWidgets('renders identity and progression summary', (tester) async {
     final data = ProfileViewData(user: user, achievements: const <AchievementRecord>[]);
     await tester.pumpWidget(_app(FakeProfileController(data)));
-    await tester.pump();
+    await tester.pumpAndSettle();
     expect(find.text('Akin Pulse'), findsOneWidget);
     expect(find.text('@akinpulse'), findsOneWidget);
     expect(find.text('level 3'), findsOneWidget);
@@ -21,22 +21,33 @@ void main() {
     expect(find.text('5 days'), findsOneWidget);
     expect(find.text('9 days'), findsOneWidget);
     expect(find.text('3 categories explored'), findsOneWidget);
-    expect(find.text('0 unlocked'), findsOneWidget);
+
+    // ListView children outside the initial viewport are lazily built, so the
+    // target must be brought into view before it can be located.
+    final list = find.byType(ListView);
+    await tester.drag(list, const Offset(0, -600));
+    await tester.pumpAndSettle();
+    final unlocked = find.text('0 unlocked');
+    expect(unlocked, findsOneWidget);
   });
 
   testWidgets('uses initials fallback when avatar is unavailable', (tester) async {
-    final data = ProfileViewData(user: user, achievements: const <AchievementRecord>[]);
-    await tester.pumpWidget(_app(FakeProfileController(data)));
-    await tester.pump();
-    expect(find.text('AP'), findsOneWidget);
-    expect(find.bySemanticsLabel('profile avatar for Akin Pulse'), findsOneWidget);
+    final semantics = tester.ensureSemantics();
+    try {
+      await tester.pumpWidget(_app(FakeProfileController(ProfileViewData(user: user, achievements: const <AchievementRecord>[]))));
+      await tester.pumpAndSettle();
+      expect(find.text('AP'), findsOneWidget);
+      expect(find.bySemanticsLabel(RegExp(r'^profile avatar for Akin Pulse')), findsOneWidget);
+    } finally {
+      semantics.dispose();
+    }
   });
 
   testWidgets('keeps long identity text and exposes edit action', (tester) async {
     final longUser = user.copyWith(displayName: 'A very long Pulse display name that should wrap safely');
     final data = ProfileViewData(user: longUser, achievements: const <AchievementRecord>[]);
     await tester.pumpWidget(_app(FakeProfileController(data)));
-    await tester.pump();
+    await tester.pumpAndSettle();
     expect(find.text(longUser.displayName!), findsOneWidget);
     expect(find.byTooltip('edit profile'), findsOneWidget);
   });
@@ -44,13 +55,14 @@ void main() {
   testWidgets('edit flow calls save once', (tester) async {
     final controller = FakeProfileController(ProfileViewData(user: user, achievements: const <AchievementRecord>[]));
     await tester.pumpWidget(_app(controller));
-    await tester.pump();
+    await tester.pumpAndSettle();
     await tester.tap(find.byTooltip('edit profile'));
     await tester.pumpAndSettle();
     expect(find.text('edit profile'), findsOneWidget);
     await tester.tap(find.text('save'));
-    await tester.pump();
     expect(controller.saveCalls, 1);
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pumpAndSettle();
   });
 
   test('profile view data exposes authoritative progression and achievement state', () {
@@ -61,6 +73,7 @@ void main() {
     expect(data.user.longestStreak, 9);
     expect(data.user.totalActivities, 12);
     expect(data.user.unlockedAchievements, {'first_step'});
+    expect(data.unlockedAchievementCount, 0);
   });
 }
 

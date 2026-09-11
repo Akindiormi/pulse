@@ -37,10 +37,10 @@ class _Content extends ConsumerWidget {
         intent: PulseMotionIntent.settingsChange,
         state: PulseSettingsMotionState.idle,
         child: _Section(title: 'preferences', children: [
-          _SwitchRow(icon: Icons.notifications_none_rounded, title: 'daily challenge reminder', subtitle: _notificationSubtitle(data), value: data.dailyReminderEnabled, enabled: data.reminderDeliveryAvailable || data.permissionStatus != NotificationPermissionStatus.unavailable, onChanged: (value) => _run(context, () => controller.setDailyReminder(value))),
-          if (!data.reminderDeliveryAvailable) Padding(padding: const EdgeInsets.fromLTRB(PulseSpace.lg, 0, PulseSpace.lg, PulseSpace.md), child: Text('your reminder preference is kept safely, but delivery is not configured yet. no notification will be sent until the trusted notification backend supports scheduling.', style: AppTypography.metadata)),
+          _SwitchRow(icon: Icons.notifications_none_rounded, title: 'daily challenge reminder', subtitle: _notificationSubtitle(data), value: data.dailyReminderEnabled, enabled: data.reminderDeliveryAvailable || data.permissionStatus != NotificationPermissionStatus.unavailable, onChanged: (value) => _run(() => controller.setDailyReminder(value), ScaffoldMessenger.maybeOf(context))),
+          if (!data.reminderDeliveryAvailable) Padding(padding: const EdgeInsets.fromLTRB(PulseSpace.lg, 0, PulseSpace.lg, PulseSpace.md), child: Text('your reminder preference is kept safely, but reminder delivery is not configured yet. no notification will be sent until the trusted notification backend supports scheduling.', style: AppTypography.metadata)),
           _TapRow(icon: Icons.palette_outlined, title: 'appearance', subtitle: _themeLabel(data.themeMode), onTap: () => _showThemePicker(context, ref)),
-          _SwitchRow(icon: Icons.motion_photos_off_outlined, title: 'reduced motion', subtitle: data.reducedMotion ? 'nonessential motion is reduced' : 'full Pulse motion', value: data.reducedMotion, onChanged: (value) => _run(context, () => controller.setReducedMotion(value))),
+          _SwitchRow(icon: Icons.motion_photos_off_outlined, title: 'reduced motion', subtitle: data.reducedMotion ? 'nonessential motion is reduced' : 'full Pulse motion', value: data.reducedMotion, onChanged: (value) => _run(() => controller.setReducedMotion(value), ScaffoldMessenger.maybeOf(context))),
         ]),
       ),
       const SizedBox(height: PulseSpace.xl),
@@ -71,35 +71,25 @@ class _Content extends ConsumerWidget {
   String _themeLabel(ThemeMode mode) => switch (mode) { ThemeMode.system => 'system', ThemeMode.light => 'light', ThemeMode.dark => 'dark' };
 
   Future<void> _showThemePicker(BuildContext context, WidgetRef ref) async {
+    final messenger = ScaffoldMessenger.maybeOf(context);
     final current = data.themeMode;
-    final messenger = ScaffoldMessenger.of(context);
     final selected = await showModalBottomSheet<ThemeMode>(context: context, showDragHandle: true, builder: (context) => SafeArea(child: Column(mainAxisSize: MainAxisSize.min, children: ThemeMode.values.map((mode) => RadioListTile<ThemeMode>(value: mode, groupValue: current, title: Text(_themeLabel(mode)), onChanged: (value) => Navigator.pop(context, value))).toList())));
-    if (selected != null && selected != current) await _runWithMessenger(messenger, () => ref.read(settingsControllerProvider.notifier).setTheme(selected));
+    if (selected != null && selected != current) await _run(() => ref.read(settingsControllerProvider.notifier).setTheme(selected), messenger);
   }
 
   Future<void> _confirmSignOut(BuildContext context, SettingsController controller) async {
-    final messenger = ScaffoldMessenger.of(context);
+    final messenger = ScaffoldMessenger.maybeOf(context);
     final ok = await showDialog<bool>(context: context, builder: (context) => AlertDialog(title: const Text('sign out?'), content: const Text('you’ll need to sign in again to continue your Pulse journey.'), actions: [TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('cancel')), FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('sign out'))]));
-    if (ok == true) await _runWithMessenger(messenger, controller.signOut);
+    if (ok == true) await _run(controller.signOut, messenger);
   }
 
   Future<void> _confirmDelete(BuildContext context, SettingsController controller) async {
-    final messenger = ScaffoldMessenger.of(context);
+    final messenger = ScaffoldMessenger.maybeOf(context);
     final ok = await showDialog<bool>(context: context, builder: (context) => AlertDialog(title: const Text('delete account?'), content: const Text('this is permanent. Pulse will ask the current authentication service to delete your account. profile data will be removed through the trusted deletion workflow.'), actions: [TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('cancel')), FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('delete account'))]));
-    if (ok == true) await _runWithMessenger(messenger, controller.deleteAccount);
+    if (ok == true) await _run(controller.deleteAccount, messenger);
   }
 
-  Future<void> _run(BuildContext context, Future<void> Function() action) => _runWithMessenger(ScaffoldMessenger.of(context), action);
-
-  Future<void> _runWithMessenger(ScaffoldMessengerState messenger, Future<void> Function() action) async {
-    try {
-      await action();
-    } catch (error) {
-      if (!messenger.mounted) return;
-      final message = error is SettingsException ? error.message : 'we couldn’t save that setting. please try again.';
-      messenger.showSnackBar(SnackBar(content: Text(message)));
-    }
-  }
+  Future<void> _run(Future<void> Function() action, ScaffoldMessengerState? messenger) async { try { await action(); } catch (error) { if (messenger == null || !messenger.mounted) return; final message = error is SettingsException ? error.message : 'we couldn’t save that setting. please try again.'; messenger.showSnackBar(SnackBar(content: Text(message))); } }
 }
 
 class _Section extends StatelessWidget {

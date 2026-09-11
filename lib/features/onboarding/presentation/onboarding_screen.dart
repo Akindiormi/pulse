@@ -19,9 +19,9 @@ class OnboardingScreen extends ConsumerStatefulWidget {
 class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   int page = 0;
   final pages = const [
-    ('make today count.', 'Pulse turns small actions into real momentum.'),
-    ('one challenge. every day.', 'get a challenge, do it, and build your streak.'),
-    ('watch yourself grow.', 'earn XP, unlock achievements, and see how far you can go.'),
+    ('turn what’s in your head into a plan.', 'Pulse helps you turn priorities into clear actions.'),
+    ('work on what matters now.', 'Choose one thing, start a focused session, and get it done.'),
+    ('see your momentum build.', 'Completed work becomes progress, while streaks, XP, challenges, and achievements reinforce consistency.'),
   ];
 
   @override
@@ -47,80 +47,38 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(PulseSpace.xl, PulseSpace.xl, PulseSpace.xl, PulseSpace.lg),
-          child: Column(
-            children: [
-              Row(
-                children: [
-                  Text('PULSE', style: AppTypography.title.copyWith(fontWeight: FontWeight.w900)),
-                  const Spacer(),
-                  if (page < pages.length - 1)
-                    PulseButton(variant: PulseButtonVariant.tertiary, label: 'skip', onPressed: () => finish(skipped: true)),
-                ],
-              ),
-              Expanded(
-                child: AnimatedSwitcher(
-                  duration: transition,
-                  switchInCurve: PulseMotionPolicy.curve(context),
-                  switchOutCurve: PulseMotionPolicy.curve(context, normal: Curves.easeIn),
-                  child: KeyedSubtree(
-                    key: ValueKey(page),
-                    child: Center(
-                      child: SingleChildScrollView(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            PulseMotionAttachment(
-                              intent: PulseMotionIntent.onboardingIllustration,
-                              state: PulseMotionState.entering,
-                              child: Container(
-                                width: 104,
-                                height: 104,
-                                decoration: BoxDecoration(color: PulseColors.accent, borderRadius: BorderRadius.circular(PulseRadius.large)),
-                                alignment: Alignment.center,
-                                child: Text('${page + 1}', style: const TextStyle(fontSize: 48, fontWeight: FontWeight.w900)),
-                              ),
-                            ),
-                            const SizedBox(height: PulseSpace.xxl),
-                            Text(item.$1, textAlign: TextAlign.center, style: Theme.of(context).textTheme.displayLarge),
-                            const SizedBox(height: PulseSpace.md),
-                            Text(item.$2, textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant)),
-                          ],
-                        ),
-                      ),
+          child: Column(children: [
+            Row(children: [
+              Text('PULSE', style: AppTypography.title.copyWith(fontWeight: FontWeight.w900)),
+              const Spacer(),
+              if (page < pages.length - 1)
+                PulseButton(variant: PulseButtonVariant.tertiary, label: 'skip', onPressed: () => finish(skipped: true)),
+            ]),
+            Expanded(
+              child: AnimatedSwitcher(
+                duration: transition,
+                switchInCurve: PulseMotionPolicy.curve(context),
+                switchOutCurve: PulseMotionPolicy.curve(context, normal: Curves.easeIn),
+                child: KeyedSubtree(
+                  key: ValueKey(page),
+                  child: Center(child: SingleChildScrollView(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+                    PulseMotionAttachment(
+                      intent: PulseMotionIntent.onboardingIllustration,
+                      state: PulseMotionState.entering,
+                      child: Container(width: 104, height: 104, decoration: BoxDecoration(color: PulseColors.accent, borderRadius: BorderRadius.circular(PulseRadius.large)), alignment: Alignment.center, child: Text('${page + 1}', style: const TextStyle(fontSize: 48, fontWeight: FontWeight.w900))),
                     ),
-                  ),
+                    const SizedBox(height: PulseSpace.xxl),
+                    Text(item.$1, textAlign: TextAlign.center, style: Theme.of(context).textTheme.displayLarge),
+                    const SizedBox(height: PulseSpace.md),
+                    Text(item.$2, textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant)),
+                  ]))),
                 ),
               ),
-              Semantics(
-                liveRegion: true,
-                label: 'onboarding page ${page + 1} of ${pages.length}',
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: List.generate(
-                    pages.length,
-                    (index) => Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 4),
-                      child: AnimatedContainer(
-                        duration: PulseMotionPolicy.microDuration(context),
-                        width: index == page ? 24 : 8,
-                        height: 8,
-                        decoration: BoxDecoration(
-                          color: index == page ? PulseColors.accent : Theme.of(context).colorScheme.outlineVariant,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: PulseSpace.lg),
-              PulseButton(
-                expand: true,
-                label: page == pages.length - 1 ? 'get started' : 'continue',
-                onPressed: () => page == pages.length - 1 ? finish(skipped: false) : setState(() => page++),
-              ),
-            ],
-          ),
+            ),
+            Semantics(liveRegion: true, label: 'onboarding page ${page + 1} of ${pages.length}', child: Row(mainAxisAlignment: MainAxisAlignment.center, children: List.generate(pages.length, (index) => Padding(padding: const EdgeInsets.symmetric(horizontal: 4), child: AnimatedContainer(duration: PulseMotionPolicy.microDuration(context), width: index == page ? 24 : 8, height: 8, decoration: BoxDecoration(color: index == page ? PulseColors.accent : Theme.of(context).colorScheme.outlineVariant, borderRadius: BorderRadius.circular(8))))))),
+            const SizedBox(height: PulseSpace.lg),
+            PulseButton(expand: true, label: page == pages.length - 1 ? 'get started' : 'continue', onPressed: () => page == pages.length - 1 ? finish(skipped: false) : setState(() => page++)),
+          ]),
         ),
       ),
     );
